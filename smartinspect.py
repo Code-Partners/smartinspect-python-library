@@ -1,0 +1,108 @@
+import struct
+import socket
+import time
+
+DEFAULTPORT = 4228
+DEFAULTSERVER = '127.0.0.1'
+DEFAULTSESSION = 'Main'
+DEFAULTAPPNAME = 'Auto'
+DEFAULTCOLOR = 0xff000005
+CLIENTBANNER = 'SmartInspect Python Library v0.1\n'
+
+
+class Session:
+    def __init__(self, parent, name):
+        self._parent = parent
+        self.name = name
+
+
+class SmartInspect:
+    def __init__(self, \
+                 appname=DEFAULTAPPNAME, \
+                 server=DEFAULTSERVER, \
+                 port=DEFAULTPORT, \
+                 enabled=False):
+        self.appname = appname
+        self.hostname = socket.gethostname()
+        self._server = server
+        self._port = port
+        self._enabled = enabled
+        self._connected = False
+
+        if self._enabled:
+            self._connect()
+
+    def add_session(self, name):
+        return Session(self, name)
+
+    def _is_enabled(self):
+        print('_is_enabled')
+        print(self._enabled)
+        return self._enabled
+
+    def _set_enabled(self, value):
+        print('_set_enabled')
+        if value:
+            self._enable()
+        else:
+            self._disable()
+
+    enabled = property(_is_enabled, _set_enabled)
+
+    def _enable(self):
+        print('_enable')
+        if not self._enabled:
+            self._enabled = True
+            self._connect()
+
+    def _disable(self):
+        if self._enabled:
+            self._enabled = False
+            self._disconnect()
+
+    def _connect(self):
+        print('_connect')
+        if self._connected:
+            return True
+
+        try:
+            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._socket.connect((self._server, self._port))
+            self._buffer = self._socket.makefile('rw')
+            s = self._buffer.readline()
+            print(s)
+            self._buffer.write(CLIENTBANNER)
+            self._connected = True
+        except Exception as e:
+            self._close()
+
+        return self._connected
+
+    def _close(self):
+        print('_close')
+        self._connected = False
+
+        if self._socket != None:
+            s = self._socket
+            self._socket = None
+            try:
+                s.close()
+            except:
+                return False
+
+        return True
+
+    def _disconnect(self):
+        if not self._connected:
+            return True
+        else:
+            return self._close()
+
+
+si = SmartInspect('Auto', 'localhost', 4228)
+si_main = si.add_session('Main')
+
+si.enabled = True
+
+
+time.sleep(10)
