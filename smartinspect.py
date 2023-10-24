@@ -17,10 +17,12 @@ class Session:
 
 
 class SmartInspect:
-    def __init__(self, \
-                 appname=DEFAULTAPPNAME, \
-                 server=DEFAULTSERVER, \
-                 port=DEFAULTPORT, \
+    VERSION = "$SIVERSION"
+
+    def __init__(self, 
+                 appname=DEFAULTAPPNAME,
+                 server=DEFAULTSERVER,
+                 port=DEFAULTPORT,
                  enabled=False):
         self.appname = appname
         self.hostname = socket.gethostname()
@@ -98,11 +100,15 @@ class SmartInspect:
         else:
             return self._close()
 
-
-si = SmartInspect('Auto', 'localhost', 4228)
-si_main = si.add_session('Main')
-
-si.enabled = True
+    @classmethod
+    def get_version(cls):
+        return cls.VERSION
 
 
-time.sleep(10)
+if __name__ == '__main__':
+    si = SmartInspect('Auto', 'localhost', 4228)
+    si_main = si.add_session('Main')
+
+    si.enabled = True
+
+    time.sleep(10)
