@@ -1,0 +1,2 @@
+class SmartInspectException(Exception):
+    pass

@@ -1,0 +1,2 @@
+class BinaryFormatter:
+    pass
