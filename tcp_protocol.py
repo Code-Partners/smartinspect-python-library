@@ -1,5 +1,5 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
-
+import io
 import socket
 import sys
 from smartinspect import SmartInspect
@@ -7,6 +7,7 @@ from protocol import Protocol
 from exceptions import SmartInspectException
 from formatters import BinaryFormatter
 from builders import ConnectionsBuilder
+from packets import Packet
 
 
 class TcpProtocol(Protocol):
@@ -19,9 +20,10 @@ class TcpProtocol(Protocol):
 
     def __init__(self):
         super().__init__()
-        self.answer: bytearray | None = None
-        self.formatter = BinaryFormatter()
-        self.load_options()
+        self.__answer: bytearray | None = None
+        self.__formatter = BinaryFormatter()
+        self._load_options()
+        self.__socket = None
 
     @staticmethod
     def _get_name() -> str:
@@ -38,7 +40,7 @@ class TcpProtocol(Protocol):
         builder.add_option("timeout", self.__timeout)
 
     def _load_options(self) -> None:
-        super().load_options()
+        super()._load_options()
         # self.__hostname = self._get_string_option("host", "127.0.0.1")
         self.__timeout = self._get_integer_option("timeout", 30000)
         # self.__port = self._get_integer_option("port", 4228)
@@ -46,7 +48,7 @@ class TcpProtocol(Protocol):
     def __do_handshake(self):
         server_banner = "".encode()
         while True:
-            current_byte = self._socket.recv(1)
+            current_byte = self.__socket.recv(1)
             if current_byte == b'\n':
                 break
             if not current_byte:
@@ -54,20 +56,37 @@ class TcpProtocol(Protocol):
                     "Could not read server banner correctly: " +
                     "Connection has been closed unexpectedly")
             server_banner += current_byte
-            print(server_banner)
+        print(server_banner)
 
         client_banner = self.__CLIENT_BANNER
-        self._socket.sendall(client_banner)
-        self._socket.close()
+        self.__socket.sendall(client_banner)
+        self.__socket.close()
 
     def _internal_connect(self):
-        socket_ = self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        socket_ = self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         socket_.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         socket_.settimeout(self.__timeout)
-        socket_.connect((self.__hostname, self.__port))
-        if socket_.connect_ex((self.__hostname, self.__port)) == 10056:
+        try:
+            socket_.connect((self.__hostname, self.__port))
             self.__do_handshake()
             self._internal_write_log_header()
+        except ConnectionError as e:
+            raise SmartInspectException(f"There was a connection error. \n"
+                                        f"Check if SI Console is running on {self.__hostname}:{self.__port} \n"
+                                        f"Your system returned: {e.errno}: {e.strerror}")
+        except SmartInspectException as e:
+            raise e
+
+    def _internal_disconnect(self) -> None:
+        self.__socket.close()
+
+    # def _internal_write_packet(self, packet: Packet) -> None:
+    #     self.__formatter.format(packet, output_stream)
+    #     self.__socket.sendall(packet)
+    #
+    #     if len(answer) != 2:
+    #         raise SmartInspectException(
+    #             "Could not read server answer correctly: Connection has been closed unexpectedly")
 
 
 if __name__ == '__main__':

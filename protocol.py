@@ -12,7 +12,7 @@ class Protocol(ABC):
         self.queue = PacketQueue()
         self.listeners = dict()
 
-    def load_options(self) -> None:
+    def _load_options(self) -> None:
         pass
 
     def _get_string_option(self, key: str, default_value: str) -> str:
