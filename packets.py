@@ -7,23 +7,35 @@ from viewer_type import ViewerType
 class Packet(ABC):
     _PACKET_HEADER: int = 6
 
-    @property
-    def PACKET_HEADER(self) -> int:
-        return self._PACKET_HEADER
-
     @abstractmethod
     def get_packet_type(self) -> PacketType:
+        pass
+
+    @classmethod
+    def get_packet_header_size(cls) -> int:
+        return cls._PACKET_HEADER
+
+    @staticmethod
+    def _get_string_size(string: str) -> int:
+        if isinstance(string, str):
+            return len(string) * 2
+        else:
+            raise TypeError("string parameter must be of type str")
+
+    def get_content(self):
         pass
 
 
 class LogEntry(Packet):
 
-    def __init__(self, log_entry_type: LogEntryType, viewer_id: ViewerType):
+    def __init__(self, log_entry_type: LogEntryType, viewer_type: ViewerType):
+        self.__data: bytearray = bytearray()
         self.__app_name: str = ""
         self.__session_name: str = ""
         self.__title: str = ""
         self.__host_name: str = ""
         self.set_log_entry_type(log_entry_type)
+        self.set_viewer_type(viewer_type)
 
     def get_packet_type(self) -> PacketType:
         return PacketType.LogEntry
@@ -49,14 +61,28 @@ class LogEntry(Packet):
         else:
             raise TypeError("log_entry_type must be a LogEntryType instance")
 
-    def get_log_entry_type(self):
-        return self.__log_entry_type
-
-    def set_viewer(self, viewer: ViewerType) -> None:
+    def set_viewer_type(self, viewer: ViewerType) -> None:
         if isinstance(viewer, ViewerType):
-            self.__viewer = viewer
+            self.__viewer_type = viewer
         else:
             raise TypeError("viewer must be a ViewerType instance")
 
     def get_viewer_type(self):
-        return self.__viewer
+        return self.__viewer_type
+
+    def get_data(self) -> bytearray:
+        return self.__data
+
+
+class LogHeader(Packet):
+    __HEADER_SIZE = 4
+
+    def __init__(self):
+        self.__app_name = ""
+        self.__host_name = ""
+
+    def get_size(self):
+        return self.__HEADER_SIZE + self._get_string_size(self.get_content())
+
+    def get_content(self):
+        return f"hostname={self.__host_name}\r\nappname={self.__app_name}\r\n"
