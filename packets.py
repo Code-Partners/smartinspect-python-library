@@ -7,8 +7,9 @@ from viewer_type import ViewerType
 class Packet(ABC):
     _PACKET_HEADER: int = 6
 
+    @staticmethod
     @abstractmethod
-    def get_packet_type(self) -> PacketType:
+    def get_packet_type() -> PacketType:
         pass
 
     @classmethod
@@ -37,7 +38,8 @@ class LogEntry(Packet):
         self.set_log_entry_type(log_entry_type)
         self.set_viewer_type(viewer_type)
 
-    def get_packet_type(self) -> PacketType:
+    @staticmethod
+    def get_packet_type() -> PacketType:
         return PacketType.LogEntry
 
     def get_app_name(self) -> str:
@@ -73,16 +75,80 @@ class LogEntry(Packet):
     def get_data(self) -> bytearray:
         return self.__data
 
+    def get_process_id(self):
+        pass
+
+    def get_thread_id(self):
+        pass
+
+    def get_timestamp(self):
+        pass
+
+    def get_color(self):
+        pass
+
 
 class LogHeader(Packet):
     __HEADER_SIZE = 4
 
     def __init__(self):
-        self.__app_name = ""
-        self.__host_name = ""
+        self.__app_name: str = ""
+        self.__hostname: str = ""
 
     def get_size(self):
         return self.__HEADER_SIZE + self._get_string_size(self.get_content())
 
     def get_content(self):
-        return f"hostname={self.__host_name}\r\nappname={self.__app_name}\r\n"
+        return f"hostname={self.__hostname}\r\nappname={self.__app_name}\r\n"
+
+    def set_hostname(self, hostname: str) -> None:
+        self.__hostname = hostname
+
+    def set_app_name(self, app_name: str) -> None:
+        self.__app_name = app_name
+
+    @staticmethod
+    def get_packet_type() -> PacketType:
+        return PacketType.LogHeader
+
+
+class ProcessFlow(Packet):
+    def get_title(self):
+        pass
+
+    def get_host_name(self):
+        pass
+
+    def get_process_flow_type(self):
+        pass
+
+    def get_process_id(self):
+        pass
+
+    def get_thread_id(self):
+        pass
+
+    def get_timestamp(self):
+        pass
+
+
+class Watch(Packet):
+    def get_name(self):
+        pass
+
+    def get_value(self):
+        pass
+
+    def get_watch_type(self):
+        pass
+
+    def get_timestamp(self):
+        pass
+
+
+class ControlCommand(Packet):
+    def get_data(self):
+        pass
+
+    def get_control_command_type(self):
+        pass
