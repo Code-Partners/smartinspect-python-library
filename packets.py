@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from packet_type import PacketType
 from log_entry_type import LogEntryType
-from viewer_type import ViewerType
+from viewer_id import ViewerId
 
 
 class Packet(ABC):
@@ -29,7 +29,7 @@ class Packet(ABC):
 
 class LogEntry(Packet):
 
-    def __init__(self, log_entry_type: LogEntryType, viewer_type: ViewerType):
+    def __init__(self, log_entry_type: LogEntryType, viewer_type: ViewerId):
         self.__data: bytearray = bytearray()
         self.__app_name: str = ""
         self.__session_name: str = ""
@@ -63,8 +63,8 @@ class LogEntry(Packet):
         else:
             raise TypeError("log_entry_type must be a LogEntryType instance")
 
-    def set_viewer_type(self, viewer: ViewerType) -> None:
-        if isinstance(viewer, ViewerType):
+    def set_viewer_type(self, viewer: ViewerId) -> None:
+        if isinstance(viewer, ViewerId):
             self.__viewer_type = viewer
         else:
             raise TypeError("viewer must be a ViewerType instance")
@@ -89,6 +89,8 @@ class LogEntry(Packet):
 
 
 class LogHeader(Packet):
+    """LogHeader packet type, used for storing and transferring log metadata //all"""
+
     __HEADER_SIZE = 4
 
     def __init__(self):
@@ -101,8 +103,14 @@ class LogHeader(Packet):
     def get_content(self):
         return f"hostname={self.__hostname}\r\nappname={self.__app_name}\r\n"
 
+    def get_hostname(self):
+        return self.__hostname
+
     def set_hostname(self, hostname: str) -> None:
         self.__hostname = hostname
+
+    def get_app_name(self):
+        return self.__app_name
 
     def set_app_name(self, app_name: str) -> None:
         self.__app_name = app_name
