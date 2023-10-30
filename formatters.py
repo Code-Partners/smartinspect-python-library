@@ -6,7 +6,7 @@ from enum import Enum
 from packets import Packet, LogEntry, ProcessFlow, Watch, ControlCommand
 from packet_type import PacketType
 from log_entry_type import LogEntryType
-from viewer_type import ViewerType
+from viewer_id import ViewerId
 from color import Color
 
 
@@ -22,7 +22,6 @@ class Formatter(ABC):
     def write(self, stream) -> None:
         """Writes a compiled packet to a supplied stream"""
 
-    @abstractmethod
     def format(self, packet: Packet, stream):
         """Compiles a packet and writes it to a stream"""
         self.compile(packet)
@@ -137,9 +136,13 @@ class BinaryFormatter(Formatter):
         else:
             self.__write_int(-1)
 
-    def __write_int(self, value: int):
+    def __write_int(self, value: int, stream=None):
         if isinstance(value, int):
-            self.__stream.write(value.to_bytes(4, "little", signed=True))
+            bytestring = value.to_bytes(4, "little", signed=True)
+            if stream is None:
+                self.__stream.write(bytestring)
+            else:
+                stream.write(bytestring)
         else:
             raise IOError("attempting to write a non-integer type to a place where only int is allowed")
 
@@ -167,7 +170,7 @@ class BinaryFormatter(Formatter):
         self.__write_data(control_command.get_data())
 
     def __write_length(self, content: bytes) -> None:
-        if isinstance(content, bytes):
+        if bytes and isinstance(content, bytes):
             self.__write_int(len(content))
         else:
             self.__write_int(0)
@@ -176,25 +179,30 @@ class BinaryFormatter(Formatter):
         if isinstance(value, bytes) and value:
             self.__stream.write(value)
 
+    def __write_short(self, value: int, stream=None) -> None:
+        short_bits = struct.pack("<h", value)
+        if stream:
+            stream.write(short_bits)
+        else:
+            self.__stream.write(short_bits)
+
     def __write_color(self, value: Color | None = None):
         if value is None:
             color = 0xff000000 | 5
         else:
             color = value.get_red() | value.get_green() << 8 | value.get_blue() << 16 | value.get_alpha() << 24
         # converting to unsigned int and writing it
-        unsigned_int = struct.unpack("<i", struct.pack("<I", color))[0]
-        self.__write_int(unsigned_int)
-
-    def format(self, packet):
-        self.compile(packet)
-        return self.__stream.getvalue()
+        signed_int = struct.unpack("<i", struct.pack("<I", color))[0]
+        self.__write_int(signed_int)
 
     def write(self, stream):
-        if self.__size > 0:
-            self.__write_int(self.__packet.get_packet_type().value)
+        self.__write_short(self.__packet.get_packet_type().value, stream=stream)
+        self.__write_int(self.__size, stream=stream)
+        stream.write(self.__stream.getvalue())
 
     def __write_double(self, value: float) -> None:
-        long_bits = struct.pack("<d", value)
+        long_bits = struct.pack("<q", value)
+        # q is for long long Q is for unsigned long long
         self.__write_long(long_bits)
 
     def __write_long(self, long_bits):
@@ -203,4 +211,4 @@ class BinaryFormatter(Formatter):
 
 if __name__ == "__main__":
     formatter = BinaryFormatter()
-    formatter.compile(LogEntry(LogEntryType.Separator, ViewerType.NoViewer))
+    formatter.compile(LogEntry(LogEntryType.Separator, ViewerId.NoViewer))
