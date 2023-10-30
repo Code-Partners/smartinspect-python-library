@@ -2,6 +2,8 @@
 import io
 import socket
 import sys
+import time
+
 from smartinspect import SmartInspect
 from protocol import Protocol
 from exceptions import SmartInspectException
@@ -46,22 +48,9 @@ class TcpProtocol(Protocol):
         # self.__port = self._get_integer_option("port", 4228)
 
     def __do_handshake(self):
-
-        server_banner = "".encode()
-        while True:
-            current_byte = self.__socket.recv(1)
-            if current_byte == b'\n':
-                break
-            if not current_byte:
-                raise SmartInspectException(
-                    "Could not read server banner correctly: " +
-                    "Connection has been closed unexpectedly")
-            server_banner += current_byte
-        print(server_banner)
-
-        client_banner = self.__CLIENT_BANNER
-        self.__socket.sendall(client_banner)
-
+        answer = self.__stream.readline()
+        self.__stream.write(self.__CLIENT_BANNER)
+        self.__stream.flush()
 
     def _internal_connect(self):
         socket_ = self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -69,6 +58,7 @@ class TcpProtocol(Protocol):
         socket_.settimeout(self.__timeout)
         try:
             socket_.connect((self._hostname, self._port))
+            self.__stream = socket_.makefile("rwb", self.__BUFFER_SIZE)
             self.__do_handshake()
             self._internal_write_log_header()
         except ConnectionError as e:
@@ -82,9 +72,9 @@ class TcpProtocol(Protocol):
         self.__socket.close()
 
     def _internal_write_packet(self, packet: Packet) -> None:
-        stream = self.__formatter.format(packet)
-        self.__socket.sendall(stream)
-        server_answer = "".encode()
+        self.__formatter.format(packet, self.__stream)
+        self.__stream.flush()
+        server_answer = self.__stream.readline(self.__ANSWER_SIZE)
         # server_answer += self.__socket.recv(1)
         # while True:
         #     current_byte = self.__socket.recv(1)
@@ -99,6 +89,7 @@ class TcpProtocol(Protocol):
         if len(server_answer) != self.__ANSWER_SIZE:
             raise SmartInspectException(
                 "Could not read server answer correctly: Connection has been closed unexpectedly")
+        print(server_answer)
         self.__socket.close()
 
 
