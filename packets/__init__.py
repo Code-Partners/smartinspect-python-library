@@ -7,3 +7,4 @@ from .log_entry import LogEntry
 from .process_flow import ProcessFlow
 from .watch import Watch
 from .control_command import ControlCommand
+from .color import Color
