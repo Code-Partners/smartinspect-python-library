@@ -3,7 +3,7 @@ import struct
 from io import BytesIO
 from enum import Enum
 from packets import Packet, LogEntry, PacketType, LogEntryType, ViewerId, ProcessFlow, Watch, ControlCommand
-from color import Color
+from packets.color import Color
 
 
 class Formatter(ABC):
@@ -66,10 +66,10 @@ class BinaryFormatter(Formatter):
         app_name = self.__encode_string(log_entry.get_app_name())
         session_name = self.__encode_string(log_entry.get_session_name())
         title = self.__encode_string(log_entry.get_title())
-        host_name = self.__encode_string(log_entry.get_host_name())
+        host_name = self.__encode_string(log_entry.get_hostname())
 
         self.__write_enum(log_entry.get_log_entry_type())
-        self.__write_enum(log_entry.get_viewer_type())
+        self.__write_enum(log_entry.get_viewer_id())
         self.__write_length(app_name)
         self.__write_length(session_name)
         self.__write_length(title)
@@ -147,11 +147,6 @@ class BinaryFormatter(Formatter):
         timestamp += (value % self.__MICROSECONDS_PER_DAY) / self.__MICROSECONDS_PER_DAY
         self.__write_double(timestamp)
 
-    # It goes under 'double' in Java code but seems to be correctly processed by 'float' in Python
-    def __write_float(self, value: float):
-        long_bits = struct.pack("!d", value)
-        self.__stream.write(long_bits)
-
     def __compile_log_header(self) -> None:
         log_header = self.__packet
         content: bytes = log_header.get_content().encode('utf-8')
@@ -187,8 +182,8 @@ class BinaryFormatter(Formatter):
             color = 0xff000000 | 5
         else:
             color = value.get_red() | value.get_green() << 8 | value.get_blue() << 16 | value.get_alpha() << 24
-        # converting to unsigned int and writing it
-        signed_int = struct.unpack("<i", struct.pack("<I", color))[0]
+        # converting to signed int and writing it
+        signed_int = struct.unpack("i", struct.pack("I", color))[0]
         self.__write_int(signed_int)
 
     def write(self, stream):
@@ -197,24 +192,8 @@ class BinaryFormatter(Formatter):
         stream.write(self.__stream.getvalue())
 
     def __write_double(self, value: float) -> None:
-        long_bits = struct.pack("<d", value)
-        # q is for long long Q is for unsigned long long
+        long_bits = struct.pack("<Q", struct.unpack("Q", struct.pack("d", value))[0])
         self.__write_long(long_bits)
 
     def __write_long(self, long_bits):
         self.__stream.write(long_bits)
-
-
-if __name__ == "__main__":
-    formatter = BinaryFormatter()
-    formatter.compile(LogEntry(LogEntryType.Separator, ViewerId.NoViewer))
-    output = BytesIO()
-    formatter.write(output)
-    bytes_obj = output.getvalue()
-    L = [bytes_obj[i:i + 1] for i in range(len(bytes_obj))]
-    n = [ord(l) if ord(l) <= 127 else ord(l) - 128 for l in L]
-    x = [ord(l) if ord(l) <= 127 else ord(l) - 128 for l in L]
-    print(len(L))
-
-
-    
