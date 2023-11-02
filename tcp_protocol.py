@@ -1,8 +1,6 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
-import io
+
 import socket
-import sys
-import time
 
 from smartinspect import SmartInspect
 from protocol import Protocol
@@ -17,7 +15,7 @@ class TcpProtocol(Protocol):
     __CLIENT_BANNER = bytearray(f"SmartInspect Java Library v{SmartInspect.get_version()}\n", encoding="UTF-8")
     __ANSWER_SIZE = 2
     _hostname = "127.0.0.1"
-    __timeout = 30000
+    _timeout = 30000
     _port = 4228
 
     def __init__(self):
@@ -26,6 +24,7 @@ class TcpProtocol(Protocol):
         self.__formatter = BinaryFormatter()
         self._load_options()
         self.__socket = None
+        self.__stream = None
 
     @staticmethod
     def _get_name() -> str:
@@ -39,23 +38,26 @@ class TcpProtocol(Protocol):
         super()._build_options(builder)
         builder.add_option("host", self._hostname)
         builder.add_option("port", self._port)
-        builder.add_option("timeout", self.__timeout)
+        builder.add_option("timeout", self._timeout)
 
     def _load_options(self) -> None:
         super()._load_options()
-        # self.__hostname = self._get_string_option("host", "127.0.0.1")
-        self.__timeout = self._get_integer_option("timeout", 30000)
-        # self.__port = self._get_integer_option("port", 4228)
+        self._hostname = self._get_string_option("host", "127.0.0.1")
+        self._timeout = self._get_integer_option("timeout", 30000)
+        self._port = self._get_integer_option("port", 4228)
 
     def __do_handshake(self):
-        answer = self.__stream.readline()
+        answer = self.__stream.readline().strip()
+        if not answer:
+            raise SmartInspectException("Could not read server banner correctly: " +
+                                        "Connection has been closed unexpectedly")
         self.__stream.write(self.__CLIENT_BANNER)
         self.__stream.flush()
 
     def _internal_connect(self):
         socket_ = self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         socket_.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        socket_.settimeout(self.__timeout)
+        socket_.settimeout(self._timeout)
         try:
             socket_.connect((self._hostname, self._port))
             self.__stream = socket_.makefile("rwb", self.__BUFFER_SIZE)
@@ -69,29 +71,27 @@ class TcpProtocol(Protocol):
             raise e
 
     def _internal_disconnect(self) -> None:
-        self.__socket.close()
+        if self.__stream:
+            try:
+                self.__stream.close()
+            finally:
+                self.__stream = None
+        if self.__socket:
+            try:
+                self.__socket.close()
+            finally:
+                self.__socket = None
 
     def _internal_write_packet(self, packet: Packet) -> None:
         self.__formatter.format(packet, self.__stream)
         self.__stream.flush()
         server_answer = self.__stream.readline(self.__ANSWER_SIZE)
-        # server_answer += self.__socket.recv(1)
-        # while True:
-        #     current_byte = self.__socket.recv(1)
-        #     if current_byte == b'\n':
-        #         break
-        #     if not current_byte:
-        #         raise SmartInspectException(
-        #             "Could not read server banner correctly: " +
-        #             "Connection has been closed unexpectedly")
-        #     server_answer += current_byte
-        # print(server_answer)
         if len(server_answer) != self.__ANSWER_SIZE:
             raise SmartInspectException(
                 "Could not read server answer correctly: Connection has been closed unexpectedly")
-        print(server_answer)
-        self.__socket.close()
 
 
 if __name__ == '__main__':
-    TcpProtocol()._internal_connect()
+    t = TcpProtocol()
+    t._internal_connect()
+    t._internal_disconnect()
