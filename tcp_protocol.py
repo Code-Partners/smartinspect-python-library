@@ -1,13 +1,14 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
 
 import socket
+import time
 
 from smartinspect import SmartInspect
 from protocol import Protocol
 from exceptions import SmartInspectException
 from formatters import BinaryFormatter
 from builders import ConnectionsBuilder
-from packets import Packet
+from packets import Packet, LogEntry, LogEntryType, ViewerId
 
 
 class TcpProtocol(Protocol):
@@ -94,4 +95,15 @@ class TcpProtocol(Protocol):
 if __name__ == '__main__':
     t = TcpProtocol()
     t._internal_connect()
+    logentry = LogEntry(LogEntryType.Message, ViewerId.NoViewer)
+
+    title = ""
+    while title != "exit":
+        title = input("Please submit title:")
+        logentry.set_title(title)
+        logentry.set_app_name("Veronica")
+        logentry.set_hostname("Don Macaron")
+        logentry.set_session_name("Main Session")
+        logentry.set_timestamp(0)
+        t._internal_write_packet(logentry)
     t._internal_disconnect()
