@@ -1,4 +1,4 @@
-from smartinspect import Session
+from session import Session
 from level import Level
 
 

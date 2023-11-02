@@ -1,12 +1,8 @@
 from abc import ABC, abstractmethod
-import sys
 import struct
 from io import BytesIO
 from enum import Enum
-from packets import Packet, LogEntry, ProcessFlow, Watch, ControlCommand
-from packet_type import PacketType
-from log_entry_type import LogEntryType
-from viewer_id import ViewerId
+from packets import Packet, LogEntry, PacketType, LogEntryType, ViewerId, ProcessFlow, Watch, ControlCommand
 from color import Color
 
 
@@ -201,7 +197,7 @@ class BinaryFormatter(Formatter):
         stream.write(self.__stream.getvalue())
 
     def __write_double(self, value: float) -> None:
-        long_bits = struct.pack("<q", value)
+        long_bits = struct.pack("<d", value)
         # q is for long long Q is for unsigned long long
         self.__write_long(long_bits)
 
@@ -212,3 +208,13 @@ class BinaryFormatter(Formatter):
 if __name__ == "__main__":
     formatter = BinaryFormatter()
     formatter.compile(LogEntry(LogEntryType.Separator, ViewerId.NoViewer))
+    output = BytesIO()
+    formatter.write(output)
+    bytes_obj = output.getvalue()
+    L = [bytes_obj[i:i + 1] for i in range(len(bytes_obj))]
+    n = [ord(l) if ord(l) <= 127 else ord(l) - 128 for l in L]
+    x = [ord(l) if ord(l) <= 127 else ord(l) - 128 for l in L]
+    print(len(L))
+
+
+    

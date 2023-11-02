@@ -1,4 +1,5 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
+
 import threading
 from abc import ABC, abstractmethod
 from lookup_table import LookupTable
