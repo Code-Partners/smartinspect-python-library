@@ -1,12 +1,10 @@
-import struct
 import socket
 import threading
 import time
-from level import Level
-from session import Session
-from session_manager import SessionManager
-from clock_resolution import ClockResolution
-from protocol_variables import ProtocolVariables
+from common import Level, ErrorEvent, ClockResolution
+from session import Session, SessionManager
+from protocols.protocol_variables import ProtocolVariables
+
 
 DEFAULTPORT = 4228
 DEFAULTSERVER = '127.0.0.1'
@@ -30,7 +28,7 @@ class SmartInspect:
         self.level = Level.Debug
         self.default_level = Level.Message
         self.connections = ""
-        self.protocols = []
+        self.__protocols = []
 
         self.set_appname(appname)
 
@@ -39,7 +37,7 @@ class SmartInspect:
         except socket.gaierror:
             self.hostname = ""
 
-        self.listeners = {}
+        self.__listeners = set()
         self.sessions = SessionManager()
         self.resolution = ClockResolution.Standard
         self.variables = ProtocolVariables()
@@ -129,6 +127,32 @@ class SmartInspect:
     def __update_protocols(self):
         with self.lock:
             ...
+
+    def set_connections(self, connections: str) -> None:
+        with self.lock:
+            self.__apply_connections(connections)
+
+    def __apply_connections(self, connections: str) -> None:
+        self.__remove_connections()
+        ...
+
+    def __remove_connections(self):
+        self.__disconnect()
+
+    def __disconnect(self):
+        for protocol in self.__protocols:
+            try:
+                protocol.disconnect()
+            except Exception as e:
+                self.__do_error(e)
+
+    def __do_error(self, exception: Exception):
+        with self.lock:
+            error_event = ErrorEvent(self, exception)
+            for listener in self.__listeners:
+                listener.on_error(error_event)
+
+                
 
 
 if __name__ == '__main__':
