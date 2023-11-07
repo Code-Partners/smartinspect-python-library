@@ -1,5 +1,5 @@
 from session import Session
-from level import Level
+from common.level import Level
 
 
 class SessionDefaults:

@@ -4,11 +4,13 @@ import socket
 import time
 
 from smartinspect import SmartInspect
-from protocol import Protocol
-from exceptions import SmartInspectException
+from protocols.protocol import Protocol
+from common.exceptions import SmartInspectException
 from formatters import BinaryFormatter
-from builders import ConnectionsBuilder
-from packets import Packet, LogEntry, LogEntryType, ViewerId
+from connections.builders import ConnectionsBuilder
+from packets.packet import Packet
+from packets.log_entry import LogEntry, LogEntryType
+from common import ViewerId, Color
 
 
 class TcpProtocol(Protocol):
@@ -97,13 +99,14 @@ if __name__ == '__main__':
     t._internal_connect()
     logentry = LogEntry(LogEntryType.Message, ViewerId.NoViewer)
 
+    logentry.set_app_name("Veronica")
+    logentry.set_hostname("Don Macaron")
+    logentry.set_session_name("Main Session")
+    logentry.set_timestamp(time.time() - time.timezone)
+    logentry.set_color(Color.Blue)
     title = ""
     while title != "exit":
         title = input("Please submit title:")
         logentry.set_title(title)
-        logentry.set_app_name("Veronica")
-        logentry.set_hostname("Don Macaron")
-        logentry.set_session_name("Main Session")
-        logentry.set_timestamp(0)
         t._internal_write_packet(logentry)
     t._internal_disconnect()

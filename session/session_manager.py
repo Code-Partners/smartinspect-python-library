@@ -1,5 +1,5 @@
 import threading
-from session_defaults import SessionDefaults
+from session import SessionDefaults
 
 
 class SessionManager:

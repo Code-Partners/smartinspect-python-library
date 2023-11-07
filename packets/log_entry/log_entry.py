@@ -1,9 +1,9 @@
 import os
-from .packet import Packet
-from .packet_type import PacketType
+from packets.packet import Packet
+from packets.packet_type import PacketType
 from .log_entry_type import LogEntryType
-from .viewer_id import ViewerId
-from .color import Color
+from common.viewer_id import ViewerId
+from common.color import Color
 
 
 class LogEntry(Packet):
@@ -21,8 +21,7 @@ class LogEntry(Packet):
         self._title = ""
         self._hostname = ""
         self._timestamp = 0
-        self._color = Color(0x05, 0x00, 0x00, 0xff)
-
+        self._color = Color.Transparent
 
     def get_size(self) -> int:
         result = self.HEADER_SIZE + \

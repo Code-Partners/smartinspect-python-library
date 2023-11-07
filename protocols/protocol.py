@@ -2,9 +2,10 @@
 
 import threading
 from abc import ABC, abstractmethod
-from lookup_table import LookupTable
-from packet_queue import PacketQueue
-from packets import Packet, LogHeader
+from common.lookup_table import LookupTable
+from packets.packet_queue import PacketQueue
+from packets.packet import Packet
+from packets.log_header import LogHeader
 
 
 class Protocol(ABC):

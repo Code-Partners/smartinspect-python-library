@@ -1,27 +1,11 @@
-from abc import ABC, abstractmethod
 import struct
 from io import BytesIO
 from enum import Enum
-from packets import Packet, LogEntry, PacketType, LogEntryType, ViewerId, ProcessFlow, Watch, ControlCommand
-from packets.color import Color
 
-
-class Formatter(ABC):
-    """Responsible for formatting and writing a packet. """
-
-    @abstractmethod
-    def compile(self, packet: Packet) -> int:
-        """Compiles a packet and returns the required size for the compiled result"""
-        pass
-
-    @abstractmethod
-    def write(self, stream) -> None:
-        """Writes a compiled packet to a supplied stream"""
-
-    def format(self, packet: Packet, stream):
-        """Compiles a packet and writes it to a stream"""
-        self.compile(packet)
-        self.write(stream)
+from formatters.formatter import Formatter
+from packets import Packet, PacketType, ProcessFlow, Watch, ControlCommand
+from packets.log_entry import LogEntry
+from common.rgbacolor import RGBAColor
 
 
 class BinaryFormatter(Formatter):
@@ -41,7 +25,7 @@ class BinaryFormatter(Formatter):
         self.__buffer = bytearray()
         self.__stream: BytesIO = BytesIO()
         self.__size: int = 0
-        self.__packet: Packet | None = None
+        self.__packet: (Packet, None) = None
 
     # There is no evident profit in resetting position in BytesIO buffer over creating a new one
     def __reset_stream(self):
@@ -143,7 +127,10 @@ class BinaryFormatter(Formatter):
             raise IOError("attempting to write a non-integer type to a place where only int is allowed")
 
     def __write_timestamp(self, value: int) -> None:
-        timestamp = value / self.__MICROSECONDS_PER_DAY + self.__DAY_OFFSET
+        # convert seconds to microseconds
+        value = value * 1000000
+        # convert epoch 01JAN1970 time in microseconds to epoch 30DEC1899 time in days
+        timestamp = value // self.__MICROSECONDS_PER_DAY + self.__DAY_OFFSET
         timestamp += (value % self.__MICROSECONDS_PER_DAY) / self.__MICROSECONDS_PER_DAY
         self.__write_double(timestamp)
 
@@ -177,13 +164,13 @@ class BinaryFormatter(Formatter):
         else:
             self.__stream.write(short_bits)
 
-    def __write_color(self, value: Color | None = None):
+    def __write_color(self, value: (RGBAColor, None) = None):
         if value is None:
             color = 0xff000000 | 5
         else:
             color = value.get_red() | value.get_green() << 8 | value.get_blue() << 16 | value.get_alpha() << 24
         # converting to signed int and writing it
-        signed_int = struct.unpack("i", struct.pack("I", color))[0]
+        signed_int = struct.unpack("i", struct.pack("<I", color))[0]
         self.__write_int(signed_int)
 
     def write(self, stream):
@@ -192,8 +179,9 @@ class BinaryFormatter(Formatter):
         stream.write(self.__stream.getvalue())
 
     def __write_double(self, value: float) -> None:
-        long_bits = struct.pack("<Q", struct.unpack("Q", struct.pack("d", value))[0])
-        self.__write_long(long_bits)
+        long_int = struct.unpack("Q", struct.pack("d", value))[0]
+        self.__write_long(long_int)
 
-    def __write_long(self, long_bits):
-        self.__stream.write(long_bits)
+    def __write_long(self, long_int):
+        original_long_bytes = struct.pack("Q", long_int)
+        self.__stream.write(original_long_bytes)
