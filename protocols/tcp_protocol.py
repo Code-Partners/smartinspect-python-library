@@ -103,7 +103,7 @@ if __name__ == '__main__':
     logentry.set_hostname("Don Macaron")
     logentry.set_session_name("Main Session")
     logentry.set_timestamp(time.time() - time.timezone)
-    logentry.set_color(Color.Blue)
+    logentry.set_color(Color.BLUE)
     title = ""
     while title != "exit":
         title = input("Please submit title:")

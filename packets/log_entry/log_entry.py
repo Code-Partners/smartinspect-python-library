@@ -24,7 +24,7 @@ class LogEntry(Packet):
         self._title = ""
         self._hostname = ""
         self._timestamp = 0
-        self._color = Color.Transparent
+        self._color = Color.TRANSPARENT
 
     def get_size(self) -> int:
         result = self.HEADER_SIZE + \
