@@ -10,7 +10,7 @@ from formatters import BinaryFormatter
 from connections.builders import ConnectionsBuilder
 from packets.packet import Packet
 from packets.log_entry import LogEntry, LogEntryType
-from common import ViewerId, Color
+from common import ViewerId, Color, Clock
 
 
 class TcpProtocol(Protocol):
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     logentry.set_app_name("Veronica")
     logentry.set_hostname("Don Macaron")
     logentry.set_session_name("Main Session")
-    logentry.set_timestamp(time.time() - time.timezone)
+    logentry.set_timestamp(Clock.now())
     logentry.set_color(Color.Blue)
     title = ""
     while title != "exit":
