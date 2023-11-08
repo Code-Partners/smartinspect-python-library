@@ -2,6 +2,6 @@ from enum import Enum
 
 
 class ClockResolution(Enum):
-    Standard = 0
-    High = 1
+    STANDARD = 0
+    HIGH = 1
     

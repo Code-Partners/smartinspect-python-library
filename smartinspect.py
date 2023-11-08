@@ -39,7 +39,7 @@ class SmartInspect:
 
         self.__listeners = set()
         self.sessions = SessionManager()
-        self.resolution = ClockResolution.Standard
+        self.resolution = ClockResolution.STANDARD
         self.variables = ProtocolVariables()
 
         self._server = server
