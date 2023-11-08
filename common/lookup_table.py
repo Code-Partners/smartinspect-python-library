@@ -1,5 +1,5 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
-from common import Level
+from common import Level, Color
 
 
 class LookupTable:
@@ -70,10 +70,24 @@ class LookupTable:
 
     def get_level_value(self, key: str, default_value: Level) -> Level:
         result: Level = default_value
-        value: str = self.get_string_value(key, "")
-        # continue from here
+        value: str = self.get_string_value(key, None)
 
-        
+        if value is not None:
+            value = value.lower().strip()
+            if value == "debug":
+                result = Level.Debug
+            if value == "verbose":
+                result = Level.Verbose
+            if value == "message":
+                result = Level.Message
+            if value == "warning":
+                result = Level.Warning
+            if value == "error":
+                result = Level.Error
+            if value == "fatal":
+                result = Level.Fatal
+
+        return result
 
     def contains(self, key: str) -> bool:
         if self.__key_is_valid(key):
@@ -93,3 +107,22 @@ class LookupTable:
             except ValueError:
                 pass
         return False
+
+    def get_color_value(self, key: str, default_value: Color) -> Color:
+        value = self.get_string_value(key, "")
+
+        if not value:
+            return default_value
+
+    @staticmethod
+    def __convert_hex_value(value: str):
+        ...
+
+    def get_boolean_value(self, key: str, default_value: bool) -> bool:
+        value = self.get_string_value(key, None)
+
+        if value is not None:
+            value = value.lower().strip()
+            return value in ("true", "1", "yes")
+        else:
+            return default_value
