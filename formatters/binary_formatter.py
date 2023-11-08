@@ -27,7 +27,7 @@ class BinaryFormatter(Formatter):
         self.__size: int = 0
         self.__packet: (Packet, None) = None
 
-    # There is no evident profit in resetting position in BytesIO buffer over creating a new one
+    # There is no evident benefit in resetting position in BytesIO buffer over creating a new one
     def __reset_stream(self):
         if self.__size > self.__MAX_STREAM_CAPACITY:
             self.__stream = BytesIO()
@@ -69,7 +69,6 @@ class BinaryFormatter(Formatter):
         self.__write_data(title)
         self.__write_data(host_name)
         self.__write_data(log_entry.get_data())
-        # print(int.from_bytes(self.__stream.getvalue(), "little", signed=True))
 
     def __compile_process_flow(self) -> None:
         process_flow: ProcessFlow = self.__packet
