@@ -25,8 +25,8 @@ class SmartInspect:
                  port=DEFAULTPORT,
                  enabled=False):
         self.lock = threading.Lock()
-        self.level = Level.Debug
-        self.default_level = Level.Message
+        self.level = Level.DEBUG
+        self.default_level = Level.MESSAGE
         self.connections = ""
         self.__protocols = []
 

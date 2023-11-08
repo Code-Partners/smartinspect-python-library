@@ -73,8 +73,6 @@ class LookupTable:
         value: str = self.get_string_value(key, "")
         # continue from here
 
-        
-
     def contains(self, key: str) -> bool:
         if self.__key_is_valid(key):
             return key in self.__items

@@ -2,10 +2,10 @@ from enum import Enum
 
 
 class Level(Enum):
-    Debug = 0
-    Verbose = 1
-    Message = 2
-    Warning = 3
-    Error = 4
-    Fatal = 5
-    Control = 6
+    DEBUG = 0
+    VERBOSE = 1
+    MESSAGE = 2
+    WARNING = 3
+    ERROR = 4
+    FATAL = 5
+    CONTROL = 6
