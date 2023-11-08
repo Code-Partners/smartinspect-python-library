@@ -16,6 +16,11 @@ class Protocol(ABC):
         self.listeners = dict()
         self._app_name = ""
 
+    @staticmethod
+    @abstractmethod
+    def _get_name() -> str:
+        pass
+
     def _load_options(self) -> None:
         pass
 
