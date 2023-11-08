@@ -127,8 +127,7 @@ class BinaryFormatter(Formatter):
             raise IOError("attempting to write a non-integer type to a place where only int is allowed")
 
     def __write_timestamp(self, value: int) -> None:
-        # convert seconds to microseconds
-        value = value * 1000000
+        value = value
         # convert epoch 01JAN1970 time in microseconds to epoch 30DEC1899 time in days
         timestamp = value // self.__MICROSECONDS_PER_DAY + self.__DAY_OFFSET
         timestamp += (value % self.__MICROSECONDS_PER_DAY) / self.__MICROSECONDS_PER_DAY
