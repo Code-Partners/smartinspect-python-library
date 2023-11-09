@@ -11,6 +11,9 @@ class LogEntry(Packet):
     HEADER_SIZE = 48
 
     def __init__(self, log_entry_type: LogEntryType, viewer_id: ViewerId):
+        self._log_entry_type = None
+        self._viewer_id = None
+
         self.set_log_entry_type(log_entry_type)
         self.set_viewer_id(viewer_id)
         self._thread_id = super()._get_thread_id()
@@ -21,7 +24,7 @@ class LogEntry(Packet):
         self._title = ""
         self._hostname = ""
         self._timestamp = 0
-        self._color = Color.Transparent
+        self._color = Color.TRANSPARENT
 
     def get_size(self) -> int:
         result = self.HEADER_SIZE + \

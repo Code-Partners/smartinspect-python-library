@@ -5,7 +5,7 @@ from smartinspect import SmartInspect
 
 
 class Session:
-    _DefaultColor = Color.Transparent
+    DefaultColor = Color.TRANSPARENT
 
     def __init__(self, parent: SmartInspect, name: str):
         self.__checkpoint_lock: threading.Lock = threading.Lock()

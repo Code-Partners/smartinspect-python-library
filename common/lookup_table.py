@@ -75,17 +75,17 @@ class LookupTable:
         if value is not None:
             value = value.lower().strip()
             if value == "debug":
-                result = Level.Debug
+                result = Level.DEBUG
             if value == "verbose":
-                result = Level.Verbose
+                result = Level.VERBOSE
             if value == "message":
-                result = Level.Message
+                result = Level.MESSAGE
             if value == "warning":
-                result = Level.Warning
+                result = Level.WARNING
             if value == "error":
-                result = Level.Error
+                result = Level.ERROR
             if value == "fatal":
-                result = Level.Fatal
+                result = Level.FATAL
 
         return result
 

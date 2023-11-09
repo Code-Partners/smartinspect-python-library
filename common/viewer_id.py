@@ -2,11 +2,11 @@ from enum import Enum
 
 
 class ViewerId(Enum):
-    Metafile = 403
-    Icon = 402
-    Jpeg = 401
-    Bitmap = 400
-    NoViewer = -1
-    Title = 0
-    Data = 1
+    METAFILE = 403
+    ICON = 402
+    JPEG = 401
+    BITMAP = 400
+    NO_VIEWER = -1
+    TITLE = 0
+    DATA = 1
     ...

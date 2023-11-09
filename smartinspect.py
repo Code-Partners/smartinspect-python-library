@@ -26,19 +26,20 @@ class SmartInspect:
     def __init__(self,
                  app_name=DEFAULTAPPNAME,
                  server=DEFAULTSERVER,
-                 port=DEFAULTPORT):
-        self.__lock: threading.Lock = threading.Lock()
-        self.__level: Level = Level.Debug
-        self.__default_level: Level = Level.Message
-        self.connections: str = ""
-        self.__protocols: typing.List[Protocol] = []
+                 port=DEFAULTPORT,
+                 enabled=False):
+        self.lock = threading.Lock()
+        self.level = Level.DEBUG
+        self.default_level = Level.MESSAGE
+        self.connections = ""
+        self.__protocols = []
 
         self.set_app_name(app_name)
         self.set_hostname()
 
         self.__listeners = set()
         self.__sessions = SessionManager()
-        self.__resolution = ClockResolution.Standard
+        self.__resolution = ClockResolution.STANDARD
         self.__variables = ProtocolVariables()
 
         self._server = server  # not how things work in Javalib
