@@ -97,7 +97,7 @@ class TcpProtocol(Protocol):
 if __name__ == '__main__':
     t = TcpProtocol()
     t._internal_connect()
-    logentry = LogEntry(LogEntryType.Message, ViewerId.NO_VIEWER)
+    logentry = LogEntry(LogEntryType.MESSAGE, ViewerId.NO_VIEWER)
 
     logentry.set_app_name("Veronica")
     logentry.set_hostname("Don Macaron")
