@@ -35,7 +35,7 @@ class PacketQueue:
 
         self.__count += 1
         self.__size += packet.get_size() + self.__OVERHEAD
-        # self.__resize()
+        self.__resize()
 
     def pop(self) -> (Packet, None):
         item = self.__head
@@ -59,14 +59,37 @@ class PacketQueue:
         while self.pop() is not None:
             ...
 
+    def __resize(self) -> None:
+        while self.__backlog < self.__size:
+            if self.pop() is None:
+                self.__size = 0
+                break
 
-if __name__ == '__main__':
-    pq = PacketQueue()
-    pq.push(LogEntry(LogEntryType.MESSAGE, ViewerId.NO_VIEWER))
-    pq.push(LogEntry(LogEntryType.MESSAGE, ViewerId.NO_VIEWER))
-    pq.push(LogEntry(LogEntryType.MESSAGE, ViewerId.NO_VIEWER))
-    pq.push(LogEntry(LogEntryType.MESSAGE, ViewerId.NO_VIEWER))
-    pq.clear()
+    @property
+    def backlog(self) -> int:
+        return self.__backlog
+
+    @backlog.setter
+    def backlog(self, backlog_size: int) -> None:
+        self.__backlog = backlog_size
+        self.__resize()
+
+    @property
+    def count(self) -> int:
+        return self.__count
+
+
+# if __name__ == '__main__':
+#     pq = PacketQueue()
+#     pq.backlog = 100
+#     pq.push(LogEntry(LogEntryType.MESSAGE, ViewerId.NO_VIEWER))
+#     print(pq.count, pq.backlog)
+#     pq.push(LogEntry(LogEntryType.MESSAGE, ViewerId.NO_VIEWER))
+#     print(pq.count, pq.backlog)
+#     pq.push(LogEntry(LogEntryType.MESSAGE, ViewerId.NO_VIEWER))
+#     pq.push(LogEntry(LogEntryType.MESSAGE, ViewerId.NO_VIEWER))
+#     pq.clear()
+#     print(pq.count, pq.backlog)
 
 
 
