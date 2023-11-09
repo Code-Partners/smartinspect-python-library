@@ -1,6 +1,6 @@
 import os
 from packets.packet import Packet, PacketType
-from process_flow_type import ProcessFlowType
+from packets.process_flow.process_flow_type import ProcessFlowType
 
 
 class ProcessFlow(Packet):

@@ -1,11 +1,16 @@
 import threading
 from abc import ABC, abstractmethod
-from .packet_type import PacketType
-from common import Level
+from packets.packet_type import PacketType
+from common.level import Level
 
 
 class Packet(ABC):
     _PACKET_HEADER: int = 6
+
+    def __init__(self):
+        self.__lock: (threading.Lock, None) = None
+        self.__threadsafe: bool = False
+        self.__level: (Level, None) = None
 
     @staticmethod
     @abstractmethod
@@ -30,10 +35,10 @@ class Packet(ABC):
     def _get_thread_id() -> int:
         return threading.get_ident()
 
-    def set_thread_safe(self, thread_safe: bool) -> None:
-        self.__thread_safe = thread_safe
+    def set_threadsafe(self, threadsafe: bool) -> None:
+        self.__threadsafe = threadsafe
 
-        if thread_safe:
+        if threadsafe:
             self.__lock = threading.Lock()
         else:
             self.__lock = None
