@@ -6,9 +6,10 @@ from common import Level, ErrorEvent, ClockResolution, Clock, InvalidConnections
 from session import Session, SessionManager
 from protocols.protocol_variables import ProtocolVariables
 from protocols.protocol import Protocol
-from packets.process_flow import ProcessFlow
-from packets.packet import Packet
+from packets import Packet, Watch, ProcessFlow, ControlCommand
+from packets.log_entry import LogEntry
 from connections import ConnectionsParser
+from common.events import FilterEvent
 
 DEFAULTPORT = 4228
 DEFAULTSERVER = '127.0.0.1'
@@ -28,7 +29,7 @@ class SmartInspect:
                  server=DEFAULTSERVER,
                  port=DEFAULTPORT,
                  enabled=False):
-        self.lock = threading.Lock()
+        self.__lock = threading.Lock()
         self.level = Level.DEBUG
         self.default_level = Level.MESSAGE
         self.connections = ""
@@ -165,9 +166,29 @@ class SmartInspect:
     def get_hostname(self) -> str:
         return self.__hostname
 
+    def send_log_entry(self, log_entry: LogEntry):
+        if self.__is_multithreaded:
+            log_entry.set_threadsafe(True)
+
+        log_entry.set_app_name(self.get_app_name())
+        log_entry.set_hostname(self.get_hostname())
+
+        try:
+            if not self._do_filter(log_entry):
+                self.__process_packet(log_entry)
+                self._do_log_entry(log_entry)
+        except Exception as e:
+            self.__do_error(e)
+
+    def send_control_command(self, control_command: ControlCommand):
+        ...
+
+    def send_watch(self, watch: Watch):
+        ...
+
     def send_process_flow(self, process_flow: ProcessFlow):
         if self.__is_multithreaded:
-            process_flow.set_thread_safe(True)
+            process_flow.set_threadsafe(True)
 
         process_flow.set_hostname(self.get_hostname())
         try:
@@ -273,8 +294,17 @@ class SmartInspect:
                 except Exception as e:
                     self.__do_error(e)
 
-    def _do_filter(self, process_flow):
-        pass
+    def _do_filter(self, packet: Packet) -> bool:
+        #needs lock
+        for listener in self.__listeners:
+            event = FilterEvent(self, packet)
+            listener.on_filter(event)
+
+            if event.cancel:
+                return True
+
+        return False
+
 
     def _do_process_flow(self, process_flow):
         pass
