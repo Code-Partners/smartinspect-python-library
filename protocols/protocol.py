@@ -7,9 +7,9 @@ from common.lookup_table import LookupTable
 from packets.packet_queue import PacketQueue
 from packets.packet import Packet
 from packets.log_header import LogHeader
-from common import Level
+from common.level import Level
 from common.exceptions import ProtocolException
-from common.events import ErrorEvent
+from common.events.error_event import ErrorEvent
 
 
 class Protocol(ABC):
@@ -87,13 +87,21 @@ class Protocol(ABC):
         self.__app_name = app_name
 
     def connect(self):
-        self._establish_connection()
+        with self.__lock:
+            if self.__async_enabled:
+                if self.__scheduler is not None:
+                    return
+                
+                self.__start_scheduler()
+                self.__schedule_connect()
+            
+            self._impl_connect()
 
     def disconnect(self) -> None:
         with self.__lock:
             self.__perform_disconnect()
 
-    def _establish_connection(self):
+    def _impl_connect(self):
         if self.__keep_open and not self.__connected:
             try:
                 try:
@@ -180,5 +188,11 @@ class Protocol(ABC):
         error_event = ErrorEvent(self, exception)
         for listener in self.__listeners:
             listener.on_error(error_event)
+
+    def __start_scheduler(self):
+        pass
+
+    def __schedule_connect(self):
+        pass
 
 
