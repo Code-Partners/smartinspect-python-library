@@ -1,16 +1,16 @@
 import threading
 
-from common import Color, Level
-from smartinspect import SmartInspect
+from common.color import Color
+from common.level import Level
 
 
 class Session:
     DefaultColor = Color.TRANSPARENT
 
-    def __init__(self, parent: SmartInspect, name: str):
+    def __init__(self, parent, name: str):
         self.__checkpoint_lock: threading.Lock = threading.Lock()
 
-        self.__parent: SmartInspect = parent
+        self.__parent = parent
         self.__checkpoint_counter: int = 0
 
         if isinstance(name, str):
@@ -18,14 +18,14 @@ class Session:
         else:
             self.__name = ""
 
-        self.__level: Level = Level.Debug
+        self.__level: Level = Level.DEBUG
         self.__active: bool = True
         self.__counter: dict = dict()
         self.__checkpoints: dict = dict()
         self.reset_color()
 
     def reset_color(self) -> None:
-        self.set_color(self._DefaultColor)
+        self.set_color(self.DefaultColor)
 
     def set_color(self, color: Color) -> None:
         if isinstance(color, Color):
@@ -67,6 +67,5 @@ class Session:
     def is_level(self) -> bool:
         return self.__active
 
-    def get_parent(self) -> SmartInspect:
+    def get_parent(self):
         return self.__parent
-        

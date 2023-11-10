@@ -1,5 +1,7 @@
 import threading
-from session import Session, SessionDefaults, SessionInfo
+from session.session import Session
+from session.session_defaults import SessionDefaults
+from session.session_info import SessionInfo
 from configuration import Configuration
 
 class SessionManager:

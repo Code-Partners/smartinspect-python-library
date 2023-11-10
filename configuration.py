@@ -1,4 +1,5 @@
-from common import LookupTable, Color
+from common.lookup_table import LookupTable
+from common.color import Color
 
 
 class Configuration:

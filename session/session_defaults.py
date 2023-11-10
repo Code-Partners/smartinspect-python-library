@@ -1,4 +1,4 @@
-from session import Session
+from session.session import Session
 from common.level import Level
 
 

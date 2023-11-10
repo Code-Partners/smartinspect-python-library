@@ -1,4 +1,5 @@
-from common import Level, Color
+from common.level import Level
+from common.color import Color
 
 
 class SessionInfo:
