@@ -16,10 +16,10 @@ class SchedulerCommand:
         else:
             raise TypeError("action must be SchedulerAction")
 
-    def get_state(self) -> Packet:
+    def get_state(self) -> object:
         return self.__state
 
-    def set_state(self, state: Packet) -> None:
+    def set_state(self, state: object) -> None:
         self.__state = state
 
     def get_size(self) -> int:
