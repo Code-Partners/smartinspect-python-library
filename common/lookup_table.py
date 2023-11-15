@@ -28,8 +28,6 @@ class LookupTable:
     def __value_is_valid(value: str) -> bool:
         if not isinstance(value, str):
             raise TypeError("value must be a string")
-        if not value:
-            raise ValueError("value must be specified")
 
         return True
 
@@ -37,8 +35,6 @@ class LookupTable:
     def __key_is_valid(key: str) -> bool:
         if not isinstance(key, str):
             raise TypeError("key must be a string")
-        if not key:
-            raise ValueError("key must be specified")
 
         return True
 
@@ -52,7 +48,10 @@ class LookupTable:
                 self.put(key, value)
 
     def get_string_value(self, key: str, default_value: str) -> str:
-        if self.__key_is_valid(key):
+        if (
+                self.__key_is_valid(key) and
+                self.__value_is_valid(default_value)
+        ):
             value = self.__items.get(key.lower(), default_value)
             return value
 
@@ -70,10 +69,13 @@ class LookupTable:
         return result
 
     def get_level_value(self, key: str, default_value: Level) -> Level:
-        result: Level = default_value
-        value: str = self.get_string_value(key, None)
+        if not isinstance(default_value, Level):
+            raise TypeError("default_value must be a Level")
 
-        if value is not None:
+        result: Level = default_value
+        value: str = self.get_string_value(key, "")
+
+        if value:
             value = value.lower().strip()
             if value == "debug":
                 result = Level.DEBUG
@@ -110,6 +112,9 @@ class LookupTable:
         return False
 
     def get_color_value(self, key: str, default_value: Color) -> Color:
+        if not isinstance(default_value, Color):
+            raise TypeError("default_value must be a Color")
+
         value = self.get_string_value(key, "")
 
         if not value:
@@ -120,9 +125,9 @@ class LookupTable:
         ...
 
     def get_boolean_value(self, key: str, default_value: bool) -> bool:
-        value = self.get_string_value(key, None)
+        value = self.get_string_value(key, "")
 
-        if value is not None:
+        if value:
             value = value.lower().strip()
             return value in ("true", "1", "yes")
         else:
