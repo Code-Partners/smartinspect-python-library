@@ -4,13 +4,21 @@ import time
 import typing
 
 from common.events.connections_parser_event import ConnectionsParserEvent
+from common.events.control_command_event import ControlCommandEvent
+from common.events.log_entry_event import LogEntryEvent
+from common.events.process_flow_event import ProcessFlowEvent
+from common.events.watch_event import WatchEvent
 from common.level import Level
 from common.events.error_event import ErrorEvent
 from common.clock_resolution import ClockResolution
 from common.clock import Clock
-from common.exceptions import InvalidConnectionsException
+from common.exceptions import InvalidConnectionsException, SmartInspectException
+from common.protocol_command import ProtocolCommand
 from common.smartinspect_listener import SmartInspectListener
+from configuration import Configuration
+from protocols.tcp_protocol import TcpProtocol
 from session.session import Session
+from session.session_defaults import SessionDefaults
 from session.session_manager import SessionManager
 from protocols.protocol_variables import ProtocolVariables
 from protocols.protocol import Protocol
@@ -22,38 +30,33 @@ from packets.log_entry import LogEntry
 from connections import ConnectionsParser
 from common.events.filter_event import FilterEvent
 from connections.connections_parser_listener import ConnectionsParserListener
+from protocols.protocol_factory import ProtocolFactory
+from common.protocol_listener import ProtocolListener
+from common.exceptions import LoadConnectionsException, LoadConfigurationException
 
 
 class SmartInspect:
     __VERSION = "$SIVERSION"
-    CAPTION_NOT_FOUND = "No protocol could be found with the specified caption"
-    CONNECTIONS_NOT_FOUND_ERROR = "No connections string found"
+    __CAPTION_NOT_FOUND = "No protocol could be found with the specified caption"
+    __CONNECTIONS_NOT_FOUND_ERROR = "No connections string found"
 
-    def __init__(self, app_name: str):
+    def __init__(self, appname: str):
         self.__lock: threading.Lock = threading.Lock()
 
-        self.level: Level = Level.DEBUG
-        self.default_level: Level = Level.MESSAGE
-        self.connections: str = ""
+        self.__level: Level = Level.DEBUG
+        self.__default_level: Level = Level.MESSAGE
+        self.__connections: str = ""
         self.__protocols: typing.List[Protocol] = []
-
-        self.set_app_name(app_name)
+        self.__enabled = False
+        self.set_appname(appname)
         self.__hostname = self.__obtain_hostname()
-
         # need to provide a lock for listeners collection
         self.__listeners = set()
         self.__sessions = SessionManager()
         self.__resolution = ClockResolution.STANDARD
         self.__variables = ProtocolVariables()
 
-        # self._server = server  # not how things work in Javalib
-        # self._port = port  # not how things work in Javalib
-        self.__enabled = False
-        self._connected = False  # not how things work in Javalib
         self.__is_multithreaded = False
-
-        if self.__enabled:  # not how things work in Javalib
-            self.__connect()  # not how things work in Javalib
 
     # this currently returns only current local time
     def now(self) -> int:
@@ -66,25 +69,27 @@ class SmartInspect:
         if isinstance(resolution, ClockResolution):
             self.__resolution = resolution
 
-    def get_version(self) -> str:
-        return self.__VERSION
+    @classmethod
+    def get_version(cls) -> str:
+        return cls.__VERSION
 
     def get_hostname(self) -> str:
         return self.__hostname
 
     def get_app_name(self) -> str:
-        return self.__app_name
+        return self.__appname
 
-    def set_app_name(self, app_name: str) -> None:
-        if not isinstance(app_name, str):
+    def set_appname(self, appname: str) -> None:
+        if not isinstance(appname, str):
             raise TypeError("app_name must be a string")
-        self.__app_name = app_name
+        self.__appname = appname
         self.__update_protocols()
 
     def __update_protocols(self):
+        # does it really do _what is expected_?
         with self.__lock:
             for protocol in self.__protocols:
-                protocol.set_app_name(self.__app_name)
+                protocol.set_app_name(self.__appname)
                 protocol.set_hostname(self.__hostname)
 
     def get_level(self) -> Level:
@@ -140,27 +145,208 @@ class SmartInspect:
 
         try:
             parser = ConnectionsParser()
-            listener = ConnectionsParserListener().on_protocol(ConnectionsParserEvent("", "", ""))
+
+            def on_protocol(event: ConnectionsParserEvent):
+                self.__add_connection(event.protocol, event.options)
+
+            listener = ConnectionsParserListener()
+            listener.on_protocol = on_protocol
+
+            parser.parse(self.__variables.expand(connections), listener)
         except Exception as e:
             self.__remove_connections()
             raise InvalidConnectionsException(e.args[0])
 
-    def add_session(self, name):
-        return Session(self, name)
+    def __add_connection(self, name: str, options: str) -> None:
 
-    def _close(self):
-        print('_close')
-        self._connected = False
+        protocol = ProtocolFactory.get_protocol(name, options)
+        listener = ProtocolListener()
 
-        if self._socket is not None:
-            s = self._socket
-            self._socket = None
+        def on_error(obj, error):
+            self.__do_error(error.get_exception())
+
+        listener.on_error = on_error
+        protocol.add_listener(listener)
+        self.__protocols.append(protocol)
+
+        if protocol.is_asynchronous():
+            self.__is_multithreaded = True
+
+        protocol.set_hostname(self.__hostname)
+        protocol.set_appname(self.__appname)
+
+    def load_connections(self, filename: str, do_not_enable: bool = False):
+        if not isinstance(filename, str):
+            return
+
+        connections = None
+
+        try:
+            connections = self.__read_connections(filename)
+        except Exception as e:
+            self.__do_error(e)
+
+        if connections is None:
+            return
+
+        with self.__lock:
+            if self.__try_connections(connections):
+                if not do_not_enable:
+                    self.__enable()
+
+    def __read_connections(self, filename: str):
+        try:
+            config = Configuration()
             try:
-                s.close()
-            except:
-                return False
+                config.load_from_file(filename)
+                if config.contains("connections"):
+                    return config.read_string("connections", "")
+            except Exception:
+                raise SmartInspectException(self.__CONNECTIONS_NOT_FOUND_ERROR)
+            finally:
+                config.clear()
+        except Exception as e:
+            raise LoadConnectionsException(filename, e.args[0])
 
-        return True
+    def get_connections(self):
+        return self.__connections
+
+    def set_connections(self, connections: str) -> None:
+        if not isinstance(connections, str):
+            raise TypeError("connections must be a string")
+
+        with self.__lock:
+            self.__apply_connections(connections)
+
+    def __apply_connections(self, connections: str) -> None:
+        self.__remove_connections()
+        if connections:
+            self.__create_connections(connections)
+            self.__connections = connections
+
+            if self.is_enabled():
+                self.__connect()
+
+    def __try_connections(self, connections: str) -> bool:
+        result = False
+        if connections:
+            try:
+                self.__apply_connections(connections)
+                result = True
+            except InvalidConnectionsException as e:
+                self.__do_error(e)
+
+        return result
+
+    def __remove_connections(self):
+        self.__disconnect()
+        self.__is_multithreaded = False
+        self.__protocols.clear()
+        self.__connections = ""
+
+    def load_configuration(self, filename: str) -> None:
+        if not isinstance(filename, str) or not filename:
+            return None
+
+        config = Configuration()
+        try:
+            try:
+                config.load_from_file(filename)
+            except Exception as e:
+                exc = LoadConfigurationException(filename, e.args[0])
+                self.__do_error(exc)
+
+            with self.__lock:
+                self.__apply_configuration(config)
+
+            self.__sessions.load_configuration(config)
+        finally:
+            config.clear()
+
+    def __apply_configuration(self, config: Configuration) -> None:
+        if config.contains("appname"):
+            self.__appname = config.read_string("appname", self.__appname)
+
+        connections = config.read_string("connections", "")
+
+        if config.contains("enabled"):
+            enabled = config.read_boolean("enabled", False)
+            if enabled:
+                self.__try_connections(connections)
+                self.__enable()
+            else:
+                self.__disable()
+                self.__try_connections(connections)
+        else:
+            self.__try_connections(connections)
+
+        if config.contains("level"):
+            self.__level = config.read_level("level", self.__level)
+
+        if config.contains("default_level"):
+            self.__default_level = config.read_level("default_level", self.__default_level)
+
+    def __find_protocol(self, caption: str):
+        for protocol in self.__protocols:
+            if protocol.get_caption().lower() == caption.lower():
+                return protocol
+
+        return None
+
+    def dispatch(self, caption: str, action: int, state: object) -> None:
+        if not isinstance(caption, str):
+            raise TypeError("Caption must be a string")
+        if not isinstance(action, int):
+            raise TypeError("Action must be an integer")
+
+        with self.__lock:
+            try:
+                protocol = self.__find_protocol(caption)
+                if protocol is None:
+                    raise SmartInspectException(self.__CAPTION_NOT_FOUND)
+
+                protocol.dispatch(ProtocolCommand(action, state))
+            except Exception as e:
+                self.__do_error(e)
+
+    def get_session_defaults(self) -> SessionDefaults:
+        return self.__sessions.get_defaults()
+
+    def set_variable(self, key: str, value: str) -> None:
+        if (
+                isinstance(key, str) and
+                isinstance(key, str)
+        ):
+            self.__variables.put(key, value)
+
+    def get_variable(self, key: str) -> (str, None):
+        if not isinstance(key, str):
+            return None
+        return self.__variables.get(key)
+
+    def unset_variable(self, key: str) -> None:
+        if isinstance(key, str):
+            self.__variables.remove(key)
+
+    def add_session(self, session: (str, Session), store: bool = False) -> (Session, None):
+        if isinstance(session, str):
+            session = Session(self, session)
+        elif isinstance(session, Session):
+            session = session
+        else:
+            return None
+
+        self.__sessions.add(session, store)
+        return session
+
+    def delete_session(self, session: Session) -> None:
+        self.__sessions.delete(session)
+
+    def get_session(self, session_name: str) -> Session:
+        return self.__sessions.get(session_name)
+
+    def _update_session(self, session: Session, new_name: str, old_name: str) -> None:
+        self.__sessions.update(session, new_name, old_name)
 
     def dispose(self) -> None:
         with self.__lock:
@@ -179,15 +365,31 @@ class SmartInspect:
         try:
             if not self._do_filter(log_entry):
                 self.__process_packet(log_entry)
-                self.__do_log_entry(log_entry)
+                self._do_log_entry(log_entry)
         except Exception as e:
             self.__do_error(e)
 
     def send_control_command(self, control_command: ControlCommand):
-        ...
+        if self.__is_multithreaded:
+            control_command.set_threadsafe(True)
+
+        try:
+            if not self._do_filter(control_command):
+                self.__process_packet(control_command)
+                self._do_control_command(control_command)
+        except Exception as e:
+            self.__do_error(e)
 
     def send_watch(self, watch: Watch):
-        ...
+        if self.__is_multithreaded:
+            watch.set_threadsafe(True)
+
+        try:
+            if not self._do_filter(watch):
+                self.__process_packet(watch)
+                self._do_watch(watch)
+        except Exception as e:
+            self.__do_error(e)
 
     def send_process_flow(self, process_flow: ProcessFlow):
         if self.__is_multithreaded:
@@ -209,28 +411,11 @@ class SmartInspect:
             hostname = ""
         return hostname
 
-    def set_connections(self, connections: str) -> None:
-        with self.__lock:
-            self.__apply_connections(connections)
-
-    def __apply_connections(self, connections: str) -> None:
-        self.__remove_connections()
-        ...
-
-    def __remove_connections(self):
-        self.__disconnect()
-        self.__is_multithreaded = False
-        self.__protocols.clear()
-        self.__connections = ""
-
     def __do_error(self, exception: Exception):
         with self.__lock:
             error_event = ErrorEvent(self, exception)
             for listener in self.__listeners:
                 listener.on_error(error_event)
-
-    def _update_session(self, session: Session, to: str, from_: str) -> None:
-        self.__sessions.update(session, to, from_)
 
     def add_listener(self, listener: SmartInspectListener) -> None:
         if isinstance(listener, SmartInspectListener):
@@ -242,6 +427,10 @@ class SmartInspect:
             with self.__lock:
                 self.__listeners.remove(listener)
 
+    def clear_listeners(self):
+        with self.__lock:
+            self.__listeners.clear()
+
     def __process_packet(self, packet: Packet) -> None:
         with self.__lock:
             for protocol in self.__protocols:
@@ -251,27 +440,55 @@ class SmartInspect:
                     self.__do_error(e)
 
     def _do_filter(self, packet: Packet) -> bool:
-        # needs lock
-        for listener in self.__listeners:
-            event = FilterEvent(self, packet)
-            listener.on_filter(event)
+        # here and in other do_methods the listeners collection itself is a lock in java...
+        with self.__lock:
+            if len(self.__listeners) > 0:
+                event = FilterEvent(self, packet)
 
-            if event.cancel:
-                return True
+                for listener in self.__listeners:
+                    listener.on_filter(event)
+                    if event.cancel:
+                        return True
 
         return False
 
-    def _do_process_flow(self, process_flow):
-        pass
+    def _do_process_flow(self, process_flow: ProcessFlow):
+        with self.__lock:
+            if len(self.__listeners) > 0:
+                event = ProcessFlowEvent(self, process_flow)
+                for listener in self.__listeners:
+                    listener.on_process_flow(event)
 
-    def __do_log_entry(self, log_entry):
-        pass
+    def _do_watch(self, watch: Watch):
+        with self.__lock:
+            if len(self.__listeners) > 0:
+                event = WatchEvent(self, watch)
+
+                for listener in self.__listeners:
+                    listener.on_watch(event)
+
+    def _do_log_entry(self, log_entry: LogEntry):
+        # here and in other do_methods the listeners collection itself is a lock in java...
+        with self.__lock:
+            if len(self.__listeners) > 0:
+                event = LogEntryEvent(self, log_entry)
+                for listener in self.__listeners:
+                    listener.on_log_entry(event)
+
+    def _do_control_command(self, control_command: ControlCommand):
+        # here and in other do_methods the listeners collection itself is a lock in java...
+        with self.__lock:
+            if len(self.__listeners):
+                event = ControlCommandEvent(self, control_command)
+                for listener in self.__listeners:
+                    listener.on_control_command(event)
 
 
 if __name__ == '__main__':
     si = SmartInspect('Auto')
-    si_main = si.add_session('Main')
+    si.set_connections("tcp()")
+    si.set_enabled(True)
 
-    si.enabled = True
+    session = si.add_session("tutorial", True)
 
     time.sleep(10)
