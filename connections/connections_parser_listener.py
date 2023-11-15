@@ -4,7 +4,7 @@ from common.events.connections_parser_event import ConnectionsParserEvent
 
 class ConnectionsParserListener(ABC):
 
-    @abstractmethod
+    # @abstractmethod
     def on_protocol(self, e: ConnectionsParserEvent):
         """Callback function for ConnectionsParser
 

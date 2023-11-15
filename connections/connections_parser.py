@@ -68,12 +68,12 @@ class ConnectionsParser:
                 # Skip the ',' character.
                 pointer += 1
 
-        print(name)
-        print(options)
+            print(f'name>>> {name}')
+            print(f'options>>> {options}')
 
-        # self.__do_protocol(callback, name, options)
-        # del name
-        # del options
+            self.__do_protocol(callback, name, options)
+            name = ""
+            options = ""
 
     def parse(self, connections: str, callback: ConnectionsParserListener) -> None:
         if not isinstance(connections, str):
@@ -87,5 +87,11 @@ class ConnectionsParser:
 
 
 if __name__ == "__main__":
-    ConnectionsParser().parse("file(append=true),tcp(host=\"localhost\")", ConnectionsParserListener())
-
+    protocols = "text(filename=\"C:\\log.txt\", pattern=\"%pattern%\", maxsize=\"1MB\", buffer=\"5MB\", " \
+                "level=\"debug\", caption=\"Caption\", reconnect=\"true\"), mem(maxsize=\"123\", " \
+                "reconnect.interval=\"123\", backlog.enabled=\"true\", backlog.queue=\"1MB\"), " \
+                "pipe(pipename=\"pipe\", backlog.flushon=\"control\", backlog.keepopen=\"false\", " \
+                "async.enabled=\"true\"), " \
+                "tcp(reconnect=\"true\", async.enabled=\"true\", async.queue=\"100KB\", host=\"example.com\", " \
+                "port=\"1234\")"
+    ConnectionsParser().parse(protocols, ConnectionsParserListener())
