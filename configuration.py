@@ -1,5 +1,8 @@
+import io
+
 from common.lookup_table import LookupTable
 from common.color import Color
+from common.level import Level
 
 
 class Configuration:
@@ -9,8 +12,65 @@ class Configuration:
         self.__keys: list = list()
         self.__items: LookupTable = LookupTable()
 
+    def load_from_file(self, filename: str) -> None:
+        if not isinstance(filename, str):
+            raise TypeError("filename must be a string")
+
+        self.clear()
+        try:
+            with open(filename, 'r') as file:
+                content = file.read().splitlines()
+
+            for line in content:
+                if not line.startswith(";"):
+                    self.__parse(line)
+        except IOError as e:
+            raise IOError(f"Error reading file: {e}")
+
+    def __parse(self, line: str):
+        idx = line.find('=')
+
+        if idx != -1:
+            key = line[:idx].strip()
+            value = line[idx + 1:].strip()
+
+            if not self.__items.contains(key):
+                self.__keys.append(key)
+
+            self.__items.put(key, value)
+
+    def clear(self) -> None:
+        """Removes all key-value pairs from the config"""
+
+        self.__keys.clear()
+        self.__items.clear()
+
+    def contains(self, key: str) -> bool:
+        return self.__items.contains(key)
+
+    def get_count(self) -> int:
+        return self.__items.get_count()
+
+    def read_string(self, key: str, default_value: str) -> str:
+        return self.__items.get_string_value(key, default_value)
+
+    def read_boolean(self, key: str, default_value: bool) -> bool:
+        return self.__items.get_boolean_value(key, default_value)
+
+    def read_integer(self, key: str, default_value: int) -> int:
+        return self.__items.get_integer_value(key, default_value)
+
+    def read_level(self, key: str, default_value: Level) -> Level:
+        return self.__items.get_level_value(key, default_value)
+
+    def read_color(self, key: str, default_value: Color) -> Color:
+        return self.__items.get_color_value(key, default_value)
+
+    def read_key(self, idx: int) -> str:
+        return self.__keys[idx]
+
     @staticmethod
-    def read_stream(stream, encoding):
+    def __read_stream(stream, encoding):
         sb = []
 
         reader = io.TextIOWrapper(stream, encoding=encoding)
@@ -25,14 +85,14 @@ class Configuration:
 
         return ''.join(sb)
 
-    def read_file(file_name):
+    def __read_file(self, file_name: str):
         with open(file_name, 'rb') as file:
-            bom = file.read(MAX_BOM)
+            bom = file.read(self.__MAX_BOM)
             pushback = len(bom)
 
             encoding = "US-ASCII"
 
-            if len(bom) == MAX_BOM:
+            if len(bom) == self.__MAX_BOM:
                 if bom[0] == 0xEF and bom[1] == 0xBB and bom[2] == 0xBF:
                     encoding = "UTF-8"
                     pushback = 0
@@ -43,19 +103,10 @@ class Configuration:
                     encoding = "UTF-16LE"
                     pushback = 1
 
+                # add other encodings?
+
+            # is there any need for rewind?
             if pushback > 0:
                 file.seek(len(bom) - pushback, io.SEEK_SET)
 
-            return read_stream(file, encoding)
-
-    def read_color(self, key: str, default_value: Color) -> Color:
-        return self.__items.get_color_value(key, default_value)
-
-    def read_key(self, idx: int) -> str:
-        return self.__keys[idx]
-
-    def contains(self, key: str) -> bool:
-        return self.__items.contains(key)
-
-    def read_boolean(self, key: str, default_value: bool) -> bool:
-        return self.__items.get_boolean_value(key, default_value)
+            return self.__read_stream(file, encoding)
