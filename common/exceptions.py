@@ -2,6 +2,10 @@ class SmartInspectException(Exception):
     def __init__(self, message):
         super().__init__(message)
 
+    @property
+    def message(self):
+        return self.args[0]
+
 
 class InvalidConnectionsException(Exception):
     def __init__(self, message):
@@ -31,3 +35,29 @@ class ProtocolException(Exception):
         return self.__protocol_options
 
 
+class LoadConnectionsException(SmartInspectException):
+    def __init__(self, filename: str, exception: str):
+        super().__init__(exception)
+        self.__filename = filename
+
+    def get_filename(self):
+        return self.__filename
+
+    def set_filename(self, filename: str):
+        if not isinstance(filename, str):
+            raise TypeError("filename must be a string")
+        self.__filename = filename
+
+
+class LoadConfigurationException(SmartInspectException):
+    def __init__(self, filename: str, exception: str):
+        super().__init__(exception)
+        self.__filename = filename
+
+    def get_filename(self):
+        return self.__filename
+
+    def set_filename(self, filename: str):
+        if not isinstance(filename, str):
+            raise TypeError("filename must be a string")
+        self.__filename = filename
