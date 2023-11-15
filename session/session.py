@@ -5,7 +5,7 @@ from common.level import Level
 
 
 class Session:
-    DefaultColor = Color.TRANSPARENT
+    DEFAULT_COLOR = Color.TRANSPARENT
 
     def __init__(self, parent, name: str):
         self.__checkpoint_lock: threading.Lock = threading.Lock()
@@ -25,7 +25,7 @@ class Session:
         self.reset_color()
 
     def reset_color(self) -> None:
-        self.set_color(self.DefaultColor)
+        self.set_color(self.DEFAULT_COLOR)
 
     def set_color(self, color: Color) -> None:
         if isinstance(color, Color):

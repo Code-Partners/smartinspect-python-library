@@ -1,8 +1,11 @@
 import threading
+
+from common.level import Level
 from session.session import Session
 from session.session_defaults import SessionDefaults
 from session.session_info import SessionInfo
 from configuration import Configuration
+
 
 class SessionManager:
     __PREFIX: str = "session."
@@ -24,20 +27,20 @@ class SessionManager:
             self.__sessions.clear()
             self.__session_infos.clear()
 
-    def update(self, session: Session, to: str, from_: str) -> None:
+    def update(self, session: Session, new_name: str, old_name: str) -> None:
         if (
                 not isinstance(session, Session) or
-                not isinstance(to, str) or
-                not isinstance(from_, str)
+                not isinstance(new_name, str) or
+                not isinstance(old_name, str)
         ):
             return
 
-        to = to.lower()
-        from_ = from_.lower()
+        to = new_name.lower()
+        old_name = old_name.lower()
 
         with self.__lock:
-            if self.__sessions.get(from_) == session:
-                del self.__sessions[from_]
+            if self.__sessions.get(old_name) == session:
+                del self.__sessions[old_name]
 
             self.__configure(session, to)
             self.__sessions[to] = session
@@ -76,6 +79,18 @@ class SessionManager:
 
         if info.has_active:
             info.active = config.read_boolean(self.__PREFIX + name + ".active", True)
+
+        info.has_level = config.contains(self.__PREFIX + name + ".level")
+
+        if info.has_level:
+            info.level = config.read_level(self.__PREFIX + name + ".level", Level.DEBUG)
+
+        info.has_color = config.contains(self.__PREFIX + name + ".color")
+
+        if info.has_color:
+            info.color = config.read_color(self.__PREFIX + name + ".color", Session.DEFAULT_COLOR)
+
+        return info
 
     def __load_defaults(self, config):
         pass
