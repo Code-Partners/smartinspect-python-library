@@ -3,19 +3,22 @@
 import socket
 import time
 
-from smartinspect import SmartInspect
+# from smartinspect import SmartInspect
 from protocols.protocol import Protocol
 from common.exceptions import SmartInspectException
-from formatters import BinaryFormatter
+from formatters.binary_formatter import BinaryFormatter
 from connections.builders import ConnectionsBuilder
 from packets.packet import Packet
 from packets.log_entry import LogEntry, LogEntryType
-from common import ViewerId, Color, Clock
+from common.viewer_id import ViewerId
+from common.color import Color
+from common.clock import Clock
 
 
 class TcpProtocol(Protocol):
     __BUFFER_SIZE = 0x2000
-    __CLIENT_BANNER = bytearray(f"SmartInspect Java Library v{SmartInspect.get_version()}\n", encoding="UTF-8")
+    __CLIENT_BANNER = bytearray(f"SmartInspect Python Library v\n", encoding="UTF-8")
+    # __CLIENT_BANNER = bytearray(f"SmartInspect Python Library v{SmartInspect.get_version()}\n", encoding="UTF-8")
     __ANSWER_SIZE = 2
     _hostname = "127.0.0.1"
     _timeout = 30000

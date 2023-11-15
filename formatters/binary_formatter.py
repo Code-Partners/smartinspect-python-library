@@ -3,7 +3,11 @@ from io import BytesIO
 from enum import Enum
 
 from formatters.formatter import Formatter
-from packets import Packet, PacketType, ProcessFlow, Watch, ControlCommand
+from packets.packet import Packet
+from packets.packet_type import PacketType
+from packets.process_flow import ProcessFlow
+from packets.watch import Watch
+from packets.control_command import ControlCommand
 from packets.log_entry import LogEntry
 from common.rgbacolor import RGBAColor
 
