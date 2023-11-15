@@ -155,7 +155,7 @@ class SmartInspect:
             parser.parse(self.__variables.expand(connections), listener)
         except Exception as e:
             self.__remove_connections()
-g            raise InvalidConnectionsException(e.args[0])
+            raise InvalidConnectionsException(e.args[0])
 
     def __add_connection(self, name: str, options: str) -> None:
 
