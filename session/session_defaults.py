@@ -6,13 +6,13 @@ from common.level import Level
 class SessionDefaults:
     def __init__(self):
         self.__active: bool = True
-        self.__color: Color = Session.DEFAULT_COLOR
+        self.__color: Color = Color.TRANSPARENT
         self.__level: Level = Level.DEBUG
 
     def _assign(self, session: Session) -> None:
-        session.set_active(self.__active)
-        session.set_color(self.__color)
-        session.set_level(self.__level)
+        session.active = self.__active
+        session.color = self.__color
+        session.level = self.__level
 
     def is_active(self) -> bool:
         return self.__active
