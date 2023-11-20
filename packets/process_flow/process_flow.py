@@ -8,9 +8,10 @@ class ProcessFlow(Packet):
     __HEADER_SIZE: int = 28
 
     def __init__(self, process_flow_type: ProcessFlowType):
+        super().__init__()
         self.__hostname: str = ""
         self.set_process_flow_type(process_flow_type)
-        self.__title = ""
+        self.__title: str = ""
         self.__timestamp: int = 0
         self.__thread_id: int = super()._get_thread_id()
         self.__process_id: int = self.__PROCESS_ID
