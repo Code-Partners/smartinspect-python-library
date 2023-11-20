@@ -21,7 +21,7 @@ class BinaryFormatter(Formatter):
         PacketType.LogHeader: "__compile_log_header",
         PacketType.Watch: "__compile_watch",
         PacketType.ControlCommand: "__compile_control_command",
-        PacketType.ProcessFlow: "__process_flow",
+        PacketType.ProcessFlow: "__compile_process_flow",
     }
 
     def __init__(self):
