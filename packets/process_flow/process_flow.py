@@ -25,11 +25,16 @@ class ProcessFlow(Packet):
     def get_packet_type() -> PacketType:
         return PacketType.ProcessFlow
 
-    def get_title(self):
+    @property
+    def title(self) -> str:
         return self.__title
 
-    def set_title(self, title: str) -> None:
-        self.__title = title
+    @title.setter
+    def title(self, title: str) -> None:
+        if isinstance(title, str):
+            self.__title = title
+        else:
+            raise TypeError('title must be a string')
 
     def get_host_name(self) -> str:
         return self.__hostname
@@ -49,11 +54,16 @@ class ProcessFlow(Packet):
     def set_thread_id(self, thread_id: int) -> None:
         self.__thread_id = thread_id
 
-    def get_timestamp(self) -> int:
+    @property
+    def timestamp(self) -> int:
         return self.__timestamp
 
-    def set_timestamp(self, timestamp: int) -> None:
-        self.__timestamp = timestamp
+    @timestamp.setter
+    def timestamp(self, timestamp: int) -> None:
+        if isinstance(timestamp, int):
+            self.__timestamp = timestamp
+        else:
+            raise TypeError("timestamp must be an integer")
 
     def set_process_flow_type(self, process_flow_type: ProcessFlowType) -> None:
         if isinstance(process_flow_type, ProcessFlowType):
