@@ -8,6 +8,7 @@ class LogHeader(Packet):
     __HEADER_SIZE = 4
 
     def __init__(self):
+        super().__init__()
         self.__app_name: str = ""
         self.__hostname: str = ""
 
