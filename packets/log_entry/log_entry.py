@@ -11,6 +11,7 @@ class LogEntry(Packet):
     HEADER_SIZE = 48
 
     def __init__(self, log_entry_type: LogEntryType, viewer_id: ViewerId):
+        super().__init__()
         self._log_entry_type = None
         self._viewer_id = None
 
