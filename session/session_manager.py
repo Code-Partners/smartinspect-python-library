@@ -88,7 +88,7 @@ class SessionManager:
         info.has_color = config.contains(self.__PREFIX + name + ".color")
 
         if info.has_color:
-            info.color = config.read_color(self.__PREFIX + name + ".color", Session.DEFAULT_COLOR)
+            info.color = config.read_color(self.__PREFIX + name + ".color", Session.__DEFAULT_COLOR)
 
         return info
 
@@ -122,13 +122,13 @@ class SessionManager:
         if not isinstance(session, Session):
             return
 
-        name = session.get_name().lower()
+        name = session.name.lower()
 
         with self.__lock:
             self.__defaults._assign(session)
 
         if store is True:
             self.__sessions[name] = session
-            session._set_stored(True)
+            session._is_stored = True
 
         self.__configure(session, name)
