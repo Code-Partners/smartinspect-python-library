@@ -11,7 +11,7 @@ class LogEntryType(Enum):
     ERROR = 102
     INTERNAL_ERROR = 103
     COMMENT = 104
-    VARIABLEVALUE = 105
+    VARIABLE_VALUE = 105
     CHECKPOINT = 106
     DEBUG = 107
     VERBOSE = 108
