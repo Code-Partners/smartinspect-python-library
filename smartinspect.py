@@ -46,7 +46,7 @@ class SmartInspect:
         self.__connections: str = ""
         self.__protocols: typing.List[Protocol] = []
         self.__enabled = False
-        self.set_appname(appname)
+        self.appname = appname
         self.__hostname = self.__obtain_hostname()
         # need to provide a lock for listeners collection
         self.__listeners = set()
@@ -74,10 +74,12 @@ class SmartInspect:
     def get_hostname(self) -> str:
         return self.__hostname
 
-    def get_app_name(self) -> str:
+    @property
+    def appname(self) -> str:
         return self.__appname
 
-    def set_appname(self, appname: str) -> None:
+    @appname.setter
+    def appname(self, appname: str) -> None:
         if not isinstance(appname, str):
             raise TypeError("app_name must be a string")
         self.__appname = appname
@@ -87,22 +89,26 @@ class SmartInspect:
         # does it really do _what is expected_?
         with self.__lock:
             for protocol in self.__protocols:
-                protocol.set_app_name(self.__appname)
+                protocol.set_appname(self.__appname)
                 protocol.set_hostname(self.__hostname)
 
-    def get_level(self) -> Level:
+    @property
+    def level(self) -> Level:
         return self.__level
 
-    def set_level(self, level: Level) -> None:
+    @level.setter
+    def level(self, level: Level) -> None:
         if isinstance(level, Level):
             self.__level = level
 
-    def set_default_level(self, level: Level) -> None:
+    @property
+    def default_level(self) -> Level:
+        return self.__default_level
+
+    @default_level.setter
+    def default_level(self, level: Level) -> None:
         if isinstance(level, Level):
             self.__default_level = level
-
-    def get_default_level(self) -> Level:
-        return self.__default_level
 
     def __connect(self):
         for protocol in self.__protocols:
@@ -118,6 +124,7 @@ class SmartInspect:
             except Exception as e:
                 self.__do_error(e)
 
+    @property
     def is_enabled(self) -> bool:
         return self.__enabled
 
@@ -222,7 +229,7 @@ class SmartInspect:
             self.__create_connections(connections)
             self.__connections = connections
 
-            if self.is_enabled():
+            if self.is_enabled:
                 self.__connect()
 
     def __try_connections(self, connections: str) -> bool:
@@ -357,7 +364,7 @@ class SmartInspect:
         if self.__is_multithreaded:
             log_entry.set_threadsafe(True)
 
-        log_entry.set_app_name(self.get_app_name())
+        log_entry.set_app_name(self.appname)
         log_entry.set_hostname(self.get_hostname())
 
         try:
