@@ -1,38 +1,36 @@
 import socket
 import threading
-import time
 import typing
 
+from common.clock import Clock
+from common.clock_resolution import ClockResolution
 from common.events.connections_parser_event import ConnectionsParserEvent
 from common.events.control_command_event import ControlCommandEvent
+from common.events.error_event import ErrorEvent
+from common.events.filter_event import FilterEvent
 from common.events.log_entry_event import LogEntryEvent
 from common.events.process_flow_event import ProcessFlowEvent
 from common.events.watch_event import WatchEvent
-from common.level import Level
-from common.events.error_event import ErrorEvent
-from common.clock_resolution import ClockResolution
-from common.clock import Clock
 from common.exceptions import InvalidConnectionsException, SmartInspectException
+from common.exceptions import LoadConnectionsException, LoadConfigurationException
+from common.level import Level
 from common.protocol_command import ProtocolCommand
+from common.protocol_listener import ProtocolListener
 from common.smartinspect_listener import SmartInspectListener
 from configuration import Configuration
-from protocols.tcp_protocol import TcpProtocol
+from connections import ConnectionsParser
+from connections.connections_parser_listener import ConnectionsParserListener
+from packets.control_command import ControlCommand
+from packets.log_entry import LogEntry
+from packets.packet import Packet
+from packets.process_flow import ProcessFlow
+from packets.watch import Watch
+from protocols.protocol import Protocol
+from protocols.protocol_factory import ProtocolFactory
+from protocols.protocol_variables import ProtocolVariables
 from session.session import Session
 from session.session_defaults import SessionDefaults
 from session.session_manager import SessionManager
-from protocols.protocol_variables import ProtocolVariables
-from protocols.protocol import Protocol
-from packets.packet import Packet
-from packets.watch import Watch
-from packets.process_flow import ProcessFlow
-from packets.control_command import ControlCommand
-from packets.log_entry import LogEntry
-from connections import ConnectionsParser
-from common.events.filter_event import FilterEvent
-from connections.connections_parser_listener import ConnectionsParserListener
-from protocols.protocol_factory import ProtocolFactory
-from common.protocol_listener import ProtocolListener
-from common.exceptions import LoadConnectionsException, LoadConfigurationException
 
 
 class SmartInspect:
