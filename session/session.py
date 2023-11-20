@@ -1,3 +1,4 @@
+import datetime
 import threading
 
 from common.color import Color
@@ -455,4 +456,154 @@ class Session:
                         self.__log_internal_error(f"log_conditional {e.args[0]}")
 
                 self.__send_log_entry(level, title, LogEntryType.CONDITIONAL, ViewerId.TITLE)
-                
+
+    @staticmethod
+    def __to_hex(value: (int, bytes, bytearray), max_chars: int) -> str:
+        # this method currently suports only ints and bytes/bytearrays
+        # if we received an int we get hex value and cut off the '0x' prefix
+        if isinstance(value, int):
+            hex_value = hex(value)[2:]
+        # if we received a bytes/bytearray sequence, we convert to hex representation
+        elif isinstance(value, bytes) or isinstance(value, bytearray):
+            hex_value = value.hex()
+        else:
+            raise TypeError("Unsupported value type")
+
+        length = len(hex_value)
+
+        # for strings longer then <maxchar> we return <maxchar> rightmost symbols
+        if length >= max_chars:
+            return hex_value[length - max_chars:]
+        # for shorter strings we pad them out with zeros from the left side
+        else:
+            return hex_value.zfill(max_chars)
+
+    def log_bool(self, name: str, value: bool, level: (Level, None) = None) -> None:
+        if not isinstance(name, str):
+            raise TypeError("Name must be a string")
+        if not isinstance(value, bool):
+            raise TypeError("Value must be a boolean")
+
+        if level is None:
+            level = self.parent.default_level
+
+        if self.is_on(level):
+            title = f"{name} = {['False', 'True'][value]}"
+            self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
+
+    def log_str(self, name: str, value: str, level: (Level, None) = None) -> None:
+        if not isinstance(name, str):
+            raise TypeError("Name must be a string")
+        if not isinstance(value, str):
+            raise TypeError("Value must be a string")
+
+        if level is None:
+            level = self.parent.default_level
+
+        if self.is_on(level):
+            title = f"{name} = \"{value}\""
+            self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
+
+    def log_byte(self, name: str, value: (bytes, bytearray),
+                 include_hex: bool = False, level: (Level, None) = None) -> None:
+        if not isinstance(name, str):
+            raise TypeError("Name must be a string")
+        if not isinstance(value, bytes) and not isinstance(value, bytearray):
+            raise TypeError("Value must be a bytes sequence - bytes or bytearray")
+        if not isinstance(include_hex, bool):
+            raise TypeError("include_hex must be a bool")
+
+        if level is None:
+            level = self.parent.default_level
+
+        if self.is_on(level):
+            title = f"{name} = '{value}'"
+            if include_hex:
+                title += f" (0x{self.__to_hex(value, 2)})"
+            self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
+
+    def log_int(self, name: str, value: int, include_hex: bool = False, level: (Level, None) = None) -> None:
+        if not isinstance(name, str):
+            raise TypeError("Name must be a string")
+        if not isinstance(value, int):
+            raise TypeError("Value must be an int")
+        if not isinstance(include_hex, bool):
+            raise TypeError("include_hex must be a bool")
+
+        if level is None:
+            level = self.parent.default_level
+
+        if self.is_on(level):
+            title = f"{name} = '{value}'"
+            if include_hex:
+                title += f" (0x{self.__to_hex(value, 16)})"
+            self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
+
+    def log_float(self, name: str, value: float, level: (Level, None) = None) -> None:
+        if not isinstance(name, str):
+            raise TypeError("Name must be a string")
+        if not isinstance(value, float):
+            raise TypeError("Value must be a float")
+
+        if level is None:
+            level = self.parent.default_level
+
+        if self.is_on(level):
+            title = f"{name} = '{value}'"
+            self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
+
+    def log_object(self, name: str, value: object, level: (Level, None) = None) -> None:
+        if not isinstance(name, str):
+            raise TypeError("Name must be a string")
+
+        if level is None:
+            level = self.parent.default_level
+
+        if self.is_on(level):
+            try:
+                title = f"{name} = {str(value)}"
+                self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
+            except Exception as e:
+                self.__log_internal_error(f"log_object: {e.args[0]}")
+
+    def log_time(self, name: str, value: datetime.time, level: (Level, None) = None) -> None:
+        if not isinstance(name, str):
+            raise TypeError("Name must be a string")
+        if not isinstance(value, datetime.time):
+            raise TypeError("Value must be a datetime.time object")
+
+        if level is None:
+            level = self.parent.default_level
+
+        if self.is_on(level):
+            title = f"{name} = {str(value)}"
+            self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
+
+    def log_datetime(self, name: str, value: datetime.datetime, level: (Level, None) = None) -> None:
+        if not isinstance(name, str):
+            raise TypeError("Name must be a string")
+        if not isinstance(value, datetime.datetime):
+            raise TypeError("Value must be a datetime.datetime object")
+
+        if level is None:
+            level = self.parent.default_level
+
+        if self.is_on(level):
+            title = f"{name} = {str(value)}"
+            self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
+
+    def log_list(self, name: str, value: list, level: (Level, None) = None) -> None:
+        if not isinstance(name, str):
+            raise TypeError("Name must be a string")
+        if not isinstance(value, list):
+            raise TypeError("Value must be a list")
+
+        if level is None:
+            level = self.parent.default_level
+
+        if self.is_on(level):
+            title = f"{name} = {str(value)}"
+            self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
+
+    
+
