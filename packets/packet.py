@@ -10,7 +10,7 @@ class Packet(ABC):
     def __init__(self):
         self.__lock: (threading.Lock, None) = None
         self.__threadsafe: bool = False
-        self.__level: (Level, None) = None
+        self.__level: Level = Level.MESSAGE
 
     @staticmethod
     @abstractmethod
