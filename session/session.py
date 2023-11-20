@@ -2,10 +2,13 @@ import threading
 
 from common.color import Color
 from common.level import Level
+from common.viewer_id import ViewerId
+from packets.log_entry import LogEntryType, LogEntry
+from packets.process_flow import ProcessFlowType, ProcessFlow
 
 
 class Session:
-    DEFAULT_COLOR = Color.TRANSPARENT
+    __DEFAULT_COLOR = Color.TRANSPARENT
 
     def __init__(self, parent, name: str):
         self.__checkpoint_lock: threading.Lock = threading.Lock()
