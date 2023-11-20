@@ -77,7 +77,7 @@ class BinaryFormatter(Formatter):
     def __compile_process_flow(self) -> None:
         process_flow: ProcessFlow = self.__packet
 
-        title = self.__encode_string(process_flow.get_title())
+        title = self.__encode_string(process_flow.title)
         host_name = self.__encode_string(process_flow.get_host_name())
 
         self.__write_enum(process_flow.get_process_flow_type())
@@ -85,7 +85,7 @@ class BinaryFormatter(Formatter):
         self.__write_length(host_name)
         self.__write_int(process_flow.get_process_id())
         self.__write_int(process_flow.get_thread_id())
-        self.__write_timestamp(process_flow.get_timestamp())
+        self.__write_timestamp(process_flow.timestamp)
 
         self.__write_data(title)
         self.__write_data(host_name)
