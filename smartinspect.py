@@ -493,7 +493,9 @@ if __name__ == '__main__':
     si = SmartInspect('Auto')
     si.set_connections("tcp()")
     si.set_enabled(True)
-
     session = si.add_session("tutorial", True)
+    session.enter_process("Pitunya")
+    session.log_message(None)
+    session.leave_process()
+    si.dispose()
 
-    time.sleep(10)
