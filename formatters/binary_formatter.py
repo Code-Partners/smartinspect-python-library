@@ -121,7 +121,11 @@ class BinaryFormatter(Formatter):
 
     def __write_int(self, value: int, stream=None):
         if isinstance(value, int):
-            bytestring = value.to_bytes(4, "little", signed=True)
+            byte1 = value & 0xFF
+            byte2 = (value >> 8) & 0xFF
+            byte3 = (value >> 16) & 0xFF
+            byte4 = (value >> 24) & 0xFF
+            bytestring = bytes([byte1, byte2, byte3, byte4])
             if stream is None:
                 self.__stream.write(bytestring)
             else:
