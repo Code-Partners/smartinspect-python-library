@@ -43,10 +43,12 @@ class Packet(ABC):
         else:
             self.__lock = None
 
-    def get_level(self) -> Level:
+    @property
+    def level(self) -> Level:
         return self.__level
 
-    def set_level(self, level: Level):
+    @level.setter
+    def level(self, level: Level):
         if isinstance(level, Level):
             self.__level = level
         else:
@@ -55,3 +57,10 @@ class Packet(ABC):
     @abstractmethod
     def get_size(self) -> int:
         ...
+
+    def lock(self):
+        # TODO implement lock
+        pass
+
+    def unlock(self):
+        pass
