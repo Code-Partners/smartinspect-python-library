@@ -33,6 +33,7 @@ class Protocol(ABC):
         self.__keep_open = False
         self.__caption = ""
         self.__initialized = False
+        self.__backlog_enabled = False
 
     @staticmethod
     @abstractmethod
@@ -87,10 +88,10 @@ class Protocol(ABC):
     def get_hostname(self) -> str:
         return self.__hostname
 
-    def get_app_name(self) -> str:
+    def get_appname(self) -> str:
         return self.__app_name
 
-    def set_app_name(self, app_name: str) -> None:
+    def set_appname(self, app_name: str) -> None:
         self.__app_name = app_name
 
     def connect(self):
@@ -138,12 +139,12 @@ class Protocol(ABC):
         else:
             self.__queue.clear()
 
-    def _is_asynchronous(self) -> bool:
+    def is_asynchronous(self) -> bool:
         return self.__async_enabled
 
     def write_packet(self, packet: Packet):
         with self.__lock:
-            if packet.get_level().value < self.__level.value:
+            if packet.level.value < self.__level.value:
                 return
 
             if self.__async_enabled:
@@ -167,7 +168,7 @@ class Protocol(ABC):
                 self.__keep_open):
             return
 
-        level = packet.get_level()
+        level = packet.level
 
         try:
             try:
@@ -253,8 +254,9 @@ class Protocol(ABC):
 
     def initialize(self, options: str):
         # TODO full implementation (this is only a stub)
-        # with self.__lock:
-        self.__initialized = True
+        self.__init__()
+        with self.__lock:
+            self.__initialized = True
 
     def add_listener(self, listener: ProtocolListener):
         # TODO implement lock
@@ -290,3 +292,6 @@ class Protocol(ABC):
             if disconnect:
                 self.__connected = False
                 self._internal_disconnect()
+
+    def __reconnect(self):
+        ...
