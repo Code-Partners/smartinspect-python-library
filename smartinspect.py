@@ -333,13 +333,13 @@ class SmartInspect:
         if isinstance(key, str):
             self.__variables.remove(key)
 
-    def add_session(self, session: (str, Session), store: bool = False) -> (Session, None):
+    def add_session(self, session: (str, Session), store: bool = False) -> Session:
         if isinstance(session, str):
             session = Session(self, session)
         elif isinstance(session, Session):
             session = session
         else:
-            return None
+            raise TypeError("session paramter must be a string (session name) or a Session instance")
 
         self.__sessions.add(session, store)
         return session
