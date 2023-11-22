@@ -17,11 +17,11 @@ class BinaryFormatter(Formatter):
     __DAY_OFFSET = 25569
     __MAX_STREAM_CAPACITY = 1 * 1024 * 1024
     __packet_type_processors = {
-        PacketType.LogEntry: "__compile_log_entry",
-        PacketType.LogHeader: "__compile_log_header",
-        PacketType.Watch: "__compile_watch",
-        PacketType.ControlCommand: "__compile_control_command",
-        PacketType.ProcessFlow: "__compile_process_flow",
+        PacketType.LOG_ENTRY: "__compile_log_entry",
+        PacketType.LOG_HEADER: "__compile_log_header",
+        PacketType.WATCH: "__compile_watch",
+        PacketType.CONTROL_COMMAND: "__compile_control_command",
+        PacketType.PROCESS_FLOW: "__compile_process_flow",
     }
 
     def __init__(self):
@@ -93,13 +93,13 @@ class BinaryFormatter(Formatter):
     def __compile_watch(self) -> None:
         watch: Watch = self.__packet
 
-        name = self.__encode_string(watch.get_name())
-        value = self.__encode_string(watch.get_value())
+        name = self.__encode_string(watch.name)
+        value = self.__encode_string(watch.value)
 
         self.__write_length(name)
         self.__write_length(value)
-        self.__write_enum(watch.get_watch_type())
-        self.__write_timestamp(watch.get_timestamp())
+        self.__write_enum(watch.watch_type)
+        self.__write_timestamp(watch.timestamp)
 
         self.__write_data(name)
         self.__write_data(value)
@@ -149,9 +149,9 @@ class BinaryFormatter(Formatter):
     def __compile_control_command(self) -> None:
         control_command: ControlCommand = self.__packet
 
-        self.__write_enum(control_command.get_control_command_type())
-        self.__write_length(control_command.get_data())
-        self.__write_data(control_command.get_data())
+        self.__write_enum(control_command.control_command_type)
+        self.__write_length(control_command.data)
+        self.__write_data(control_command.data)
 
     def __write_length(self, content: bytes) -> None:
         if bytes and isinstance(content, bytes):
