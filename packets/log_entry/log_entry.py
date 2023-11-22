@@ -38,7 +38,7 @@ class LogEntry(Packet):
 
     @staticmethod
     def get_packet_type() -> PacketType:
-        return PacketType.LogEntry
+        return PacketType.LOG_ENTRY
 
     def get_app_name(self) -> str:
         return self._app_name
