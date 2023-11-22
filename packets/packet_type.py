@@ -3,8 +3,8 @@ from enum import Enum
 
 # But where are the other nums?
 class PacketType(Enum):
-    ControlCommand = 1
-    LogEntry = 4
-    Watch = 5
-    ProcessFlow = 6
-    LogHeader = 7
+    CONTROL_COMMAND = 1
+    LOG_ENTRY = 4
+    WATCH = 5
+    PROCESS_FLOW = 6
+    LOG_HEADER = 7
