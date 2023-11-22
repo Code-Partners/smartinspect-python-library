@@ -23,7 +23,7 @@ class ProcessFlow(Packet):
 
     @staticmethod
     def get_packet_type() -> PacketType:
-        return PacketType.ProcessFlow
+        return PacketType.PROCESS_FLOW
 
     @property
     def title(self) -> str:
