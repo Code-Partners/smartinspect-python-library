@@ -54,19 +54,19 @@ class SessionManager:
     def __assign(self, session: Session, info: SessionInfo) -> None:
         if info.active:
             if info.has_color:
-                session.set_color(info.color)
+                session.color = info.color
             if info.has_level:
-                session.set_level(info.level)
+                session.level = info.level
             if info.has_active:
-                session.set_active(info.active)
+                session.active = info.active
         else:
             # but what is the sense of it actually?
             if info.has_active:
-                session.set_active(info.active)
+                session.active = info.active
             if info.has_level:
-                session.set_level(info.level)
+                session.level = info.level
             if info.has_color:
-                session.set_color(info.color)
+                session.color = info.color
 
     def __load_infos(self, config):
         pass
@@ -88,7 +88,7 @@ class SessionManager:
         info.has_color = config.contains(self.__PREFIX + name + ".color")
 
         if info.has_color:
-            info.color = config.read_color(self.__PREFIX + name + ".color", Session.__DEFAULT_COLOR)
+            info.color = config.read_color(self.__PREFIX + name + ".color", Session.DEFAULT_COLOR)
 
         return info
 
@@ -112,7 +112,7 @@ class SessionManager:
         if not isinstance(session, Session):
             return
 
-        name = session.get_name().lower()
+        name = session.name.lower()
 
         with self.__lock:
             if self.__sessions.get(name) == session:
