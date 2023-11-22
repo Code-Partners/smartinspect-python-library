@@ -280,7 +280,7 @@ class Protocol(ABC):
                 self.__connected = True
                 self.__failed = False
             else:
-                self.__reconnect()
+                self.__do_reconnect()
 
         if self.__connected:
             packet.lock()
@@ -293,5 +293,5 @@ class Protocol(ABC):
                 self.__connected = False
                 self._internal_disconnect()
 
-    def __reconnect(self):
-        ...
+    def __do_reconnect(self) -> None:
+        pass
