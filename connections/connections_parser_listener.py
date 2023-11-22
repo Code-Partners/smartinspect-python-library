@@ -1,4 +1,5 @@
-from abc import ABC, abstractmethod
+from abc import ABC
+
 from common.events.connections_parser_event import ConnectionsParserEvent
 
 
