@@ -32,4 +32,4 @@ class LogHeader(Packet):
 
     @staticmethod
     def get_packet_type() -> PacketType:
-        return PacketType.LogHeader
+        return PacketType.LOG_HEADER
