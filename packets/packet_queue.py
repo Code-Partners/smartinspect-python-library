@@ -1,8 +1,5 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
 from packets.packet import Packet
-from packets.log_entry import LogEntry
-from packets.log_entry.log_entry_type import LogEntryType
-from common.viewer_id import ViewerId
 
 
 class PacketQueueItem:
