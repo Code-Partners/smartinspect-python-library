@@ -1,18 +1,17 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
 
 import socket
-import time
 
+from common.clock import Clock
+from common.color import Color
+from common.exceptions import SmartInspectException
+from common.viewer_id import ViewerId
+from connections.builders import ConnectionsBuilder
+from formatters.binary_formatter import BinaryFormatter
+from packets.log_entry import LogEntry, LogEntryType
+from packets.packet import Packet
 # from smartinspect import SmartInspect
 from protocols.protocol import Protocol
-from common.exceptions import SmartInspectException
-from formatters.binary_formatter import BinaryFormatter
-from connections.builders import ConnectionsBuilder
-from packets.packet import Packet
-from packets.log_entry import LogEntry, LogEntryType
-from common.viewer_id import ViewerId
-from common.color import Color
-from common.clock import Clock
 
 
 class TcpProtocol(Protocol):
