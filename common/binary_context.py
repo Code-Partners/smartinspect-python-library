@@ -50,4 +50,4 @@ class BinaryContext(ViewerContext):
 
     def load_from_stream(self, stream):
         self.reset_data()
-        self.__data.write(stream.getvalue())
+        self.__data.write(stream)
