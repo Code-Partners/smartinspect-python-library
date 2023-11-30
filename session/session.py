@@ -1,13 +1,20 @@
 import datetime
 import fractions
 import io
+import os
+import platform
 import threading
+import traceback
 
 from common.binary_context import BinaryContext
 from common.binary_viewer_context import BinaryViewerContext
 from common.color import Color
+from common.data_viewer_context import DataViewerContext
+from common.inspector_viewer_context import InspectorViewerContext
 from common.level import Level
+from common.list_viewer_context import ListViewerContext
 from common.text_context import TextContext
+from common.value_list_viewer_context import ValueListViewerContext
 from common.viewer_context import ViewerContext
 from common.viewer_id import ViewerId
 from packets.control_command import ControlCommand
@@ -16,6 +23,8 @@ from packets.log_entry import LogEntryType, LogEntry
 from packets.process_flow import ProcessFlowType, ProcessFlow
 from packets.watch import Watch
 from packets.watch_type import WatchType
+from source_id import SourceId
+from tableviewercontext import TableViewerContext
 
 
 class Session:
@@ -481,7 +490,7 @@ class Session:
         else:
             return hex_value.zfill(max_chars)
 
-    def log_bool(self, name: str, value: bool, level: (Level, None) = None) -> None:
+    def log_bool_value(self, name: str, value: bool, level: (Level, None) = None) -> None:
         if not isinstance(name, str):
             raise TypeError("Name must be a string")
         if not isinstance(value, bool):
@@ -494,7 +503,7 @@ class Session:
             title = f"{name} = {['False', 'True'][value]}"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_str(self, name: str, value: str, level: (Level, None) = None) -> None:
+    def log_str_value(self, name: str, value: str, level: (Level, None) = None) -> None:
         if not isinstance(name, str):
             raise TypeError("Name must be a string")
         if not isinstance(value, str):
@@ -507,8 +516,8 @@ class Session:
             title = f"{name} = \"{value}\""
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_byte(self, name: str, value: (bytes, bytearray),
-                 include_hex: bool = False, level: (Level, None) = None) -> None:
+    def log_byte_value(self, name: str, value: (bytes, bytearray),
+                       include_hex: bool = False, level: (Level, None) = None) -> None:
         if not isinstance(name, str):
             raise TypeError("Name must be a string")
         if not isinstance(value, bytes) and not isinstance(value, bytearray):
@@ -525,7 +534,7 @@ class Session:
                 title += f" (0x{self.__to_hex(value, 2)})"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_int(self, name: str, value: int, include_hex: bool = False, level: (Level, None) = None) -> None:
+    def log_int_value(self, name: str, value: int, include_hex: bool = False, level: (Level, None) = None) -> None:
         if not isinstance(name, str):
             raise TypeError("Name must be a string")
         if not isinstance(value, int):
@@ -542,7 +551,7 @@ class Session:
                 title += f" (0x{self.__to_hex(value, 16)})"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_float(self, name: str, value: float, level: (Level, None) = None) -> None:
+    def log_float_value(self, name: str, value: float, level: (Level, None) = None) -> None:
         if not isinstance(name, str):
             raise TypeError("Name must be a string")
         if not isinstance(value, float):
@@ -555,7 +564,7 @@ class Session:
             title = f"{name} = '{value}'"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_object(self, name: str, value: object, level: (Level, None) = None) -> None:
+    def log_object_value(self, name: str, value: object, level: (Level, None) = None) -> None:
         if not isinstance(name, str):
             raise TypeError("Name must be a string")
 
@@ -569,7 +578,7 @@ class Session:
             except Exception as e:
                 self.__log_internal_error(f"log_object: {e.args[0]}")
 
-    def log_time(self, name: str, value: datetime.time, level: (Level, None) = None) -> None:
+    def log_time_value(self, name: str, value: datetime.time, level: (Level, None) = None) -> None:
         if not isinstance(name, str):
             raise TypeError("Name must be a string")
         if not isinstance(value, datetime.time):
@@ -582,7 +591,7 @@ class Session:
             title = f"{name} = {str(value)}"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_datetime(self, name: str, value: datetime.datetime, level: (Level, None) = None) -> None:
+    def log_datetime_value(self, name: str, value: datetime.datetime, level: (Level, None) = None) -> None:
         if not isinstance(name, str):
             raise TypeError("Name must be a string")
         if not isinstance(value, datetime.datetime):
@@ -595,20 +604,21 @@ class Session:
             title = f"{name} = {str(value)}"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_list(self, name: str, value: list, level: (Level, None) = None) -> None:
+    def log_list_value(self, name: str, value: list, level: (Level, None) = None) -> None:
         if not isinstance(name, str):
             raise TypeError("Name must be a string")
         if not isinstance(value, list):
             raise TypeError("Value must be a list")
-
         if level is None:
             level = self.parent.default_level
+        if not isinstance(level, Level):
+            raise TypeError("Level must be a Level")
 
         if self.is_on(level):
             title = f"{name} = {str(value)}"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_tuple(self, name: str, value: tuple, level: (Level, None) = None) -> None:
+    def log_tuple_value(self, name: str, value: tuple, level: (Level, None) = None) -> None:
         if not isinstance(name, str):
             raise TypeError("Name must be a string")
         if not isinstance(value, tuple):
@@ -621,7 +631,7 @@ class Session:
             title = f"{name} = {str(value)}"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_set(self, name: str, value: set, level: (Level, None) = None) -> None:
+    def log_set_value(self, name: str, value: set, level: (Level, None) = None) -> None:
         if not isinstance(name, str):
             raise TypeError("Name must be a string")
         if not isinstance(value, set):
@@ -634,7 +644,7 @@ class Session:
             title = f"{name} = {str(value)}"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_dict(self, name: str, value: dict, level: (Level, None) = None) -> None:
+    def log_dict_value(self, name: str, value: dict, level: (Level, None) = None) -> None:
         if not isinstance(name, str):
             raise TypeError("Name must be a string")
         if not isinstance(value, dict):
@@ -647,7 +657,7 @@ class Session:
             title = f"{name} = {str(value)}"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_complex(self, name: str, value: complex, level: (Level, None) = None) -> None:
+    def log_complex_value(self, name: str, value: complex, level: (Level, None) = None) -> None:
         if not isinstance(name, str):
             raise TypeError("Name must be a string")
         if not isinstance(value, complex):
@@ -660,7 +670,7 @@ class Session:
             title = f"{name} = {str(value)}"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_fraction(self, name: str, value: fractions.Fraction, level: (Level, None) = None) -> None:
+    def log_fraction_value(self, name: str, value: fractions.Fraction, level: (Level, None) = None) -> None:
         if not isinstance(name, str):
             raise TypeError("Name must be a string")
         if not isinstance(value, fractions.Fraction):
@@ -681,39 +691,39 @@ class Session:
             level = self.parent.default_level
 
         if isinstance(value, bool):
-            self.log_bool(name, value, level)
+            self.log_bool_value(name, value, level)
         if isinstance(value, str):
-            self.log_str(name, value, level)
+            self.log_str_value(name, value, level)
         if isinstance(value, bytes) or isinstance(value, bytearray):
-            self.log_byte(name, value, level)
+            self.log_byte_value(name, value, level)
         if isinstance(value, int):
-            self.log_int(name, value, level)
+            self.log_int_value(name, value, level)
         if isinstance(value, float):
-            self.log_float(name, value, level)
+            self.log_float_value(name, value, level)
         if isinstance(value, datetime.time):
-            self.log_time(name, value, level)
+            self.log_time_value(name, value, level)
         if isinstance(value, datetime.datetime):
-            self.log_datetime(name, value, level)
+            self.log_datetime_value(name, value, level)
         if isinstance(value, list):
-            self.log_list(name, value, level)
+            self.log_list_value(name, value, level)
         if isinstance(value, object):
-            self.log_object(name, value, level)
+            self.log_object_value(name, value, level)
         if isinstance(value, datetime.time):
-            self.log_time(name, value, level)
+            self.log_time_value(name, value, level)
         if isinstance(value, datetime.datetime):
-            self.log_datetime(name, value, level)
+            self.log_datetime_value(name, value, level)
         if isinstance(value, list):
-            self.log_list(name, value, level)
+            self.log_list_value(name, value, level)
         if isinstance(value, tuple):
-            self.log_tuple(name, value, level)
+            self.log_tuple_value(name, value, level)
         if isinstance(value, set):
-            self.log_set(name, value, level)
+            self.log_set_value(name, value, level)
         if isinstance(value, dict):
-            self.log_dict(name, value, level)
+            self.log_dict_value(name, value, level)
         if isinstance(value, complex):
-            self.log_complex(name, value, level)
+            self.log_complex_value(name, value, level)
         if isinstance(value, fractions.Fraction):
-            self.log_fraction(name, value, level)
+            self.log_fraction_value(name, value, level)
 
     def log_custom_context(self, title: str, logentry_type: LogEntryType,
                            context: ViewerContext, level: (Level, None) = None) -> None:
@@ -804,13 +814,11 @@ class Session:
         finally:
             context.close()
 
-    def log_custom_stream(self, title: str, stream: io.BytesIO,
+    def log_custom_stream(self, title: str, stream,
                           log_entry_type: LogEntryType, viewer_id: ViewerId,
                           level: (Level, None) = None) -> None:
         if not isinstance(title, str):
             raise TypeError("Title must be a string")
-        if not isinstance(stream, io.BytesIO):
-            raise TypeError("stream must be a BytesIO")
         if not isinstance(log_entry_type, LogEntryType):
             raise TypeError("log_entry_type must be a LogEntryType")
         if not isinstance(viewer_id, ViewerId):
@@ -854,11 +862,9 @@ class Session:
 
         self.log_custom_file(filename, LogEntryType.TEXT, ViewerId.DATA, title=title, level=level)
 
-    def log_text_stream(self, title: str, stream: io.BytesIO, level: (Level, None) = None) -> None:
+    def log_text_stream(self, title: str, stream, level: (Level, None) = None) -> None:
         if not isinstance(title, str):
             raise TypeError("title must be a string")
-        if not isinstance(stream, io.BytesIO):
-            raise TypeError("stream must be a BytesIO")
 
         if level is None:
             level = self.parent.default_level
@@ -941,3 +947,440 @@ class Session:
             level = self.parent.default_level
 
         self.log_custom_stream(title, stream, LogEntryType.BINARY, ViewerId.BINARY, level=level)
+
+    def log_bitmap_file(self, filename: str, title: str = "", level: (Level, None) = None) -> None:
+        if not isinstance(filename, str):
+            raise TypeError("filename must be a string")
+        if not isinstance(title, str):
+            raise TypeError("title must be a string")
+
+        if level is None:
+            level = self.parent.default_level
+
+        self.log_custom_file(filename, LogEntryType.GRAPHIC, ViewerId.BITMAP, title, level)
+
+    def log_bitmap_stream(self, title: str, stream, level: (Level, None) = None) -> None:
+        if not isinstance(title, str):
+            raise TypeError("Title must be a string")
+
+        if level is None:
+            level = self.parent.default_level
+
+        self.log_custom_stream(title, stream, LogEntryType.GRAPHIC, ViewerId.BITMAP, level)
+
+    def log_jpeg_file(self, filename: str, title: str = "", level: (Level, None) = None) -> None:
+        if not isinstance(filename, str):
+            raise TypeError("filename must be a string")
+        if not isinstance(title, str):
+            raise TypeError("title must be a string")
+
+        if level is None:
+            level = self.parent.default_level
+
+        self.log_custom_file(filename, LogEntryType.GRAPHIC, ViewerId.JPEG, title, level)
+
+    def log_jpeg_stream(self, title: str, stream, level: (Level, None) = None) -> None:
+        if not isinstance(title, str):
+            raise TypeError("Title must be a string")
+
+        if level is None:
+            level = self.parent.default_level
+
+        self.log_custom_stream(title, stream, LogEntryType.GRAPHIC, ViewerId.JPEG, level)
+
+    def log_icon_file(self, filename: str, title: str = "", level: (Level, None) = None) -> None:
+        if not isinstance(filename, str):
+            raise TypeError("filename must be a string")
+        if not isinstance(title, str):
+            raise TypeError("title must be a string")
+
+        if level is None:
+            level = self.parent.default_level
+
+        self.log_custom_file(filename, LogEntryType.GRAPHIC, ViewerId.ICON, title, level)
+
+    def log_icon_stream(self, title: str, stream, level: (Level, None) = None) -> None:
+        if not isinstance(title, str):
+            raise TypeError("Title must be a string")
+
+        if level is None:
+            level = self.parent.default_level
+
+        self.log_custom_stream(title, stream, LogEntryType.GRAPHIC, ViewerId.ICON, level)
+
+    def log_metafile_file(self, filename: str, title: str = "", level: (Level, None) = None) -> None:
+        if not isinstance(filename, str):
+            raise TypeError("filename must be a string")
+        if not isinstance(title, str):
+            raise TypeError("title must be a string")
+
+        if level is None:
+            level = self.parent.default_level
+
+        self.log_custom_file(filename, LogEntryType.GRAPHIC, ViewerId.METAFILE, title, level)
+
+    def log_metafile_stream(self, title: str, stream, level: (Level, None) = None) -> None:
+        if not isinstance(title, str):
+            raise TypeError("Title must be a string")
+
+        if level is None:
+            level = self.parent.default_level
+
+        self.log_custom_stream(title, stream, LogEntryType.GRAPHIC, ViewerId.METAFILE, level)
+
+    def log_sql(self, title: str, source: str, level: (Level, None) = None) -> None:
+        self.log_source(title, source, SourceId.SQL, level)
+
+    def log_source(self, title: str, source: str, source_id: SourceId, level):
+        if not isinstance(title, str):
+            raise TypeError("Title must be a string")
+        if not isinstance(source, str):
+            raise TypeError("Source must be a string")
+
+        if level is None:
+            level = self.parent.default_level
+
+        if self.is_on(level):
+            if not isinstance(source_id, SourceId):
+                self.__log_internal_error("source_id must be a SourceId")
+            else:
+                self.log_custom_text(title, source, LogEntryType.SOURCE, source_id.viewer_id, level)
+
+    def log_source_file(self, filename: str, source_id: SourceId, title: str = "", level: (Level, None) = None) -> None:
+        if level is None:
+            level = self.parent.default_level
+
+        if self.is_on(level):
+            if not isinstance(source_id, SourceId):
+                self.__log_internal_error("log_source_file: source_id must be a SourceId")
+            else:
+                self.log_custom_file(filename, LogEntryType.SOURCE, source_id.viewer_id, title, level)
+
+    def log_source_stream(self, title: str, stream, source_id: SourceId, level: (Level, None) = None) -> None:
+        if level is None:
+            level = self.parent.default_level
+
+        if self.is_on(level):
+            if not isinstance(source_id, SourceId):
+                self.__log_internal_error("log_source_stream: source_id must be a SourceId")
+            else:
+                self.log_custom_stream(title, stream, LogEntryType.SOURCE, source_id.viewer_id, level)
+
+    def log_object(self, title: str, instance: object, non_public: bool = False, level: (Level, None) = None) -> None:
+        if level is None:
+            level = self.parent.default_level
+
+        if self.is_on(level):
+            if instance is None:
+                self.__log_internal_error("log_object: instance argument is None")
+            else:
+                cls = instance.__class__
+                context = InspectorViewerContext()
+                if non_public is True:
+                    allowed_prefixes = ["_", "__"]
+                    # TODO bases
+
+    def log_exception(self, exception: BaseException, title: str = ""):
+        if self.is_on(Level.ERROR):
+            if not isinstance(exception, BaseException):
+                self.__log_internal_error("log_exception: exception must be an Exception")
+            if not isinstance(title, str):
+                self.__log_internal_error("log_exception: title must be a string")
+
+            if title == "":
+                title = getattr(exception, "message", repr(exception))
+
+            context = DataViewerContext()
+            try:
+                try:
+                    file = io.StringIO()
+                    try:
+                        raise exception
+                    except BaseException:
+                        traceback.print_exc(file=file)
+
+                    context.load_from_text(file.getvalue())
+                    self.__send_context(Level.ERROR, title, LogEntryType.ERROR, context)
+                    del file
+
+                except Exception as e:
+                    exc_message = getattr(e, "message", repr(e))
+                    self.__log_internal_error(f"log_exception: {exc_message}")
+            finally:
+                context.close()
+
+    def log_current_thread(self, title: str = "", level: (Level, None) = None) -> None:
+        if not isinstance(title, str):
+            raise TypeError("title must be a string")
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            raise TypeError("level must be a Level")
+
+        if self.is_on(level):
+            current_thread = threading.current_thread()
+            if title == "":
+                if current_thread.name:
+                    title = f"Current thread: {current_thread.name}"
+                else:
+                    title = "Current thread"
+            self.log_thread(title, current_thread, level)
+
+    def log_thread(self, title: str, thread: threading.Thread, level: (Level, None) = None) -> None:
+        if not isinstance(title, str):
+            raise TypeError("title must be a string")
+        if not isinstance(level, Level):
+            raise TypeError("level must be a Level")
+        if not isinstance(thread, threading.Thread):
+            self.__log_internal_error("log_thread: thread argument is not a threading.Thread")
+
+        if level is None:
+            level = self.parent.default_level
+
+        if self.is_on(level):
+            context = ValueListViewerContext()
+            try:
+                try:
+                    context.append_key_value("Name", thread.name)
+                    context.append_key_value("Ident", thread.ident)
+                    context.append_key_value("Alive", thread.is_alive())
+                    context.append_key_value("Daemon", thread.daemon)
+                    self.__send_context(level, title, LogEntryType.TEXT, context)
+                except Exception as e:
+                    exc_message = getattr(e, "message", repr(e))
+                    self.__log_internal_error(f"log_thread: {exc_message}")
+            finally:
+                context.close()
+
+    def log_iterable(self, iterable, title: str = "", level: (Level, None) = None) -> None:
+        if not isinstance(title, str):
+            raise TypeError("title must be a string")
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            raise TypeError("level must be a Level")
+
+        if self.is_on(level):
+            context = ListViewerContext()
+
+            try:
+                it = iter(iterable)
+
+                while True:
+                    try:
+                        nxt = next(it)
+
+                        if nxt == iterable:
+                            context.append_line("<cycle>")
+                        else:
+                            context.append_line(str(nxt))
+
+                    except StopIteration:
+                        break
+
+                if title == "":
+                    title = "iterable"
+                self.__send_context(level, title, LogEntryType.TEXT, context)
+            except Exception as e:
+                exc_message = getattr(e, "message", repr(e))
+                self.__log_internal_error(f"log_iterable: {exc_message}")
+
+            finally:
+                context.close()
+
+    def log_dict(self, dictionary: dict, title: str = "", level: (Level, None) = None) -> None:
+        if not isinstance(title, str):
+            raise TypeError("title must be a string")
+        if not isinstance(title, str):
+            raise TypeError("dictionary must be a dict")
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            raise TypeError("level must be a Level")
+
+        if self.is_on(level):
+            context = ValueListViewerContext()
+
+            try:
+                for elem in dictionary:
+                    key = str(elem)
+
+                    value = dictionary[elem]
+                    if value == dictionary:
+                        value = "<cycle>"
+                    value = str(value)
+
+                    context.append_key_value(key, value)
+                if title == "":
+                    title = "dictionary"
+                self.__send_context(level, title, LogEntryType.TEXT, context)
+            except Exception as e:
+                exc_message = getattr(e, "message", repr(e))
+                self.__log_internal_error(f"log_dictionary: {exc_message}")
+
+            finally:
+                context.close()
+
+    @staticmethod
+    def __build_stacktrace() -> ViewerContext:
+        context = ListViewerContext()
+        try:
+            raise Exception("Current stacktrace")
+        except Exception:
+            stacktrace = traceback.format_stack()
+            for frame in stacktrace[:-2]:
+                context.append_line(frame.strip())
+            return context
+
+    def log_current_stacktrace(self, title: str = "", level: (Level, None) = None) -> None:
+        if not isinstance(title, str):
+            raise TypeError("title must be a string")
+        if not isinstance(title, str):
+            raise TypeError("dictionary must be a dict")
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            raise TypeError("level must be a Level")
+
+        if self.is_on(level):
+            context = self.__build_stacktrace()
+            if title == "":
+                title = "Current stack trace"
+            try:
+                self.__send_context(level, title, LogEntryType.TEXT, context)
+            finally:
+                context.close()
+
+    def log_system(self, title: str = "System information", level: (Level, None) = None) -> None:
+        if not isinstance(title, str):
+            raise TypeError("title must be a string")
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            raise TypeError("level must be a Level")
+
+        if self.is_on(level):
+            # context = ValueListViewerContext()
+            context = InspectorViewerContext()
+            try:
+                try:
+                    context.start_group('Operating System')
+                    context.append_key_value('Name', platform.system())
+                    context.append_key_value('Version', platform.version())
+
+                    context.start_group('User')
+                    context.append_key_value('Name', os.getlogin())
+                    context.append_key_value('Home', os.path.expanduser('~'))
+                    context.append_key_value('Current directory', os.getcwd())
+
+                    context.start_group("Python")
+                    context.append_key_value('Version', platform.python_version())
+                    context.append_key_value('Compiler', platform.python_compiler())
+                    context.append_key_value('Implementation', platform.python_implementation())
+
+                    self.__send_context(level, title, LogEntryType.SYSTEM, context)
+                except Exception as e:
+                    exc_message = getattr(e, "message", repr(e))
+                    self.__log_internal_error(f"log_dictionary: {exc_message}")
+
+            finally:
+                context.close()
+
+    def log_cursor_metadata(self, cursor, title: str = "", level: (Level, None) = None) -> None:
+        if not self.__is_cursor(cursor):
+            raise TypeError("cursor does not pass compliance check with Python DB API 2.0")
+        if not isinstance(title, str):
+            raise TypeError("title must be a string")
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            raise TypeError("level must be a Level")
+
+        if self.is_on(level):
+            if not cursor.description:
+                self.__log_internal_error("log_cursor_data: cursor is empty")
+                return
+
+            context = TableViewerContext()
+            try:
+                try:
+                    description = cursor.description
+                    context.begin_row()
+                    for column in description:
+                        name = column[0]
+                        context.add_row_entry(name)
+                    context.end_row()
+
+                    context.begin_row()
+                    for column in description:
+                        data_type = column[1]
+                        context.add_row_entry(data_type)
+                    context.end_row()
+                    self.__send_context(level, title, LogEntryType.DATABASE_STRUCTURE, context)
+                except Exception as e:
+                    exc_message = getattr(e, "message", repr(e))
+                    self.__log_internal_error(f"log_cursor_data: {exc_message}")
+            finally:
+                context.close()
+
+    def log_cursor_data(self, cursor, title: str = "Table data", level: (Level, None) = None) -> None:
+        if not self.__is_cursor(cursor):
+            raise TypeError("cursor does not pass compliance check with Python DB API 2.0")
+        if not isinstance(title, str):
+            raise TypeError("title must be a string")
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            raise TypeError("level must be a Level")
+
+        if self.is_on(level):
+            if not cursor.description:
+                self.__log_internal_error("log_cursor_data: cursor is empty")
+                return
+            context = TableViewerContext()
+            try:
+                try:
+                    description = cursor.description
+
+                    context.begin_row()
+                    for column in description:
+                        name = column[0]
+                        context.add_row_entry(name)
+                    context.end_row()
+
+                    rows = cursor.fetchall()
+
+                    for row in rows:
+                        context.begin_row()
+                        for cell in row:
+                            context.add_row_entry(cell)
+                        context.end_row()
+                    self.__send_context(level, title, LogEntryType.DATABASE_STRUCTURE, context)
+
+
+                except Exception as e:
+                    exc_message = getattr(e, "message", repr(e))
+                    self.__log_internal_error(f"log_cursor_data: {exc_message}")
+            finally:
+                context.close()
+
+    @staticmethod
+    def __is_cursor(cursor) -> bool:
+        """This method performs an attempt to check for cursor compliance with
+        Python DB API 2.0 by checking existence of mandatory methods and attributes
+        according to PEP249 https://peps.python.org/pep-0249/ and returns False if any
+        of them is missing"""
+
+        required_methods = ('execute', 'close', 'fetchone', 'fetchall', 'fetchmany',
+                            'executemany', 'setinputsizes', 'setoutputsize',)
+        required_attributes = ('description', 'rowcount', 'arraysize',)
+
+        for method in required_methods:
+            if not hasattr(cursor, method) or not callable(getattr(cursor, method)):
+                return False
+
+        for attribute in required_attributes:
+            if not hasattr(cursor, attribute):
+                return False
+
+        return True
