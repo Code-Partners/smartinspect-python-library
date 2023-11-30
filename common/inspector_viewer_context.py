@@ -10,7 +10,7 @@ class InspectorViewerContext(ValueListViewerContext):
         if isinstance(group, str):
             self.append_text("[")
             self.append_text(self.escape_item(group))
-            self.append_text("]")
+            self.append_text("]\r\n")
 
     def escape_item(self, item: str) -> str:
         return self.escape_line(item, "\\=[]")
