@@ -3,7 +3,7 @@ from common.viewer_id import ViewerId
 
 
 class ValueListViewerContext(ListViewerContext):
-    def __init__(self, viewer_id: ViewerId = ViewerId.LIST):
+    def __init__(self, viewer_id: ViewerId = ViewerId.VALUE_LIST):
         super().__init__(viewer_id)
 
     def append_key_value(self, key: str, value) -> None:
