@@ -49,7 +49,7 @@ class TextContext(ViewerContext):
 
     def append_line(self, line: str):
         if not isinstance(line, str):
-            raise TypeError("escape line must be a string")
+            raise TypeError("line must be a string")
 
         self.__data += line + "\r\n"
 
