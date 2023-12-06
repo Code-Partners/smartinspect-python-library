@@ -1,10 +1,12 @@
 import datetime
 import fractions
+import inspect
 import io
 import os
 import platform
 import threading
 import traceback
+from typing import Optional, Union
 
 from common.binary_context import BinaryContext
 from common.binary_viewer_context import BinaryViewerContext
@@ -13,6 +15,7 @@ from common.data_viewer_context import DataViewerContext
 from common.inspector_viewer_context import InspectorViewerContext
 from common.level import Level
 from common.list_viewer_context import ListViewerContext
+from common.locked_dictionary import LockedDictionary
 from common.text_context import TextContext
 from common.value_list_viewer_context import ValueListViewerContext
 from common.viewer_context import ViewerContext
@@ -41,11 +44,15 @@ class Session:
         else:
             self.__name = ""
 
-        self.__level: Level = Level.DEBUG
-        self.__active: bool = True
-        self.__counter: dict = dict()
+        self.level: Level = Level.DEBUG
+        self.active: bool = True
+        self.__counter: LockedDictionary = LockedDictionary()
         self.__checkpoints: dict = dict()
-        self.__color = self.DEFAULT_COLOR
+        self.color = self.DEFAULT_COLOR
+
+    @property
+    def is_on(self) -> bool:
+        return self.is_active and self.parent.is_enabled
 
     @property
     def active(self) -> bool:
@@ -112,7 +119,7 @@ class Session:
         if isinstance(level, Level):
             self.__level = level
 
-    def is_on(self, level: (Level, None) = None) -> bool:
+    def is_on_level(self, level: (Level, None) = None) -> bool:
         if level is None:
             return self.active and self.parent.is_enabled
         if not isinstance(level, Level):
@@ -133,36 +140,35 @@ class Session:
                          color: (Color, None) = None,
                          data: (bytes, bytearray, None) = None):
         log_entry = LogEntry(log_entry_type, viewer_id)
-        log_entry.set_timestamp(self.parent.now())
+        log_entry.timestamp = self.parent.now()
         log_entry.level = level
 
         if title is None:
             title = ""
-        log_entry.set_title(title)
+        log_entry.title = title
 
         if color is None:
             color = self.color
 
         # Here we skipped color variety management
-        log_entry.set_color(color)
-        log_entry.set_session_name(self.name)
-        log_entry.set_data(data)
+        log_entry.color = color
+        log_entry.session_name = self.name
+        log_entry.data = data
         self.parent.send_log_entry(log_entry)
 
     def log_separator(self, level: (Level, None) = None) -> None:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             self.__send_log_entry(level, None, LogEntryType.SEPARATOR, ViewerId.NO_VIEWER)
 
     def reset_call_stack(self, level: (Level, None) = None) -> None:
         if level is None:
             level = self.parent.default_level
-            if self.is_on(level):
+            if self.is_on_level(level):
                 self.__send_log_entry(level, None, LogEntryType.RESET_CALLSTACK, ViewerId.NO_VIEWER)
 
-    # TODO check if we are working correctly winth None here
     def enter_method(self, method_name: str, *args, instance: (object, None) = None,
                      level: (Level, None) = None) -> None:
         if not isinstance(method_name, str):
@@ -171,12 +177,13 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             if args:
                 try:
-                    method_name = method_name.format(args)
+                    method_name = method_name.format(*args)
                 except Exception as e:
                     self.__log_internal_error(f"enter_method {e.args[0]}")
+                    return
             if instance:
                 class_name = instance.__class__.__name__
                 method_name = f"{class_name}.{method_name}"
@@ -184,7 +191,6 @@ class Session:
             self.__send_log_entry(level, method_name, LogEntryType.ENTER_METHOD, ViewerId.TITLE)
             self.__send_process_flow(level, method_name, ProcessFlowType.ENTER_METHOD)
 
-    # TODO check None theme
     def leave_method(self, method_name: str, *args, instance: (object, None) = None,
                      level: (Level, None) = None) -> None:
         if not isinstance(method_name, str):
@@ -193,12 +199,12 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             if args:
                 try:
-                    method_name = method_name.format(args)
+                    method_name = method_name.format(*args)
                 except Exception as e:
-                    self.__log_internal_error(f"leave_method {e.args[0]}")
+                    return self.__log_internal_error(f"leave_method {e.args[0]}")
             if instance:
                 class_name = instance.__class__.__name__
                 method_name = f"{class_name}.{method_name}"
@@ -213,12 +219,12 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             if args:
                 try:
-                    thread_name = thread_name.format(args)
+                    thread_name = thread_name.format(*args)
                 except Exception as e:
-                    self.__log_internal_error(f"enter_thread {e.args[0]}")
+                    return self.__log_internal_error(f"enter_thread {e.args[0]}")
 
             self.__send_process_flow(level, thread_name, ProcessFlowType.ENTER_THREAD)
 
@@ -229,12 +235,12 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             if args:
                 try:
-                    thread_name = thread_name.format(args)
+                    thread_name = thread_name.format(*args)
                 except Exception as e:
-                    self.__log_internal_error(f"leave_thread {e.args[0]}")
+                    return self.__log_internal_error(f"leave_thread {e.args[0]}")
 
             self.__send_process_flow(level, thread_name, ProcessFlowType.LEAVE_THREAD)
 
@@ -245,14 +251,14 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             if process_name == "":
                 process_name = self.parent.appname
             if args:
                 try:
-                    process_name = process_name.format(args)
+                    process_name = process_name.format(*args)
                 except Exception as e:
-                    self.__log_internal_error(f"enter_process {e.args[0]}")
+                    return self.__log_internal_error(f"enter_process {e.args[0]}")
 
             self.__send_process_flow(level, process_name, ProcessFlowType.ENTER_PROCESS)
             self.__send_process_flow(level, "Main Thread", ProcessFlowType.ENTER_THREAD)
@@ -264,30 +270,31 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             if process_name == "":
                 process_name = self.parent.appname
             if args:
                 try:
-                    process_name = process_name.format(args)
+                    process_name = process_name.format(*args)
                 except Exception as e:
-                    self.__log_internal_error(f"leave_process {e.args[0]}")
+                    return self.__log_internal_error(f"leave_process {e.args[0]}")
 
             self.__send_process_flow(level, "Main Thread", ProcessFlowType.LEAVE_THREAD)
             self.__send_process_flow(level, process_name, ProcessFlowType.LEAVE_PROCESS)
 
-    def log_colored(self, title: str, *args, color: Color, level: (Level, None) = None) -> None:
+    def log_colored(self, color: Color, title: str, *args,  level: (Level, None) = None) -> None:
         if not isinstance(title, str):
             raise TypeError('Title must be a string')
         if not isinstance(color, Color):
             raise TypeError('color must be a Color')
-
-        if self.is_on(level):
+        if level is None:
+            level = self.parent.default_level
+        if self.is_on_level(level):
             if args:
                 try:
-                    title = title.format(args)
+                    title = title.format(*args)
                 except Exception as e:
-                    self.__log_internal_error(f"log_colored {e.args[0]}")
+                    return self.__log_internal_error(f"log_colored {e.args[0]}")
 
             self.__send_log_entry(level, title, LogEntryType.MESSAGE, ViewerId.TITLE, color, None)
 
@@ -295,43 +302,43 @@ class Session:
         if not isinstance(title, str):
             raise TypeError('Title must be a string')
 
-        if self.is_on(Level.DEBUG):
+        if self.is_on_level(Level.DEBUG):
             if args:
                 try:
-                    title = title.format(args)
+                    title = title.format(*args)
                 except Exception as e:
-                    self.__log_internal_error(f"log_debug {e.args[0]}")
+                    return self.__log_internal_error(f"log_debug {e.args[0]}")
             self.__send_log_entry(Level.DEBUG, title, LogEntryType.DEBUG, ViewerId.TITLE)
 
     def log_verbose(self, title: str, *args) -> None:
         if not isinstance(title, str):
             raise TypeError('Title must be a string')
 
-        if self.is_on(Level.VERBOSE):
+        if self.is_on_level(Level.VERBOSE):
             if args:
                 try:
-                    title = title.format(args)
+                    title = title.format(*args)
                 except Exception as e:
-                    self.__log_internal_error(f"log_verbose {e.args[0]}")
+                    return self.__log_internal_error(f"log_verbose {e.args[0]}")
             self.__send_log_entry(Level.VERBOSE, title, LogEntryType.VERBOSE, ViewerId.TITLE)
 
-    def log_message(self, title: (str, None), *args) -> None:
-        if not isinstance(title, str) and not (title is None):
-            raise TypeError("Title must be a string or None")
+    def log_message(self, title: str, *args) -> None:
+        if not isinstance(title, str):
+            raise TypeError("Title must be a string")
 
-        if self.is_on(Level.MESSAGE):
+        if self.is_on_level(Level.MESSAGE):
             if args and isinstance(title, str):
                 try:
-                    title = title.format(args)
+                    title = title.format(*args)
                 except Exception as e:
-                    self.__log_internal_error(f"log_message {e.args[0]}")
+                    return self.__log_internal_error(f"log_message {e.args[0]}")
             self.__send_log_entry(Level.MESSAGE, title, LogEntryType.MESSAGE, ViewerId.TITLE)
 
     def log_warning(self, title: (str, None), *args) -> None:
         if not isinstance(title, str) and not (title is None):
             raise TypeError("Title must be a string or None")
 
-        if self.is_on(Level.WARNING):
+        if self.is_on_level(Level.WARNING):
             if args and isinstance(title, str):
                 try:
                     title = title.format(args)
@@ -343,7 +350,7 @@ class Session:
         if not isinstance(title, str) and not (title is None):
             raise TypeError("Title must be a string or None")
 
-        if self.is_on(Level.ERROR):
+        if self.is_on_level(Level.ERROR):
             if args and isinstance(title, str):
                 try:
                     title = title.format(args)
@@ -355,7 +362,7 @@ class Session:
         if not isinstance(title, str) and not (title is None):
             raise TypeError("Title must be a string or None")
 
-        if self.is_on(Level.FATAL):
+        if self.is_on_level(Level.FATAL):
             if args and isinstance(title, str):
                 try:
                     title = title.format(args)
@@ -367,7 +374,7 @@ class Session:
         if not isinstance(title, str):
             raise TypeError('Title must be a string')
 
-        if self.is_on(Level.ERROR):
+        if self.is_on_level(Level.ERROR):
             if args:
                 try:
                     title = title.format(args)
@@ -385,7 +392,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             if name:
                 key = name.lower()
                 value = self.__checkpoints.get(key)
@@ -427,7 +434,7 @@ class Session:
         if not isinstance(title, str):
             raise TypeError("Title must be a string")
 
-        if self.is_on(Level.ERROR):
+        if self.is_on_level(Level.ERROR):
             if args:
                 try:
                     title = title.format(args)
@@ -444,7 +451,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             if instance is None:
                 self.log_message(title + "is None")
             else:
@@ -459,7 +466,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             if condition:
                 if args:
                     try:
@@ -499,7 +506,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             title = f"{name} = {['False', 'True'][value]}"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
@@ -512,7 +519,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             title = f"{name} = \"{value}\""
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
@@ -528,7 +535,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             title = f"{name} = '{value}'"
             if include_hex:
                 title += f" (0x{self.__to_hex(value, 2)})"
@@ -545,7 +552,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             title = f"{name} = '{value}'"
             if include_hex:
                 title += f" (0x{self.__to_hex(value, 16)})"
@@ -560,7 +567,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             title = f"{name} = '{value}'"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
@@ -571,7 +578,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             try:
                 title = f"{name} = {str(value)}"
                 self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
@@ -587,7 +594,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             title = f"{name} = {str(value)}"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
@@ -600,7 +607,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             title = f"{name} = {str(value)}"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
@@ -614,7 +621,7 @@ class Session:
         if not isinstance(level, Level):
             raise TypeError("Level must be a Level")
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             title = f"{name} = {str(value)}"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
@@ -627,7 +634,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             title = f"{name} = {str(value)}"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
@@ -640,7 +647,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             title = f"{name} = {str(value)}"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
@@ -653,7 +660,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             title = f"{name} = {str(value)}"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
@@ -666,7 +673,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             title = f"{name} = {str(value)}"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
@@ -679,7 +686,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             title = f"{name} = {str(value)}"
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
@@ -691,46 +698,40 @@ class Session:
             level = self.parent.default_level
 
         if isinstance(value, bool):
-            self.log_bool_value(name, value, level)
-        if isinstance(value, str):
-            self.log_str_value(name, value, level)
-        if isinstance(value, bytes) or isinstance(value, bytearray):
-            self.log_byte_value(name, value, level)
+            return self.log_bool_value(name, value, level)
         if isinstance(value, int):
-            self.log_int_value(name, value, level)
+            return self.log_int_value(name, value, level)
+        if isinstance(value, str):
+            return self.log_str_value(name, value, level)
+        if isinstance(value, bytes) or isinstance(value, bytearray):
+            return self.log_byte_value(name, value, level)
         if isinstance(value, float):
-            self.log_float_value(name, value, level)
+            return self.log_float_value(name, value, level)
         if isinstance(value, datetime.time):
-            self.log_time_value(name, value, level)
+            return self.log_time_value(name, value, level)
         if isinstance(value, datetime.datetime):
-            self.log_datetime_value(name, value, level)
+            return self.log_datetime_value(name, value, level)
         if isinstance(value, list):
-            self.log_list_value(name, value, level)
+            return self.log_list_value(name, value, level)
         if isinstance(value, object):
-            self.log_object_value(name, value, level)
-        if isinstance(value, datetime.time):
-            self.log_time_value(name, value, level)
-        if isinstance(value, datetime.datetime):
-            self.log_datetime_value(name, value, level)
-        if isinstance(value, list):
-            self.log_list_value(name, value, level)
+            return self.log_object_value(name, value, level)
         if isinstance(value, tuple):
-            self.log_tuple_value(name, value, level)
+            return self.log_tuple_value(name, value, level)
         if isinstance(value, set):
-            self.log_set_value(name, value, level)
+            return self.log_set_value(name, value, level)
         if isinstance(value, dict):
-            self.log_dict_value(name, value, level)
+            return self.log_dict_value(name, value, level)
         if isinstance(value, complex):
-            self.log_complex_value(name, value, level)
+            return self.log_complex_value(name, value, level)
         if isinstance(value, fractions.Fraction):
-            self.log_fraction_value(name, value, level)
+            return self.log_fraction_value(name, value, level)
 
     def log_custom_context(self, title: str, logentry_type: LogEntryType,
                            context: ViewerContext, level: (Level, None) = None) -> None:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             if not isinstance(logentry_type, LogEntryType) or not isinstance(context, ViewerContext):
                 self.__log_internal_error("log_custom_context: Invalid arguments")
             else:
@@ -739,7 +740,8 @@ class Session:
     def __send_context(self, level, title, logentry_type, context: ViewerContext):
         self.__send_log_entry(level, title, logentry_type, context.viewer_id, self.color, context.viewer_data)
 
-    def __send_control_command(self, control_command_type: ControlCommandType, data: (bytes, bytearray)) -> None:
+    def __send_control_command(self, control_command_type: ControlCommandType,
+                               data: Optional[Union[bytes, bytearray]]) -> None:
         control_command = ControlCommand(control_command_type)
         control_command.level = Level.CONTROL
         control_command.data = data
@@ -775,7 +777,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             context = TextContext(viewer_id)
             try:
                 try:
@@ -918,7 +920,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             context = BinaryViewerContext()
             try:
                 context.append_bytes(value, offset, length)
@@ -1040,7 +1042,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             if not isinstance(source_id, SourceId):
                 self.__log_internal_error("source_id must be a SourceId")
             else:
@@ -1050,7 +1052,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             if not isinstance(source_id, SourceId):
                 self.__log_internal_error("log_source_file: source_id must be a SourceId")
             else:
@@ -1060,7 +1062,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             if not isinstance(source_id, SourceId):
                 self.__log_internal_error("log_source_stream: source_id must be a SourceId")
             else:
@@ -1069,19 +1071,72 @@ class Session:
     def log_object(self, title: str, instance: object, non_public: bool = False, level: (Level, None) = None) -> None:
         if level is None:
             level = self.parent.default_level
+        if not isinstance(level, Level):
+            raise TypeError("level must be a Level")
+        if not isinstance(non_public, bool):
+            raise TypeError("non_public must be True or False")
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             if instance is None:
                 self.__log_internal_error("log_object: instance argument is None")
-            else:
+                return
+
+            context = InspectorViewerContext()
+
+            try:
+                # we get field names from the instance
+                instance_fields = set(self.__get_fields(instance))
+
+                # we then get fields from all the parent classes
                 cls = instance.__class__
-                context = InspectorViewerContext()
-                if non_public is True:
-                    allowed_prefixes = ["_", "__"]
-                    # TODO bases
+                class_fields = set()
+
+                class_fields.update(self.__get_fields(cls))
+                for class_ in inspect.getmro(cls):
+                    if class_ != object:
+                        class_fields.update(self.__get_fields(class_))
+
+                # we do not include fields which are derived from parent classes
+                fields = instance_fields.difference(class_fields)
+
+                # if non_public is False then we need to exclude fields, starting with '_' (thus, with '__' as well)
+                if non_public is False:
+                    fields = list(filter(lambda f: not f[0].startswith("_"), fields))
+
+                result = []
+                current_field = []
+
+                for name in fields:
+                    current_field.append(context.escape_item(name))
+                    current_field.append("=")
+                    current_field.append(str(getattr(instance, name)))
+                    result.append("".join(current_field))
+                    current_field = []
+
+                result.sort()
+
+                context.start_group("Fields")
+
+                for item in result:
+                    context.append_line(item)
+
+                self.__send_context(level, title, LogEntryType.OBJECT, context)
+            except Exception as e:
+                exc_message = getattr(e, "message", repr(e))
+                self.__log_internal_error(f"log_object: {exc_message}")
+
+    @staticmethod
+    def __get_fields(cls):
+        # here we create a dummy object to make a list of all general fields present in all objects
+        boring = dir(type('dummy', (object,), {}))
+        # here we make a list of fields without 'boring' fields and without methods
+        all_fields = inspect.getmembers(cls)
+        fields = [item[0] for item in all_fields
+                  if not (item[0] in boring or inspect.isroutine(item[1]))]
+        return fields
 
     def log_exception(self, exception: BaseException, title: str = ""):
-        if self.is_on(Level.ERROR):
+        if self.is_on_level(Level.ERROR):
             if not isinstance(exception, BaseException):
                 self.__log_internal_error("log_exception: exception must be an Exception")
             if not isinstance(title, str):
@@ -1117,7 +1172,7 @@ class Session:
         if not isinstance(level, Level):
             raise TypeError("level must be a Level")
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             current_thread = threading.current_thread()
             if title == "":
                 if current_thread.name:
@@ -1137,7 +1192,7 @@ class Session:
         if level is None:
             level = self.parent.default_level
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             context = ValueListViewerContext()
             try:
                 try:
@@ -1160,7 +1215,7 @@ class Session:
         if not isinstance(level, Level):
             raise TypeError("level must be a Level")
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             context = ListViewerContext()
 
             try:
@@ -1198,7 +1253,7 @@ class Session:
         if not isinstance(level, Level):
             raise TypeError("level must be a Level")
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             context = ValueListViewerContext()
 
             try:
@@ -1242,7 +1297,7 @@ class Session:
         if not isinstance(level, Level):
             raise TypeError("level must be a Level")
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             context = self.__build_stacktrace()
             if title == "":
                 title = "Current stack trace"
@@ -1259,7 +1314,7 @@ class Session:
         if not isinstance(level, Level):
             raise TypeError("level must be a Level")
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             # context = ValueListViewerContext()
             context = InspectorViewerContext()
             try:
@@ -1296,7 +1351,7 @@ class Session:
         if not isinstance(level, Level):
             raise TypeError("level must be a Level")
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             if not cursor.description:
                 self.__log_internal_error("log_cursor_data: cursor is empty")
                 return
@@ -1333,7 +1388,7 @@ class Session:
         if not isinstance(level, Level):
             raise TypeError("level must be a Level")
 
-        if self.is_on(level):
+        if self.is_on_level(level):
             if not cursor.description:
                 self.__log_internal_error("log_cursor_data: cursor is empty")
                 return
@@ -1356,7 +1411,6 @@ class Session:
                             context.add_row_entry(cell)
                         context.end_row()
                     self.__send_context(level, title, LogEntryType.DATABASE_STRUCTURE, context)
-
 
                 except Exception as e:
                     exc_message = getattr(e, "message", repr(e))
@@ -1384,3 +1438,318 @@ class Session:
                 return False
 
         return True
+
+    def log_string(self, title: str, string: str, level: (Level, None) = None) -> None:
+        if not isinstance(title, str):
+            raise TypeError("Title must be a string")
+        if not isinstance(string, str):
+            raise TypeError("Text must be a string")
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            raise TypeError("level must be a Level")
+
+        self.log_text(title, string, level)
+
+    def clear_log(self) -> None:
+        if self.is_on:
+            self.__send_control_command(ControlCommandType.CLEAR_LOG, data=None)
+
+    def clear_watches(self) -> None:
+        if self.is_on:
+            self.__send_control_command(ControlCommandType.CLEAR_AUTO_VIEWS, data=None)
+
+    def clear_auto_views(self) -> None:
+        if self.is_on:
+            self.__send_control_command(ControlCommandType.CLEAR_AUTO_VIEWS, data=None)
+
+    def clear_all(self) -> None:
+        if self.is_on:
+            self.__send_control_command(ControlCommandType.CLEAR_ALL, data=None)
+
+    def clear_process_flow(self) -> None:
+        if self.is_on:
+            self.__send_control_command(ControlCommandType.CLEAR_PROCESS_FLOW, data=None)
+
+    def __update_counter(self, name: str, increment: bool) -> int:
+        key = name.lower()
+
+        with self.__counter as counter:
+            value = int(counter.get(key, 0))
+            if increment:
+                value += 1
+            else:
+                value -= 1
+            counter[key] = value
+
+        return value
+
+    def inc_counter(self, name: str, level: Optional[Level] = None) -> None:
+        if not isinstance(name, str):
+            self.__log_internal_error("inc_counter: name must be an str")
+            return
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            self.__log_internal_error("inc_counter: level must be a Level")
+            return
+
+        if self.is_on_level(level):
+            value = self.__update_counter(name, increment=True)
+            self.__send_watch(level, name, str(value), WatchType.INT)
+
+    def dec_counter(self, name: str, level: Optional[Level] = None) -> None:
+        if not isinstance(name, str):
+            self.__log_internal_error("dec_counter: name must be an str")
+            return
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            self.__log_internal_error("dec_counter: level must be a Level")
+            return
+
+        if self.is_on_level(level):
+            value = self.__update_counter(name, increment=False)
+            self.__send_watch(level, name, str(value), WatchType.INT)
+
+    def reset_counter(self, name: str) -> None:
+        if not isinstance(name, str):
+            self.__log_internal_error("reset_counter: name must be an str")
+            return
+
+        key = name.lower()
+
+        with self.__counter as counter:
+            del counter[key]
+
+    def send_custom_log_entry(self, title: str, log_entry_type: LogEntryType,
+                              viewer_id: ViewerId, data: (bytes, bytearray),
+                              level: Optional[Level] = None) -> None:
+        if not isinstance(title, str):
+            self.__log_internal_error("send_custom_log_entry: title must be an str")
+            return
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            self.__log_internal_error("send_custom_log_entry: level must be a Level")
+            return
+        if self.is_on_level(level):
+            if not isinstance(log_entry_type, LogEntryType):
+                self.__log_internal_error("send_custom_log_entry: log_entry_type must be a LogEntryType")
+                return
+            if not isinstance(viewer_id, ViewerId):
+                self.__log_internal_error("send_custom_log_entry: viewer_id must be a ViewerId")
+                return
+            if not isinstance(data, bytes) and not isinstance(data, bytearray):
+                self.__log_internal_error("send_custom_log_entry: data must be a bytes or bytearray")
+                return
+
+            self.__send_log_entry(level, title, log_entry_type, viewer_id, self.color, data)
+
+    def send_custom_control_command(self, control_command_type: ControlCommandType,
+                                    data: (bytes, bytearray), level: Optional[Level] = None) -> None:
+
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            self.__log_internal_error("send_custom_log_entry: level must be a Level")
+            return
+        if self.is_on_level(level):
+            if not isinstance(control_command_type, ControlCommandType):
+                self.__log_internal_error(
+                    "send_custom_control_command: control_command_type must be a ControlCommandType")
+                return
+            if not isinstance(data, bytes) and not isinstance(data, bytearray):
+                self.__log_internal_error("send_custom_control_command: data must be a bytes or bytearray")
+                return
+
+            self.__send_control_command(control_command_type, data)
+
+    def send_custom_watch(self, name: str, value: str,
+                          watch_type: WatchType, level: Optional[Level] = None) -> None:
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            self.__log_internal_error("send_custom_watch: level must be a Level")
+            return
+        if self.is_on_level(level):
+            if not isinstance(name, str):
+                self.__log_internal_error(
+                    "send_custom_watch: name must be an str")
+                return
+            if not isinstance(value, str):
+                self.__log_internal_error(
+                    "send_custom_watch: value must be an str")
+                return
+            if not isinstance(watch_type, WatchType):
+                self.__log_internal_error("send_custom_watch: watch_type must be a WatchType")
+                return
+
+            self.__send_watch(level, name, value, watch_type)
+
+    def send_custom_process_flow(self, title: str, process_flow_type: ProcessFlowType,
+                                 level: Optional[Level] = None) -> None:
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            self.__log_internal_error("send_custom_process_flow: level must be a Level")
+            return
+        if self.is_on_level(level):
+            if not isinstance(title, str):
+                self.__log_internal_error("send_custom_process_flow: title must be an str")
+                return
+            if not isinstance(process_flow_type, ProcessFlowType):
+                self.__log_internal_error("send_custom_watch: process_flow_type must be a ProcessFlowType")
+                return
+
+            self.__send_process_flow(level, title, process_flow_type)
+
+    def watch(self, name: str, value, level: Optional[Level] = None) -> None:
+        if not isinstance(name, str):
+            self.__log_internal_error("watch: name must be an str")
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(name, str):
+            self.__log_internal_error("watch: level must be a Level")
+        if isinstance(value, bool):
+            return self.watch_bool(name, value, level)
+        if isinstance(value, int):
+            return self.watch_int(name, value, level)
+        if isinstance(value, str):
+            return self.watch_str(name, value, level)
+        if isinstance(value, bytes) or isinstance(value, bytearray):
+            return self.watch_byte(name, value, level)
+        if isinstance(value, float):
+            return self.watch_float(name, value, level)
+        if isinstance(value, datetime.time):
+            return self.watch_time(name, value, level)
+        if isinstance(value, datetime.datetime):
+            return self.watch_datetime(name, value, level)
+        if isinstance(value, object):
+            return self.watch_object(name, value, level)
+
+    def watch_str(self, name: str, value: str, level: Optional[Level] = None) -> None:
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            self.__log_internal_error("watch_str: level must be a Level")
+
+        if self.is_on_level(level):
+            if not isinstance(name, str):
+                self.__log_internal_error("watch_str: name must be an str")
+            if not isinstance(value, str):
+                self.__log_internal_error("watch_str: value must be an str")
+
+            self.__send_watch(level, name, value, WatchType.STR)
+
+    def watch_byte(self, name: str, value: (bytes, bytearray), include_hex: bool = False,
+                   level: Optional[Level] = None) -> None:
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            self.__log_internal_error("watch_byte: level must be a Level")
+
+        if self.is_on_level(level):
+            if not isinstance(name, str):
+                self.__log_internal_error("watch_byte: name must be an str")
+            if not isinstance(value, bytes) and not isinstance(value, bytearray):
+                self.__log_internal_error("watch_byte: value must be bytes or bytearray")
+            if not isinstance(include_hex, bool):
+                self.__log_internal_error("watch_byte: include_hex must be True or False")
+
+            output = str(value)
+            if include_hex:
+                output += f" (0x{self.__to_hex(value, 2)})"
+            self.__send_watch(level, name, output, WatchType.INT)
+
+    def watch_int(self, name: str, value: int, include_hex: bool = False, level: Optional[Level] = None) -> None:
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            self.__log_internal_error("watch_int: level must be a Level")
+
+        if self.is_on_level(level):
+            if not isinstance(name, str):
+                self.__log_internal_error("watch_int: name must be an str")
+            if not isinstance(value, int):
+                self.__log_internal_error("watch_int: value must be int")
+            if not isinstance(include_hex, bool):
+                self.__log_internal_error("watch_int: include_hex must be True or False")
+
+            output = str(value)
+
+            if include_hex:
+                output += f" (0x{self.__to_hex(value, 16)})"
+
+            self.__send_watch(level, name, output, WatchType.INT)
+
+    def watch_float(self, name: str, value: float, level: Optional[Level] = None) -> None:
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            self.__log_internal_error("watch_float: level must be a Level")
+
+        if self.is_on_level(level):
+            if not isinstance(name, str):
+                self.__log_internal_error("watch_float: name must be an str")
+            if not isinstance(value, float):
+                self.__log_internal_error("watch_float: value must be float")
+
+            self.__send_watch(level, name, str(value), WatchType.FLOAT)
+
+    def watch_bool(self, name: str, value: bool, level: Optional[Level] = None) -> None:
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            self.__log_internal_error("watch_bool: level must be a Level")
+
+        if self.is_on_level(level):
+            if not isinstance(name, str):
+                self.__log_internal_error("watch_bool: name must be an str")
+            if not isinstance(value, bool):
+                self.__log_internal_error("watch_bool: value must be boolean")
+
+            self.__send_watch(level, name, str(value), WatchType.BOOL)
+
+    def watch_time(self, name: str, value: datetime.time, level: Optional[Level] = None) -> None:
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            self.__log_internal_error("watch_time: level must be a Level")
+
+        if self.is_on_level(level):
+            if not isinstance(name, str):
+                self.__log_internal_error("watch_time: name must be an str")
+            if not isinstance(value, datetime.time):
+                self.__log_internal_error("watch_time: value must be datetime.time")
+
+            self.__send_watch(level, name, str(value), WatchType.TIMESTAMP)
+
+    def watch_datetime(self, name: str, value: datetime.datetime, level: Optional[Level] = None) -> None:
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            self.__log_internal_error("watch_datetime: level must be a Level")
+
+        if self.is_on_level(level):
+            if not isinstance(name, str):
+                self.__log_internal_error("watch_datetime: name must be an str")
+            if not isinstance(value, datetime.datetime):
+                self.__log_internal_error("watch_datetime: value must be datetime.datetime")
+
+            self.__send_watch(level, name, str(value), WatchType.TIMESTAMP)
+
+    def watch_object(self, name: str, value: object, level: Optional[Level] = None) -> None:
+        if level is None:
+            level = self.parent.default_level
+        if not isinstance(level, Level):
+            self.__log_internal_error("watch_object: level must be a Level")
+
+        if self.is_on_level(level):
+            if not isinstance(name, str):
+                self.__log_internal_error("watch_object: name must be an str")
+            try:
+                self.__send_watch(level, name, str(value), WatchType.OBJECT)
+            except Exception as e:
+                exc_message = getattr(e, "message", repr(e))
+                self.__log_internal_error(f"watch_object: {exc_message}")
