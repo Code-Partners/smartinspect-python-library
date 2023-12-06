@@ -1,5 +1,7 @@
+import datetime
 import socket
 import threading
+import time
 import typing
 
 from common.clock import Clock
@@ -41,7 +43,7 @@ class SmartInspect:
     def __init__(self, appname: str):
         self.__lock: threading.Lock = threading.Lock()
 
-        self.__level: Level = Level.DEBUG
+        self.level: Level = Level.DEBUG
         self.__default_level: Level = Level.MESSAGE
         self.__connections: str = ""
         self.__protocols: typing.List[Protocol] = []
@@ -67,11 +69,12 @@ class SmartInspect:
         if isinstance(resolution, ClockResolution):
             self.__resolution = resolution
 
-    @classmethod
-    def get_version(cls) -> str:
-        return cls.__VERSION
+    @property
+    def version(self) -> str:
+        return self.__VERSION
 
-    def get_hostname(self) -> str:
+    @property
+    def hostname(self) -> str:
         return self.__hostname
 
     @property
@@ -362,10 +365,10 @@ class SmartInspect:
 
     def send_log_entry(self, log_entry: LogEntry):
         if self.__is_multithreaded:
-            log_entry.set_threadsafe(True)
+            log_entry.threadsafe = True
 
-        log_entry.set_app_name(self.appname)
-        log_entry.set_hostname(self.get_hostname())
+        log_entry.appname = self.appname
+        log_entry.hostname = self.hostname
 
         try:
             if not self._do_filter(log_entry):
@@ -376,7 +379,7 @@ class SmartInspect:
 
     def send_control_command(self, control_command: ControlCommand):
         if self.__is_multithreaded:
-            control_command.set_threadsafe(True)
+            control_command.threadsafe = True
 
         try:
             if not self._do_filter(control_command):
@@ -387,7 +390,7 @@ class SmartInspect:
 
     def send_watch(self, watch: Watch):
         if self.__is_multithreaded:
-            watch.set_threadsafe(True)
+            watch.threadsafe = True
 
         try:
             if not self._do_filter(watch):
@@ -398,9 +401,9 @@ class SmartInspect:
 
     def send_process_flow(self, process_flow: ProcessFlow):
         if self.__is_multithreaded:
-            process_flow.set_threadsafe(True)
+            process_flow.threadsafe = True
 
-        process_flow.set_hostname(self.get_hostname())
+        process_flow.hostname = self.hostname
         try:
             if not self._do_filter(process_flow):
                 self.__process_packet(process_flow)
@@ -489,13 +492,4 @@ class SmartInspect:
                     listener.on_control_command(event)
 
 
-if __name__ == '__main__':
-    si = SmartInspect('Auto')
-    si.set_connections("tcp()")
-    si.set_enabled(True)
-    session = si.add_session("Python Tutorial", True)
-    session.enter_process("Current Process")
-    session.log_message("Different")
-    session.leave_process("Current Process")
-    si.dispose()
 
