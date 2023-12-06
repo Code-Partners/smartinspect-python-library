@@ -70,8 +70,8 @@ class Protocol(ABC):
 
     def _internal_write_log_header(self):
         log_header: LogHeader = LogHeader()
-        log_header.set_hostname(self.__hostname)
-        log_header.set_app_name(self.__app_name)
+        log_header.hostname = self.__hostname
+        log_header.app_name = self.__app_name
         self._internal_write_packet(log_header)
 
     @abstractmethod
