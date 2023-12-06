@@ -5,21 +5,21 @@ from common.level import Level
 
 
 class Packet(ABC):
-    _PACKET_HEADER: int = 6
+    __PACKET_HEADER: int = 6
 
     def __init__(self):
         self.__lock: (threading.Lock, None) = None
-        self.__threadsafe: bool = False
-        self.__level: Level = Level.MESSAGE
+        self.threadsafe: bool = False
+        self.level: Level = Level.MESSAGE
 
-    @staticmethod
+    @property
     @abstractmethod
-    def get_packet_type() -> PacketType:
+    def packet_type(self) -> PacketType:
         pass
 
     @classmethod
     def get_packet_header_size(cls) -> int:
-        return cls._PACKET_HEADER
+        return cls.__PACKET_HEADER
 
     @staticmethod
     def _get_string_size(string: str) -> int:
@@ -28,14 +28,16 @@ class Packet(ABC):
         else:
             raise TypeError("string parameter must be of type str")
 
-    def get_content(self):
-        pass
-
-    @staticmethod
-    def _get_thread_id() -> int:
+    @property
+    def thread_id(self) -> int:
         return threading.get_ident()
 
-    def set_threadsafe(self, threadsafe: bool) -> None:
+    @property
+    def threadsafe(self) -> bool:
+        return self.__threadsafe
+
+    @threadsafe.setter
+    def threadsafe(self, threadsafe: bool) -> None:
         self.__threadsafe = threadsafe
 
         if threadsafe:
@@ -54,9 +56,10 @@ class Packet(ABC):
         else:
             raise TypeError("level must be a Level")
 
+    @property
     @abstractmethod
-    def get_size(self) -> int:
-        ...
+    def size(self) -> int:
+        pass
 
     def lock(self):
         # TODO implement lock
