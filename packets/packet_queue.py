@@ -31,7 +31,7 @@ class PacketQueue:
             self.__tail = item
 
         self.__count += 1
-        self.__size += packet.get_size() + self.__OVERHEAD
+        self.__size += packet.size + self.__OVERHEAD
         self.__resize()
 
     def pop(self) -> (Packet, None):
@@ -49,7 +49,7 @@ class PacketQueue:
             self.__tail = None
 
         self.__count -= 1
-        self.__size -= packet.get_size() + self.__OVERHEAD
+        self.__size -= packet.size + self.__OVERHEAD
         return packet
 
     def clear(self) -> None:
@@ -87,6 +87,3 @@ class PacketQueue:
 #     pq.push(LogEntry(LogEntryType.MESSAGE, ViewerId.NO_VIEWER))
 #     pq.clear()
 #     print(pq.count, pq.backlog)
-
-
-
