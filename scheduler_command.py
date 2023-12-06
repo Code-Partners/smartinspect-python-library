@@ -7,27 +7,32 @@ class SchedulerCommand:
         self.__action = SchedulerAction.Connect
         self.__state: (Packet, None) = None
 
-    def get_action(self) -> SchedulerAction:
+    @property
+    def action(self) -> SchedulerAction:
         return self.__action
 
-    def set_action(self, action: SchedulerAction) -> None:
+    @action.setter
+    def action(self, action: SchedulerAction) -> None:
         if isinstance(action, SchedulerAction):
             self.__action = action
         else:
             raise TypeError("action must be SchedulerAction")
 
-    def get_state(self) -> object:
+    @property
+    def state(self) -> object:
         return self.__state
 
-    def set_state(self, state: object) -> None:
+    @state.setter
+    def state(self, state: object) -> None:
         self.__state = state
 
-    def get_size(self) -> int:
+    @property
+    def size(self) -> int:
         if self.__action != SchedulerAction.WritePacket:
             return 0
 
         if self.__state is not None:
-            return self.__state.get_size()
+            return self.__state.size
         else:
             return 0
 
