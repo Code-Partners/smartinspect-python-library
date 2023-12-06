@@ -41,7 +41,7 @@ class BinaryFormatter(Formatter):
     def compile(self, packet: Packet) -> int:
         self.__reset_stream()
         self.__packet = packet
-        packet_type = packet.get_packet_type()
+        packet_type = packet.packet_type
         compile_function_name = "_BinaryFormatter" + self.__packet_type_processors.get(packet_type)
         compile_function = getattr(self, compile_function_name)
         compile_function()
@@ -51,40 +51,40 @@ class BinaryFormatter(Formatter):
     def __compile_log_entry(self):
         log_entry: LogEntry = self.__packet
 
-        app_name = self.__encode_string(log_entry.get_app_name())
-        session_name = self.__encode_string(log_entry.get_session_name())
-        title = self.__encode_string(log_entry.get_title())
-        host_name = self.__encode_string(log_entry.get_hostname())
+        app_name = self.__encode_string(log_entry.app_name)
+        session_name = self.__encode_string(log_entry.session_name)
+        title = self.__encode_string(log_entry.title)
+        host_name = self.__encode_string(log_entry.hostname)
 
-        self.__write_enum(log_entry.get_log_entry_type())
-        self.__write_enum(log_entry.get_viewer_id())
+        self.__write_enum(log_entry.log_entry_type)
+        self.__write_enum(log_entry.viewer_id)
         self.__write_length(app_name)
         self.__write_length(session_name)
         self.__write_length(title)
         self.__write_length(host_name)
-        self.__write_length(log_entry.get_data())
-        self.__write_int(log_entry.get_process_id())
-        self.__write_int(log_entry.get_thread_id())
-        self.__write_timestamp(log_entry.get_timestamp())
-        self.__write_color(log_entry.get_color())
+        self.__write_length(log_entry.data)
+        self.__write_int(log_entry.process_id)
+        self.__write_int(log_entry.thread_id)
+        self.__write_timestamp(log_entry.timestamp)
+        self.__write_color(log_entry.color)
 
         self.__write_data(app_name)
         self.__write_data(session_name)
         self.__write_data(title)
         self.__write_data(host_name)
-        self.__write_data(log_entry.get_data())
+        self.__write_data(log_entry.data)
 
     def __compile_process_flow(self) -> None:
         process_flow: ProcessFlow = self.__packet
 
         title = self.__encode_string(process_flow.title)
-        host_name = self.__encode_string(process_flow.get_host_name())
+        host_name = self.__encode_string(process_flow.hostname)
 
-        self.__write_enum(process_flow.get_process_flow_type())
+        self.__write_enum(process_flow.process_flow_type)
         self.__write_length(title)
         self.__write_length(host_name)
-        self.__write_int(process_flow.get_process_id())
-        self.__write_int(process_flow.get_thread_id())
+        self.__write_int(process_flow.process_id)
+        self.__write_int(process_flow.thread_id)
         self.__write_timestamp(process_flow.timestamp)
 
         self.__write_data(title)
@@ -142,7 +142,7 @@ class BinaryFormatter(Formatter):
 
     def __compile_log_header(self) -> None:
         log_header = self.__packet
-        content: bytes = log_header.get_content().encode('utf-8')
+        content: bytes = log_header.content.encode('utf-8')
         self.__write_length(content)
         self.__write_data(content)
 
@@ -180,7 +180,7 @@ class BinaryFormatter(Formatter):
         self.__write_int(signed_int)
 
     def write(self, stream):
-        self.__write_short(self.__packet.get_packet_type().value, stream=stream)
+        self.__write_short(self.__packet.packet_type.value, stream=stream)
         self.__write_int(self.__size, stream=stream)
         stream.write(self.__stream.getvalue())
 
