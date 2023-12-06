@@ -1,3 +1,5 @@
+from typing import Optional, Union
+
 from .control_command_type import ControlCommandType
 from .packet import Packet
 from .packet_type import PacketType
@@ -12,11 +14,11 @@ class ControlCommand(Packet):
         self.data = bytes()
 
     @property
-    def data(self) -> (bytes, bytearray):
+    def data(self) -> Optional[Union[bytes, bytearray]]:
         return self.__data
 
     @data.setter
-    def data(self, data: (bytes, bytearray)) -> None:
+    def data(self, data: Optional[Union[bytes, bytearray]]) -> None:
         self.__data = data
 
     @property
