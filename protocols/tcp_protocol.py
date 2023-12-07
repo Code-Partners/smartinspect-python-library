@@ -101,14 +101,14 @@ if __name__ == '__main__':
     t._internal_connect()
     logentry = LogEntry(LogEntryType.MESSAGE, ViewerId.NO_VIEWER)
 
-    logentry.set_app_name("Veronica")
-    logentry.set_hostname("Don Macaron")
-    logentry.set_session_name("Main Session")
-    logentry.set_timestamp(Clock.now())
-    logentry.set_color(Color.BLUE)
+    logentry.app_name = "Veronica"
+    logentry.hostname = "Don Macaron"
+    logentry.session_name = "Main Session"
+    logentry.timestamp = Clock.now()
+    logentry.color = Color.BLUE
     title = ""
     while title != "exit":
         title = input("Please submit title:")
-        logentry.set_title(title)
+        logentry.title = title
         t._internal_write_packet(logentry)
     t._internal_disconnect()
