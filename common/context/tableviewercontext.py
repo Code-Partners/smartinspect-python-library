@@ -1,4 +1,4 @@
-from common.list_viewer_context import ListViewerContext
+from common.context.list_viewer_context import ListViewerContext
 from common.viewer_id import ViewerId
 
 

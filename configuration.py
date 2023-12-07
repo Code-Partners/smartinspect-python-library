@@ -1,7 +1,8 @@
 import io
 
+from common.color.color import Color
 from common.lookup_table import LookupTable
-from common.color import Color
+
 from common.level import Level
 
 

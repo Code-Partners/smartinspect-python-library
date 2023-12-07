@@ -5,7 +5,7 @@ import time
 from abc import ABC, abstractmethod
 from common.lookup_table import LookupTable
 from common.protocol_command import ProtocolCommand
-from common.protocol_listener import ProtocolListener
+from common.listener.protocol_listener import ProtocolListener
 from common.scheduler_action import SchedulerAction
 from connections.builders import ConnectionsBuilder
 from packets.packet_queue import PacketQueue
@@ -14,7 +14,7 @@ from packets.log_header import LogHeader
 from common.level import Level
 from common.exceptions import ProtocolException
 from common.events.error_event import ErrorEvent
-from scheduler_command import SchedulerCommand
+from common.scheduler_command import SchedulerCommand
 
 
 class Protocol(ABC):

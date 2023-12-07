@@ -1,10 +1,10 @@
-from scheduler_action import SchedulerAction
+from common.scheduler_action import SchedulerAction
 from packets.packet import Packet
 
 
 class SchedulerCommand:
     def __init__(self):
-        self.__action = SchedulerAction.Connect
+        self.__action = SchedulerAction.CONNECT
         self.__state: (Packet, None) = None
 
     @property

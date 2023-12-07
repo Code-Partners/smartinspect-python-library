@@ -3,7 +3,7 @@ from packets.packet import Packet
 from packets.packet_type import PacketType
 from .log_entry_type import LogEntryType
 from common.viewer_id import ViewerId
-from common.color import Color
+from common.color.color import Color
 
 
 class LogEntry(Packet):

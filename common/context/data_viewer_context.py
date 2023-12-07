@@ -1,4 +1,4 @@
-from common.text_context import TextContext
+from common.context.text_context import TextContext
 from common.viewer_id import ViewerId
 
 

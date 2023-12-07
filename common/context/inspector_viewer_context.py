@@ -1,4 +1,4 @@
-from common.value_list_viewer_context import ValueListViewerContext
+from common.context.value_list_viewer_context import ValueListViewerContext
 from common.viewer_id import ViewerId
 
 

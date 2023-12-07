@@ -1,7 +1,5 @@
-import datetime
 import socket
 import threading
-import time
 import typing
 
 from common.clock import Clock
@@ -17,8 +15,8 @@ from common.exceptions import InvalidConnectionsException, SmartInspectException
 from common.exceptions import LoadConnectionsException, LoadConfigurationException
 from common.level import Level
 from common.protocol_command import ProtocolCommand
-from common.protocol_listener import ProtocolListener
-from common.smartinspect_listener import SmartInspectListener
+from common.listener.protocol_listener import ProtocolListener
+from common.listener.smartinspect_listener import SmartInspectListener
 from configuration import Configuration
 from connections import ConnectionsParser
 from connections.connections_parser_listener import ConnectionsParserListener

@@ -9,7 +9,7 @@ from packets.process_flow import ProcessFlow
 from packets.watch import Watch
 from packets.control_command import ControlCommand
 from packets.log_entry import LogEntry
-from common.rgbacolor import RGBAColor
+from common.color.rgbacolor import RGBAColor
 
 
 class BinaryFormatter(Formatter):

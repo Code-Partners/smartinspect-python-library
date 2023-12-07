@@ -1,4 +1,4 @@
-from common.color import Color
+from common.color.color import Color
 from session.session import Session
 from common.level import Level
 

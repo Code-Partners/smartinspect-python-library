@@ -1,4 +1,4 @@
-from common.binary_context import BinaryContext
+from common.context.binary_context import BinaryContext
 from common.viewer_id import ViewerId
 
 

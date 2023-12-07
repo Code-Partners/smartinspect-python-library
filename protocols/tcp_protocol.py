@@ -3,7 +3,7 @@
 import socket
 
 from common.clock import Clock
-from common.color import Color
+from common.color.color import Color
 from common.exceptions import SmartInspectException
 from common.viewer_id import ViewerId
 from connections.builders import ConnectionsBuilder

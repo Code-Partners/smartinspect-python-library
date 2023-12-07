@@ -1,6 +1,6 @@
 from io import TextIOWrapper
 
-from common.viewer_context import ViewerContext
+from common.context.viewer_context import ViewerContext
 from common.viewer_id import ViewerId
 
 

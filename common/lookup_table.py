@@ -1,6 +1,6 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
 from common.level import Level
-from common.color import Color
+from common.color.color import Color
 
 
 class LookupTable:
