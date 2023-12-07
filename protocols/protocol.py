@@ -8,11 +8,14 @@ from common.protocol_command import ProtocolCommand
 from common.listener.protocol_listener import ProtocolListener
 from common.scheduler_action import SchedulerAction
 from connections.builders import ConnectionsBuilder
+from connections.options_parser import OptionsParser
+from connections.options_parser_event import OptionsParserEvent
+from connections.options_parser_listener import OptionsParserListener
 from packets.packet_queue import PacketQueue
 from packets.packet import Packet
 from packets.log_header import LogHeader
 from common.level import Level
-from common.exceptions import ProtocolException
+from common.exceptions import ProtocolException, SmartInspectException
 from common.events.error_event import ErrorEvent
 from common.scheduler_command import SchedulerCommand
 
@@ -35,14 +38,44 @@ class Protocol(ABC):
         self.__initialized = False
         self.__backlog_enabled = False
 
+    # def __create_options(self, options: str) -> None:
+    #     try:
+    #         parser = OptionsParser()
+    #         listener = OptionsParserListener()
+    #
+    #         def on_option(event: OptionsParserEvent):
+    #             self.__add_option(event.protocol, event.key, event.value)
+    #
+    #         listener.on_option = on_option
+    #         parser.parse(self._get_name(), options, listener)
+    #
+    #     except SmartInspectException as e:
+    #         self.__remove_options()
+    #         raise e
+
     @staticmethod
     @abstractmethod
     def _get_name() -> str:
         pass
 
     def _load_options(self) -> None:
+        # self.__level = self._get_level_option("level", Level.DEBUG)
+        # self.__caption = self._get_string_option("caption", self._get_name())
+        # self.__reconnect = self._get_boolean_option("reconnect", False)
+        # self.__reconnect_interval = self._get_timespan_option("reconnect_interval", 0)
+        #
+        # self.__backlog_enabled = self._get_boolean_option("backlog.enabled", False)
+        # self.__backlog_queue = self._get_size_option("backlog.queue", 2048)
+        # self.__backlog_flushon = self._get_level_option("backlog.flushon", Level.ERROR)
+        # self.__backlog__keepopen = self._get_boolean_option("backlog.keepopen", False)
+        #
+        # # self.__queue.set_backlog(self.__backlog_queue)
+        # self.__keep_open = not self.__backlog_enabled or self.__backlog__keepopen
+        # self.__async_enabled = self._get_boolean_option("async.enabled", False)
+        # self.__async_throttle = self._get_boolean_option("async.throttle", True)
+        # self.__async_queue = self._get_size_option("async.queue", 2048)
+        # self.__async_clear_on_disconnect = self._get_boolean_option("async.clearondisconnect", False)
         pass
-
     def _get_string_option(self, key: str, default_value: str) -> str:
         return self.__options.get_string_value(key, default_value)
 
@@ -65,8 +98,10 @@ class Protocol(ABC):
                                         ))
         return is_valid
 
-    def _build_options(self, builder):
+    def _build_options(self, builder: ConnectionsBuilder):
         pass
+        # builder.add_option("async.enabled", self.__async_enabled)
+        # builder.add_option("async.clearondisconnect", self.__async_clearondisconnect)
 
     def _internal_write_log_header(self):
         log_header: LogHeader = LogHeader()
@@ -230,8 +265,8 @@ class Protocol(ABC):
 
     def __schedule_dispatch(self, command: ProtocolCommand) -> None:
         scheduler_command = SchedulerCommand()
-        scheduler_command.set_action(SchedulerAction.DISPATCH)
-        scheduler_command.set_state(command)
+        scheduler_command.action = SchedulerAction.DISPATCH
+        scheduler_command.state = command
 
         self.__scheduler.schedule(scheduler_command)
 
@@ -256,6 +291,9 @@ class Protocol(ABC):
         # TODO full implementation (this is only a stub)
         self.__init__()
         with self.__lock:
+            # if len(options) > 0:
+            #     self.__create_options(options)
+            # self._load_options()
             self.__initialized = True
 
     def add_listener(self, listener: ProtocolListener):
@@ -295,3 +333,52 @@ class Protocol(ABC):
 
     def __do_reconnect(self) -> None:
         pass
+
+    # def __add_option(self, protocol: str, key: str, value: str) -> None:
+    #     if self.__map_option(key, value):
+    #         return
+    #     if not self._is_valid_option(key):
+    #         raise SmartInspectException(f"Option \"{key}\" is not available for protocol \"{protocol}\"")
+    #
+    #     self.__options.put(key, value)
+    #
+    # def __map_option(self, key: str, value: str) -> bool:
+    #     if key == "backlog":
+    #         self.__options.put(key, value)
+    #         backlog = self.__options.get_size_value("backlog", 0)
+    #
+    #         if backlog > 0:
+    #             self.__options.add("backlog.enabled", "true")
+    #             self.__options.add("backlog.queue", value)
+    #         else:
+    #             self.__options.add("backlog.enabled", "false")
+    #             self.__options.add("backlog.queue", "0")
+    #
+    #             return True
+    #
+    #     if key == "flushon":
+    #         self.__options.put(key, value)
+    #         self.__options.add("backlog.flushon", value)
+    #         return True
+    #
+    #     if key == "keepopen":
+    #         self.__options.put(key, value)
+    #         self.__options.add("backlog.keepopen", value)
+    #         return True
+    #
+    #     return False
+    #
+    # def __remove_options(self) -> None:
+    #     self.__options.clear()
+    #
+    # def _get_level_option(self, key: str, default_value: Level) -> Level:
+    #     return self.__options.get_level_value(key, default_value)
+    #
+    # def _get_boolean_option(self, key: str, default_value: bool) -> bool:
+    #     return self.__options.get_boolean_value(key, default_value)
+    #
+    # def _get_timespan_option(self, key: str, default_value: int) -> int:
+    #     return self.__options.get_timespan_value(key, default_value)
+    #
+    # def _get_size_option(self, key: str, default_value: int) -> int:
+    #     return self.__options.get_size_value(key, default_value)
