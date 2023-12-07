@@ -132,3 +132,82 @@ class LookupTable:
             return value in ("true", "1", "yes")
         else:
             return default_value
+
+    def get_size_value(self, key: str, default_value: int) -> int:
+        result = default_value * self.__KB_FACTOR
+        value = self.get_string_value(key, "")
+
+        if value != "":
+            result = self.size_to_int(value, default_value)
+
+        return result
+
+    def size_to_int(self, value: str, default_value: int) -> int:
+        if not isinstance(value, str):
+            raise TypeError("Value must be a string")
+        if not isinstance(default_value, int):
+            raise TypeError("Value must be an int")
+
+        result = default_value
+        factor = self.__KB_FACTOR
+        value = value.strip()
+
+        if len(value) >= 2:
+            unit = value[-2:].lower()
+
+            if self.__is_valid_size_unit(unit):
+                value = value[:-2].strip()
+
+                if unit == "kb":
+                    factor = self.__KB_FACTOR
+                elif unit == "mb":
+                    factor = self.__MB_FACTOR
+                elif unit == "gb":
+                    factor = self.__GB_FACTOR
+
+        if self.__is_valid_integer(value):
+            try:
+                result = factor * int(value)
+            except ValueError:
+                pass  # Return default
+
+        return result
+
+    @staticmethod
+    def __is_valid_size_unit(unit: str) -> bool:
+        return unit in ("kb", "mb", "gb")
+
+    def get_timespan_value(self, key: str, default_value: int) -> int:
+        result = default_value * self.__SECONDS_FACTOR
+        value = self.get_string_value(key, "")
+
+        if value != "":
+            factor = self.__SECONDS_FACTOR
+            value = value.strip()
+
+            if len(value) >= 1:
+                unit = value[-1].lower()
+
+                if self.__is_valid_timespan_unit(unit):
+                    value = value[:-1].strip()
+
+                    if unit == "s":
+                        factor = self.__SECONDS_FACTOR
+                    elif unit == "m":
+                        factor = self.__MINUTES_FACTOR
+                    elif unit == "h":
+                        factor = self.__HOURS_FACTOR
+                    elif unit == "d":
+                        factor = self.__DAYS_FACTOR
+
+            if self.__is_valid_integer(value):
+                try:
+                    result = factor * int(value)
+                except ValueError:
+                    pass  # Return default
+
+        return result
+
+    @staticmethod
+    def __is_valid_timespan_unit(unit: str) -> bool:
+        return unit in ("s", "m", "h", "d")
