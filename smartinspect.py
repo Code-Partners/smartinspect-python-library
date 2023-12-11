@@ -90,8 +90,8 @@ class SmartInspect:
         # does it really do _what is expected_?
         with self.__lock:
             for protocol in self.__protocols:
-                protocol.set_appname(self.__appname)
-                protocol.set_hostname(self.__hostname)
+                protocol.appname = self.__appname
+                protocol.hostname = self.__hostname
 
     @property
     def level(self) -> Level:
@@ -178,8 +178,8 @@ class SmartInspect:
         if protocol.is_asynchronous():
             self.__is_multithreaded = True
 
-        protocol.set_hostname(self.__hostname)
-        protocol.set_appname(self.__appname)
+        protocol.hostname = self.__hostname
+        protocol.appname = self.__appname
 
     def load_connections(self, filename: str, do_not_enable: bool = False):
         if not isinstance(filename, str):
@@ -340,7 +340,7 @@ class SmartInspect:
         elif isinstance(session, Session):
             session = session
         else:
-            raise TypeError("session paramter must be a string (session name) or a Session instance")
+            raise TypeError("session parameter must be a string (session name) or a Session instance")
 
         self.__sessions.add(session, store)
         return session
