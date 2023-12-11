@@ -9,7 +9,7 @@ class LogHeader(Packet):
 
     def __init__(self):
         super().__init__()
-        self.app_name: str = ""
+        self.appname: str = ""
         self.hostname: str = ""
 
     @property
@@ -18,7 +18,7 @@ class LogHeader(Packet):
 
     @property
     def content(self):
-        return f"hostname={self.__hostname}\r\nappname={self.__app_name}\r\n"
+        return f"hostname={self.__hostname}\r\nappname={self.__appname}\r\n"
 
     @property
     def hostname(self):
@@ -29,12 +29,12 @@ class LogHeader(Packet):
         self.__hostname = hostname
 
     @property
-    def app_name(self):
-        return self.__app_name
+    def appname(self):
+        return self.__appname
 
-    @app_name.setter
-    def app_name(self, app_name: str) -> None:
-        self.__app_name = app_name
+    @appname.setter
+    def appname(self, appname: str) -> None:
+        self.__appname = appname
 
     @property
     def packet_type(self) -> PacketType:
