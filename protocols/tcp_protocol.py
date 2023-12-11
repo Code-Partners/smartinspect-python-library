@@ -31,8 +31,7 @@ class TcpProtocol(Protocol):
         self.__socket = None
         self.__stream = None
 
-    @staticmethod
-    def _get_name() -> str:
+    def _get_name(self) -> str:
         return "tcp"
 
     def _is_valid_option(self, option_name: str) -> bool:
