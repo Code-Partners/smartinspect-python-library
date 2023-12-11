@@ -1,4 +1,4 @@
-from common.scheduler_action import SchedulerAction
+from protocols.scheduler_action import SchedulerAction
 from packets.packet import Packet
 
 
@@ -28,7 +28,7 @@ class SchedulerCommand:
 
     @property
     def size(self) -> int:
-        if self.__action != SchedulerAction.WritePacket:
+        if self.__action != SchedulerAction.WRITE_PACKET:
             return 0
 
         if self.__state is not None:
