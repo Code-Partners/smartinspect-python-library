@@ -156,40 +156,54 @@ class Session:
         log_entry.data = data
         self.parent.send_log_entry(log_entry)
 
-    def log_separator(self, level: (Level, None) = None) -> None:
-        if level is None:
-            level = self.parent.default_level
+    def log_separator(self, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
             self.__send_log_entry(level, None, LogEntryType.SEPARATOR, ViewerId.NO_VIEWER)
 
-    def reset_call_stack(self, level: (Level, None) = None) -> None:
-        if level is None:
-            level = self.parent.default_level
-            if self.is_on_level(level):
-                self.__send_log_entry(level, None, LogEntryType.RESET_CALLSTACK, ViewerId.NO_VIEWER)
-
-    def enter_method(self, method_name: str, *args, instance: (object, None) = None,
-                     level: (Level, None) = None) -> None:
-        if not isinstance(method_name, str):
-            raise TypeError('Method name must be a string')
-
-        if level is None:
-            level = self.parent.default_level
+    def reset_call_stack(self, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            if args:
-                try:
-                    method_name = method_name.format(*args)
-                except Exception as e:
-                    self.__log_internal_error(f"enter_method {e.args[0]}")
-                    return
-            if instance:
-                class_name = instance.__class__.__name__
-                method_name = f"{class_name}.{method_name}"
+            self.__send_log_entry(level, None, LogEntryType.RESET_CALLSTACK, ViewerId.NO_VIEWER)
+
+    def enter_method(self, method_name: str, *args, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+
+        if self.is_on_level(level):
+
+            try:
+                if not isinstance(method_name, str):
+                    raise TypeError('Method name must be a string')
+                method_name = method_name.format(*args, **kwargs)
+
+                instance = kwargs.get("instance")
+                if instance is not None:
+                    class_name = instance.__class__.__name__
+                    method_name = f"{class_name}.{method_name}"
+            except Exception as e:
+                return self.__process_internal_error(e)
 
             self.__send_log_entry(level, method_name, LogEntryType.ENTER_METHOD, ViewerId.TITLE)
             self.__send_process_flow(level, method_name, ProcessFlowType.ENTER_METHOD)
+
+    def __process_internal_error(self, e: Exception) -> None:
+        tb = e.__traceback__
+        calling_method_name = traceback.extract_tb(tb)[-1].name
+
+        exc_message = getattr(e, "message", repr(e))
+        return self.__log_internal_error(f"{calling_method_name}: {exc_message}")
+
+    def __get_level(self, **kwargs):
+        level = kwargs.get("level")
+
+        if level is None:
+            return self.parent.default_level
+        if not isinstance(level, Level):
+            self.__log_internal_error("level must be a Level")
+
+        return level
 
     def leave_method(self, method_name: str, *args, instance: (object, None) = None,
                      level: (Level, None) = None) -> None:
