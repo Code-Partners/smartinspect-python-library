@@ -16,8 +16,8 @@ class LogEntry(Packet):
         self.viewer_id = viewer_id
         self.thread_id = super().thread_id
         self.process_id = self.PROCESS_ID
-        self.data = bytearray()
-        self.app_name = ""
+        self.data = b""
+        self.appname = ""
         self.session_name = ""
         self.title = ""
         self.hostname = ""
@@ -27,7 +27,7 @@ class LogEntry(Packet):
     @property
     def size(self) -> int:
         result = self.HEADER_SIZE + \
-                 self._get_string_size(self.__app_name) + \
+                 self._get_string_size(self.__appname) + \
                  self._get_string_size(self.__session_name) + \
                  self._get_string_size(self.__title) + \
                  self._get_string_size(self.__hostname) + \
@@ -39,12 +39,12 @@ class LogEntry(Packet):
         return PacketType.LOG_ENTRY
 
     @property
-    def app_name(self) -> str:
-        return self.__app_name
+    def appname(self) -> str:
+        return self.__appname
 
-    @app_name.setter
-    def app_name(self, app_name: str) -> None:
-        self.__app_name = app_name
+    @appname.setter
+    def appname(self, appname: str) -> None:
+        self.__appname = appname
 
     @property
     def session_name(self) -> str:
@@ -121,7 +121,7 @@ class LogEntry(Packet):
         return self.__timestamp
 
     @timestamp.setter
-    def timestamp(self, timestamp: float) -> None:
+    def timestamp(self, timestamp: int) -> None:
         self.__timestamp = timestamp
 
     @property
