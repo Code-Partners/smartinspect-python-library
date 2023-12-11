@@ -1,4 +1,7 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
+from typing import Optional
+
+from common.file_rotate import FileRotate
 from common.level import Level
 from common.color.color import Color
 
@@ -146,7 +149,7 @@ class LookupTable:
         if not isinstance(value, str):
             raise TypeError("Value must be a string")
         if not isinstance(default_value, int):
-            raise TypeError("Value must be an int")
+            raise TypeError("Default value must be an int")
 
         result = default_value
         factor = self.__KB_FACTOR
@@ -211,3 +214,49 @@ class LookupTable:
     @staticmethod
     def __is_valid_timespan_unit(unit: str) -> bool:
         return unit in ("s", "m", "h", "d")
+
+    def get_rotate_value(self, key: str, default_value: FileRotate) -> FileRotate:
+        value = self.get_string_value(key, "").lower().strip()
+        if not isinstance(default_value, FileRotate):
+            raise TypeError("default_value must be a FileRotate")
+
+        rotate_values = {
+            "none": FileRotate.NO_ROTATE,
+            "hourly": FileRotate.HOURLY,
+            "daily": FileRotate.DAILY,
+            "weekly": FileRotate.WEEKLY,
+            "monthly": FileRotate.MONTHLY
+        }
+
+        return rotate_values.get(value, default_value)
+
+    def get_bytes_value(self, key: str, size: int, default_value: (bytes, bytearray)) -> (bytes, bytearray):
+        value: str = self.get_string_value(key, "")
+
+        if not isinstance(default_value, bytes) and not isinstance(default_value, bytearray):
+            raise TypeError("default_value must be a bytes or bytearray")
+        if value == "":
+            return default_value
+
+        byte_value = self.__convert_unicode_value(value.strip())
+
+        if byte_value is None:
+            return default_value  # Invalid hex format
+        elif len(byte_value) == size:
+            return byte_value
+
+        result = bytearray(size)
+
+        if len(byte_value) > size:
+            result[:size] = byte_value[:size]
+        else:
+            result[:len(byte_value)] = byte_value
+
+        return result
+
+    @staticmethod
+    def __convert_unicode_value(value: str) -> Optional[bytes]:
+        try:
+            return value.encode('utf-8')
+        except UnicodeEncodeError:
+            return None
