@@ -1,0 +1,2 @@
+class SchedulerQueue:
+    pass
