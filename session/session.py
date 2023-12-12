@@ -205,290 +205,262 @@ class Session:
 
         return level
 
-    def leave_method(self, method_name: str, *args, instance: (object, None) = None,
-                     level: (Level, None) = None) -> None:
-        if not isinstance(method_name, str):
-            raise TypeError('Method name must be a string')
-
-        if level is None:
-            level = self.parent.default_level
-
+    def leave_method(self, method_name: str, *args, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
         if self.is_on_level(level):
-            if args:
-                try:
-                    method_name = method_name.format(*args)
-                except Exception as e:
-                    return self.__log_internal_error(f"leave_method {e.args[0]}")
-            if instance:
-                class_name = instance.__class__.__name__
-                method_name = f"{class_name}.{method_name}"
+
+            try:
+                if not isinstance(method_name, str):
+                    raise TypeError('Method name must be a string')
+                method_name = method_name.format(*args)
+                instance = kwargs.get("instance")
+                if instance is not None:
+                    class_name = instance.__class__.__name__
+                    method_name = f"{class_name}.{method_name}"
+            except Exception as e:
+                return self.__process_internal_error(e)
 
             self.__send_log_entry(level, method_name, LogEntryType.LEAVE_METHOD, ViewerId.TITLE)
             self.__send_process_flow(level, method_name, ProcessFlowType.LEAVE_METHOD)
 
-    def enter_thread(self, thread_name: str, *args, level: (Level, None) = None) -> None:
-        if not isinstance(thread_name, str):
-            raise TypeError('Thread name must be a string')
-
-        if level is None:
-            level = self.parent.default_level
+    def enter_thread(self, thread_name: str, *args, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            if args:
-                try:
-                    thread_name = thread_name.format(*args)
-                except Exception as e:
-                    return self.__log_internal_error(f"enter_thread {e.args[0]}")
+            try:
+                if not isinstance(thread_name, str):
+                    raise TypeError('Thread name must be a string')
+
+                thread_name = thread_name.format(*args, **kwargs)
+            except Exception as e:
+                return self.__process_internal_error(e)
 
             self.__send_process_flow(level, thread_name, ProcessFlowType.ENTER_THREAD)
 
-    def leave_thread(self, thread_name: str, *args, level: (Level, None) = None) -> None:
-        if not isinstance(thread_name, str):
-            raise TypeError('Thread name must be a string')
-
-        if level is None:
-            level = self.parent.default_level
+    def leave_thread(self, thread_name: str, *args, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            if args:
-                try:
-                    thread_name = thread_name.format(*args)
-                except Exception as e:
-                    return self.__log_internal_error(f"leave_thread {e.args[0]}")
+            try:
+                if not isinstance(thread_name, str):
+                    raise TypeError('Thread name must be a string')
+                thread_name = thread_name.format(*args, **kwargs)
+            except Exception as e:
+                return self.__process_internal_error(e)
 
             self.__send_process_flow(level, thread_name, ProcessFlowType.LEAVE_THREAD)
 
-    def enter_process(self, process_name: str, *args, level: (Level, None) = None) -> None:
-        if not isinstance(process_name, str):
-            raise TypeError('Process name must be a string')
-
-        if level is None:
-            level = self.parent.default_level
+    def enter_process(self, process_name: str = "", *args, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            if process_name == "":
-                process_name = self.parent.appname
-            if args:
-                try:
-                    process_name = process_name.format(*args)
-                except Exception as e:
-                    return self.__log_internal_error(f"enter_process {e.args[0]}")
+            try:
+                if not isinstance(process_name, str):
+                    raise TypeError('Process name must be a string')
+                if process_name == "":
+                    process_name = self.parent.appname
+                process_name = process_name.format(*args, **kwargs)
+            except Exception as e:
+                return self.__process_internal_error(e)
 
             self.__send_process_flow(level, process_name, ProcessFlowType.ENTER_PROCESS)
             self.__send_process_flow(level, "Main Thread", ProcessFlowType.ENTER_THREAD)
 
-    def leave_process(self, process_name: str, *args, level: (Level, None) = None) -> None:
-        if not isinstance(process_name, str):
-            raise TypeError('Process name must be a string')
-
-        if level is None:
-            level = self.parent.default_level
+    def leave_process(self, process_name: str = "", *args, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            if process_name == "":
-                process_name = self.parent.appname
-            if args:
-                try:
-                    process_name = process_name.format(*args)
-                except Exception as e:
-                    return self.__log_internal_error(f"leave_process {e.args[0]}")
+            try:
+                if not isinstance(process_name, str):
+                    raise TypeError('Process name must be a string')
+                if process_name == "":
+                    process_name = self.parent.appname
+                process_name = process_name.format(*args, **kwargs)
+            except Exception as e:
+                return self.__process_internal_error(e)
 
             self.__send_process_flow(level, "Main Thread", ProcessFlowType.LEAVE_THREAD)
             self.__send_process_flow(level, process_name, ProcessFlowType.LEAVE_PROCESS)
 
-    def log_colored(self, color: Color, title: str, *args, level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError('Title must be a string')
-        if not isinstance(color, Color):
-            raise TypeError('color must be a Color')
-        if level is None:
-            level = self.parent.default_level
+    def log_colored(self, color: Color, title: str, *args, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+
         if self.is_on_level(level):
-            if args:
-                try:
-                    title = title.format(*args)
-                except Exception as e:
-                    return self.__log_internal_error(f"log_colored {e.args[0]}")
+            try:
+                if not isinstance(title, str):
+                    raise TypeError('Title must be a string')
+                if not isinstance(color, Color):
+                    raise TypeError('color must be a Color')
+                title = title.format(*args, **kwargs)
+            except Exception as e:
+                return self.__process_internal_error(e)
 
             self.__send_log_entry(level, title, LogEntryType.MESSAGE, ViewerId.TITLE, color, None)
 
-    def log_debug(self, title: str, *args) -> None:
-        if not isinstance(title, str):
-            raise TypeError('Title must be a string')
-
+    def log_debug(self, title: str, *args, **kwargs) -> None:
         if self.is_on_level(Level.DEBUG):
-            if args:
-                try:
-                    title = title.format(*args)
-                except Exception as e:
-                    return self.__log_internal_error(f"log_debug {e.args[0]}")
+            try:
+                if not isinstance(title, str):
+                    raise TypeError('Title must be a string')
+                title = title.format(*args, **kwargs)
+            except Exception as e:
+                return self.__process_internal_error(e)
             self.__send_log_entry(Level.DEBUG, title, LogEntryType.DEBUG, ViewerId.TITLE)
 
-    def log_verbose(self, title: str, *args) -> None:
-        if not isinstance(title, str):
-            raise TypeError('Title must be a string')
-
+    def log_verbose(self, title: str, *args, **kwargs) -> None:
         if self.is_on_level(Level.VERBOSE):
-            if args:
-                try:
-                    title = title.format(*args)
-                except Exception as e:
-                    return self.__log_internal_error(f"log_verbose {e.args[0]}")
+            try:
+                if not isinstance(title, str):
+                    raise TypeError('Title must be a string')
+                title = title.format(*args, **kwargs)
+            except Exception as e:
+                return self.__process_internal_error(e)
             self.__send_log_entry(Level.VERBOSE, title, LogEntryType.VERBOSE, ViewerId.TITLE)
 
-    def log_message(self, title: str, *args) -> None:
-        if not isinstance(title, str):
-            raise TypeError("Title must be a string")
-
+    def log_message(self, title: str, *args, **kwargs) -> None:
         if self.is_on_level(Level.MESSAGE):
-            if args and isinstance(title, str):
-                try:
-                    title = title.format(*args)
-                except Exception as e:
-                    return self.__log_internal_error(f"log_message {e.args[0]}")
+            try:
+                if not isinstance(title, str):
+                    raise TypeError("Title must be a string")
+                title = title.format(*args, **kwargs)
+            except Exception as e:
+                return self.__process_internal_error(e)
             self.__send_log_entry(Level.MESSAGE, title, LogEntryType.MESSAGE, ViewerId.TITLE)
 
-    def log_warning(self, title: str, *args) -> None:
-        if not isinstance(title, str):
-            raise TypeError("Title must be a string")
-
+    def log_warning(self, title: str, *args, **kwargs) -> None:
         if self.is_on_level(Level.WARNING):
-            if args:
-                try:
-                    title = title.format(*args)
-                except Exception as e:
-                    return self.__log_internal_error(f"log_warning {e.args[0]}")
+            try:
+                if not isinstance(title, str):
+                    raise TypeError("Title must be a string")
+                title = title.format(*args, **kwargs)
+            except Exception as e:
+                return self.__process_internal_error(e)
             self.__send_log_entry(Level.WARNING, title, LogEntryType.WARNING, ViewerId.TITLE)
 
-    def log_error(self, title: str, *args) -> None:
-        if not isinstance(title, str):
-            raise TypeError("Title must be a string ")
-
+    def log_error(self, title: str, *args, **kwargs) -> None:
         if self.is_on_level(Level.ERROR):
-            if args:
-                try:
-                    title = title.format(*args)
-                except Exception as e:
-                    return self.__log_internal_error(f"log_error {e.args[0]}")
+            try:
+                if not isinstance(title, str):
+                    raise TypeError("Title must be a string ")
+                title = title.format(*args, **kwargs)
+            except Exception as e:
+                return self.__process_internal_error(e)
             self.__send_log_entry(Level.ERROR, title, LogEntryType.ERROR, ViewerId.TITLE)
 
-    def log_fatal(self, title: str, *args) -> None:
-        if not isinstance(title, str):
-            raise TypeError("Title must be a string or None")
-
+    def log_fatal(self, title: str, *args, **kwargs) -> None:
         if self.is_on_level(Level.FATAL):
-            if args:
-                try:
-                    title = title.format(*args)
-                except Exception as e:
-                    return self.__log_internal_error(f"log_fatal {e.args[0]}")
+            try:
+                if not isinstance(title, str):
+                    raise TypeError("Title must be a string or None")
+                title = title.format(*args, **kwargs)
+            except Exception as e:
+                return self.__process_internal_error(e)
             self.__send_log_entry(Level.FATAL, title, LogEntryType.FATAL, ViewerId.TITLE)
 
-    def __log_internal_error(self, title: str, *args):
-        if not isinstance(title, str):
-            raise TypeError('Title must be a string')
-
+    def __log_internal_error(self, title: str, *args, **kwargs):
         if self.is_on_level(Level.ERROR):
-            if args:
-                try:
-                    title = title.format(args)
-                except Exception as e:
-                    return self.__log_internal_error(f"log_internal_error {e.args[0]}")
+            try:
+                if not isinstance(title, str):
+                    raise TypeError('Title must be a string')
+                title = title.format(args, **kwargs)
+            except Exception as e:
+                return self.__process_internal_error(e)
             self.__send_log_entry(Level.ERROR, title, LogEntryType.INTERNAL_ERROR, ViewerId.TITLE)
 
-    def add_checkpoint(self, name: str = "", details: str = "", level: (Level, None) = None) -> None:
-        if not isinstance(name, str):
-            raise TypeError("Name must be a string")
-
-        if not isinstance(details, str):
-            raise TypeError("Name must be a string")
-
-        if level is None:
-            level = self.parent.default_level
+    def add_checkpoint(self, name: str = "", details: str = "", **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            if name:
-                key = name.lower()
-                value = self.__checkpoints.get(key)
-                if value is None:
-                    value = 0
-                value += 1
-                self.__checkpoints[key] = value
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("Name must be a string")
 
-                title = name + " #" + str(value)
-                if details:
-                    title += "(" + details + ")"
+                if not isinstance(details, str):
+                    raise TypeError("Name must be a string")
 
-            else:
-                with self.__checkpoint_lock:
+                if name:
+                    key = name.lower()
+                    value = self.__checkpoints.get(key)
+                    if value is None:
+                        value = 0
+                    value += 1
+                    self.__checkpoints[key] = value
 
-                    self.__checkpoint_counter += 1
-                    counter = self.__checkpoint_counter
+                    title = name + " #" + str(value)
+                    if details:
+                        title += "(" + details + ")"
 
-                    title = f"Checkpoint #{counter}"
+                else:
+                    with self.__checkpoint_lock:
+
+                        self.__checkpoint_counter += 1
+                        counter = self.__checkpoint_counter
+
+                        title = f"Checkpoint #{counter}"
+            except Exception as e:
+                return self.__process_internal_error(e)
 
             self.__send_log_entry(level, title, LogEntryType.CHECKPOINT, ViewerId.TITLE)
 
     def reset_checkpoint(self, name: str = "") -> None:
-        if not isinstance(name, str):
-            raise TypeError("Name must be a string")
+        try:
+            if not isinstance(name, str):
+                raise TypeError("Name must be a string")
 
-        if name:
-            key = name.lower()
-            with self.__checkpoint_lock:
-                if key in self.__checkpoints:
-                    del self.__checkpoints[key]
+            if name:
+                key = name.lower()
+                with self.__checkpoint_lock:
+                    if key in self.__checkpoints:
+                        del self.__checkpoints[key]
 
-        else:
-            self.__checkpoint_counter = 0
+            else:
+                self.__checkpoint_counter = 0
 
-    def log_assert(self, condition: bool, title: str, *args):
-        if not isinstance(condition, bool):
-            raise TypeError("Condition must be a boolean")
-        if not isinstance(title, str):
-            raise TypeError("Title must be a string")
+        except Exception as e:
+            return self.__process_internal_error(e)
 
+    def log_assert(self, condition: bool, title: str, *args, **kwargs):
         if self.is_on_level(Level.ERROR):
-            if args:
-                try:
-                    title = title.format(*args)
-                except Exception as e:
-                    return self.__log_internal_error(f"log_assert {e.args[0]}")
+            try:
+                if not isinstance(condition, bool):
+                    raise TypeError("Condition must be a boolean")
+                if not isinstance(title, str):
+                    raise TypeError("Title must be a string")
+                title = title.format(*args, **kwargs)
+            except Exception as e:
+                return self.__process_internal_error(e)
             if not condition:
                 self.__send_log_entry(Level.ERROR, title, LogEntryType.ASSERT, ViewerId.TITLE)
 
-    # this is to solve the log_assigned() task with checking for null
-    def log_is_None(self, title: str, instance: object, level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("Title must be a string")
-
-        if level is None:
-            level = self.parent.default_level
-
+    def log_is_None(self, title: str, instance: object, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
         if self.is_on_level(level):
+            try:
+                if not isinstance(title, str):
+                    raise TypeError("Title must be a string")
+            except Exception as e:
+                return self.__process_internal_error(e)
+
             if instance is None:
                 self.log_message(title + " is None")
             else:
                 self.log_message(title + " is not None")
 
-    def log_conditional(self, condition: bool, title: str, *args, level: (Level, None) = None) -> None:
-        if not isinstance(condition, bool):
-            raise TypeError("Condition must be a boolean")
-        if not isinstance(title, str):
-            raise TypeError("Title must be a string")
-
-        if level is None:
-            level = self.parent.default_level
+    def log_conditional(self, condition: bool, title: str, *args, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            if condition:
-                if args:
-                    try:
-                        title = title.format(*args)
-                    except Exception as e:
-                        return self.__log_internal_error(f"log_conditional {e.args[0]}")
+            try:
+                if not isinstance(condition, bool):
+                    raise TypeError("Condition must be a boolean")
+                if not isinstance(title, str):
+                    raise TypeError("Title must be a string")
+                if condition:
+                    title = title.format(*args, **kwargs)
+            except Exception as e:
+                return self.__process_internal_error(e)
 
-                self.__send_log_entry(level, title, LogEntryType.CONDITIONAL, ViewerId.TITLE)
+            self.__send_log_entry(level, title, LogEntryType.CONDITIONAL, ViewerId.TITLE)
 
     @staticmethod
     def __to_hex(value: (int, bytes, bytearray), max_chars: int) -> str:
@@ -511,245 +483,258 @@ class Session:
         else:
             return hex_value.zfill(max_chars)
 
-    def log_bool_value(self, name: str, value: bool, level: (Level, None) = None) -> None:
-        if not isinstance(name, str):
-            raise TypeError("Name must be a string")
-        if not isinstance(value, bool):
-            raise TypeError("Value must be a boolean")
-
-        if level is None:
-            level = self.parent.default_level
+    def log_bool_value(self, name: str, value: bool, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            title = f"{name} = {['False', 'True'][value]}"
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("Name must be a string")
+                if not isinstance(value, bool):
+                    raise TypeError("Value must be a boolean")
+                title = f"{name} = {['False', 'True'][value]}"
+            except Exception as e:
+                return self.__process_internal_error(e)
+
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_str_value(self, name: str, value: str, level: (Level, None) = None) -> None:
-        if not isinstance(name, str):
-            raise TypeError("Name must be a string")
-        if not isinstance(value, str):
-            raise TypeError("Value must be a string")
-
-        if level is None:
-            level = self.parent.default_level
+    def log_str_value(self, name: str, value: str, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            title = f"{name} = \"{value}\""
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("Name must be a string")
+                if not isinstance(value, str):
+                    raise TypeError("Value must be a string")
+                title = f"{name} = \"{value}\""
+            except Exception as e:
+                return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_byte_value(self, name: str, value: (bytes, bytearray),
-                       include_hex: bool = False, level: (Level, None) = None) -> None:
-        if not isinstance(name, str):
-            raise TypeError("Name must be a string")
-        if not isinstance(value, bytes) and not isinstance(value, bytearray):
-            raise TypeError("Value must be a bytes sequence - bytes or bytearray")
-        if not isinstance(include_hex, bool):
-            raise TypeError("include_hex must be a bool")
-
-        if level is None:
-            level = self.parent.default_level
+    def log_byte_value(self, name: str, value: (bytes, bytearray), include_hex: bool = False, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            title = f"{name} = '{value}'"
-            if include_hex:
-                title += f" (0x{self.__to_hex(value, 2)})"
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("Name must be a string")
+                if not isinstance(value, bytes) and not isinstance(value, bytearray):
+                    raise TypeError("Value must be a bytes sequence - bytes or bytearray")
+                if not isinstance(include_hex, bool):
+                    raise TypeError("include_hex must be a bool")
+                title = f"{name} = '{value}'"
+                if include_hex:
+                    title += f" (0x{self.__to_hex(value, 2)})"
+            except Exception as e:
+                return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_int_value(self, name: str, value: int, include_hex: bool = False, level: (Level, None) = None) -> None:
-        if not isinstance(name, str):
-            raise TypeError("Name must be a string")
-        if not isinstance(value, int):
-            raise TypeError("Value must be an int")
-        if not isinstance(include_hex, bool):
-            raise TypeError("include_hex must be a bool")
-
-        if level is None:
-            level = self.parent.default_level
-
-        if self.is_on_level(level):
-            title = f"{name} = '{value}'"
-            if include_hex:
-                title += f" (0x{self.__to_hex(value, 16)})"
-            self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
-
-    def log_float_value(self, name: str, value: float, level: (Level, None) = None) -> None:
-        if not isinstance(name, str):
-            raise TypeError("Name must be a string")
-        if not isinstance(value, float):
-            raise TypeError("Value must be a float")
-
-        if level is None:
-            level = self.parent.default_level
-
-        if self.is_on_level(level):
-            title = f"{name} = '{value}'"
-            self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
-
-    def log_object_value(self, name: str, value: object, level: (Level, None) = None) -> None:
-        if not isinstance(name, str):
-            raise TypeError("Name must be a string")
+    def log_int_value(self, name: str, value: int, include_hex: bool = False, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if level is None:
             level = self.parent.default_level
 
         if self.is_on_level(level):
             try:
-                title = f"{name} = {str(value)}"
-                self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
+                if not isinstance(name, str):
+                    raise TypeError("Name must be a string")
+                if not isinstance(value, int):
+                    raise TypeError("Value must be an int")
+                if not isinstance(include_hex, bool):
+                    raise TypeError("include_hex must be a bool")
+                title = f"{name} = '{value}'"
+                if include_hex:
+                    title += f" (0x{self.__to_hex(value, 16)})"
             except Exception as e:
-                return self.__log_internal_error(f"log_object: {e.args[0]}")
-
-    def log_time_value(self, name: str, value: datetime.time, level: (Level, None) = None) -> None:
-        if not isinstance(name, str):
-            raise TypeError("Name must be a string")
-        if not isinstance(value, datetime.time):
-            raise TypeError("Value must be a datetime.time object")
-
-        if level is None:
-            level = self.parent.default_level
-
-        if self.is_on_level(level):
-            title = f"{name} = {str(value)}"
+                return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_datetime_value(self, name: str, value: datetime.datetime, level: (Level, None) = None) -> None:
-        if not isinstance(name, str):
-            raise TypeError("Name must be a string")
-        if not isinstance(value, datetime.datetime):
-            raise TypeError("Value must be a datetime.datetime object")
-
-        if level is None:
-            level = self.parent.default_level
+    def log_float_value(self, name: str, value: float, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            title = f"{name} = {str(value)}"
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("Name must be a string")
+                if not isinstance(value, float):
+                    raise TypeError("Value must be a float")
+                title = f"{name} = '{value}'"
+            except Exception as e:
+                return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_list_value(self, name: str, value: list, level: (Level, None) = None) -> None:
-        if not isinstance(name, str):
-            raise TypeError("Name must be a string")
-        if not isinstance(value, list):
-            raise TypeError("Value must be a list")
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            raise TypeError("Level must be a Level")
+    def log_object_value(self, name: str, value: object, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            title = f"{name} = {str(value)}"
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("Name must be a string")
+                title = f"{name} = {str(value)}"
+            except Exception as e:
+                return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_tuple_value(self, name: str, value: tuple, level: (Level, None) = None) -> None:
-        if not isinstance(name, str):
-            raise TypeError("Name must be a string")
-        if not isinstance(value, tuple):
-            raise TypeError("Value must be a tuple")
-
-        if level is None:
-            level = self.parent.default_level
+    def log_time_value(self, name: str, value: datetime.time, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            title = f"{name} = {str(value)}"
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("Name must be a string")
+                if not isinstance(value, datetime.time):
+                    raise TypeError("Value must be a datetime.time object")
+                title = f"{name} = {str(value)}"
+            except Exception as e:
+                return self.__process_internal_error(e)
+
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_set_value(self, name: str, value: set, level: (Level, None) = None) -> None:
-        if not isinstance(name, str):
-            raise TypeError("Name must be a string")
-        if not isinstance(value, set):
-            raise TypeError("Value must be a set")
-
-        if level is None:
-            level = self.parent.default_level
+    def log_datetime_value(self, name: str, value: datetime.datetime, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            title = f"{name} = {str(value)}"
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("Name must be a string")
+                if not isinstance(value, datetime.datetime):
+                    raise TypeError("Value must be a datetime.datetime object")
+                title = f"{name} = {str(value)}"
+            except Exception as e:
+                return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_dict_value(self, name: str, value: dict, level: (Level, None) = None) -> None:
-        if not isinstance(name, str):
-            raise TypeError("Name must be a string")
-        if not isinstance(value, dict):
-            raise TypeError("Value must be a dict")
-
-        if level is None:
-            level = self.parent.default_level
+    def log_list_value(self, name: str, value: list, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            title = f"{name} = {str(value)}"
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("Name must be a string")
+                if not isinstance(value, list):
+                    raise TypeError("Value must be a list")
+                title = f"{name} = {str(value)}"
+            except Exception as e:
+                return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_complex_value(self, name: str, value: complex, level: (Level, None) = None) -> None:
-        if not isinstance(name, str):
-            raise TypeError("Name must be a string")
-        if not isinstance(value, complex):
-            raise TypeError("Value must be a complex")
-
-        if level is None:
-            level = self.parent.default_level
+    def log_tuple_value(self, name: str, value: tuple, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            title = f"{name} = {str(value)}"
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("Name must be a string")
+                if not isinstance(value, tuple):
+                    raise TypeError("Value must be a tuple")
+                title = f"{name} = {str(value)}"
+            except Exception as e:
+                return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_fraction_value(self, name: str, value: fractions.Fraction, level: (Level, None) = None) -> None:
-        if not isinstance(name, str):
-            raise TypeError("Name must be a string")
-        if not isinstance(value, fractions.Fraction):
-            raise TypeError("Value must be a Fraction")
-
-        if level is None:
-            level = self.parent.default_level
+    def log_set_value(self, name: str, value: set, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            title = f"{name} = {str(value)}"
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("Name must be a string")
+                if not isinstance(value, set):
+                    raise TypeError("Value must be a set")
+                title = f"{name} = {str(value)}"
+            except Exception as e:
+                return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_value(self, name: str, value, level: (Level, None) = None) -> None:
-        if not isinstance(name, str):
-            raise TypeError("Name must be a string")
+    def log_dict_value(self, name: str, value: dict, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
-        if level is None:
-            level = self.parent.default_level
+        if self.is_on_level(level):
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("Name must be a string")
+                if not isinstance(value, dict):
+                    raise TypeError("Value must be a dict")
+                title = f"{name} = {str(value)}"
+            except Exception as e:
+                return self.__process_internal_error(e)
+            self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
+
+    def log_complex_value(self, name: str, value: complex, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+
+        if self.is_on_level(level):
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("Name must be a string")
+                if not isinstance(value, complex):
+                    raise TypeError("Value must be a complex")
+
+                title = f"{name} = {str(value)}"
+            except Exception as e:
+                return self.__process_internal_error(e)
+
+            self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
+
+    def log_fraction_value(self, name: str, value: fractions.Fraction, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+
+        if self.is_on_level(level):
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("Name must be a string")
+                if not isinstance(value, fractions.Fraction):
+                    raise TypeError("Value must be a Fraction")
+                title = f"{name} = {str(value)}"
+            except Exception as e:
+                return self.__process_internal_error(e)
+            self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
+
+    def log_value(self, name: str, value, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if isinstance(value, bool):
-            return self.log_bool_value(name, value, level)
+            return self.log_bool_value(name, value, level=level)
         if isinstance(value, int):
-            return self.log_int_value(name, value, level)
+            return self.log_int_value(name, value, level=level)
         if isinstance(value, str):
-            return self.log_str_value(name, value, level)
+            return self.log_str_value(name, value, level=level)
         if isinstance(value, bytes) or isinstance(value, bytearray):
-            return self.log_byte_value(name, value, level)
+            return self.log_byte_value(name, value, level=level)
         if isinstance(value, float):
-            return self.log_float_value(name, value, level)
+            return self.log_float_value(name, value, level=level)
         if isinstance(value, datetime.time):
-            return self.log_time_value(name, value, level)
+            return self.log_time_value(name, value, level=level)
         if isinstance(value, datetime.datetime):
-            return self.log_datetime_value(name, value, level)
+            return self.log_datetime_value(name, value, level=level)
         if isinstance(value, list):
-            return self.log_list_value(name, value, level)
+            return self.log_list_value(name, value, level=level)
         if isinstance(value, object):
-            return self.log_object_value(name, value, level)
+            return self.log_object_value(name, value, level=level)
         if isinstance(value, tuple):
-            return self.log_tuple_value(name, value, level)
+            return self.log_tuple_value(name, value, level=level)
         if isinstance(value, set):
-            return self.log_set_value(name, value, level)
+            return self.log_set_value(name, value, level=level)
         if isinstance(value, dict):
-            return self.log_dict_value(name, value, level)
+            return self.log_dict_value(name, value, level=level)
         if isinstance(value, complex):
-            return self.log_complex_value(name, value, level)
+            return self.log_complex_value(name, value, level=level)
         if isinstance(value, fractions.Fraction):
-            return self.log_fraction_value(name, value, level)
+            return self.log_fraction_value(name, value, level=level)
 
-    def log_custom_context(self, title: str, logentry_type: LogEntryType,
-                           context: ViewerContext, level: (Level, None) = None) -> None:
-        if level is None:
-            level = self.parent.default_level
+    def log_custom_context(self, title: str, logentry_type: LogEntryType, context: ViewerContext, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            if not isinstance(logentry_type, LogEntryType) or not isinstance(context, ViewerContext):
-                return self.__log_internal_error("log_custom_context: Invalid arguments")
-            else:
-                self.__send_context(level, title, logentry_type, context)
+            try:
+                if not isinstance(logentry_type, LogEntryType) or not isinstance(context, ViewerContext):
+                    raise TypeError("Invalid arguments")
+            except Exception as e:
+                return self.__process_internal_error(e)
+
+            self.__send_context(level, title, logentry_type, context)
 
     def __send_context(self, level, title, logentry_type, context: ViewerContext):
         self.__send_log_entry(level, title, logentry_type, context.viewer_id, self.color, context.viewer_data)
@@ -776,80 +761,71 @@ class Session:
         watch.value = value
         self.parent.send_watch(watch)
 
-    def log_custom_text(self, title: str, text: str,
-                        log_entry_type: LogEntryType, viewer_id: ViewerId,
-                        level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("Title must be a string")
-        if not isinstance(text, str):
-            raise TypeError("Text must be a string")
-        if not isinstance(log_entry_type, LogEntryType):
-            raise TypeError("log_entry_type must be a LogEntryType")
-        if not isinstance(viewer_id, ViewerId):
-            raise TypeError("viewer_id must be a ViewerId")
-
-        if level is None:
-            level = self.parent.default_level
+    def log_custom_text(self, title: str, text: str, log_entry_type: LogEntryType,
+                        viewer_id: ViewerId, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
             context = TextContext(viewer_id)
             try:
                 try:
+                    if not isinstance(title, str):
+                        raise TypeError("Title must be a string")
+                    if not isinstance(text, str):
+                        raise TypeError("Text must be a string")
+                    if not isinstance(log_entry_type, LogEntryType):
+                        raise TypeError("log_entry_type must be a LogEntryType")
+                    if not isinstance(viewer_id, ViewerId):
+                        raise TypeError("viewer_id must be a ViewerId")
                     context.load_from_text(text)
                     self.__send_context(level, title, log_entry_type, context)
                 except Exception as e:
-                    return self.__log_internal_error(f"log_custom_text {e.args[0]}")
+                    return self.__process_internal_error(e)
             finally:
                 context.close()
 
     def log_custom_file(self, filename: str,
                         log_entry_type: LogEntryType, viewer_id: ViewerId,
-                        title: str = "", level: (Level, None) = None) -> None:
-        if not isinstance(filename, str):
-            raise TypeError("Filename must be a string")
-        if not isinstance(title, str):
-            raise TypeError("Title must be a string")
-        if not isinstance(log_entry_type, LogEntryType):
-            raise TypeError("log_entry_type must be a LogEntryType")
-        if not isinstance(viewer_id, ViewerId):
-            raise TypeError("viewer_id must be a ViewerId")
-
-        if title == "":
-            title = filename
-
-        if level is None:
-            level = self.parent.default_level
-
+                        title: str = "", **kwargs) -> None:
+        level = self.__get_level(**kwargs)
         context = BinaryContext(viewer_id)
         try:
             try:
+                if not isinstance(filename, str):
+                    raise TypeError("Filename must be a string")
+                if not isinstance(title, str):
+                    raise TypeError("Title must be a string")
+                if not isinstance(log_entry_type, LogEntryType):
+                    raise TypeError("log_entry_type must be a LogEntryType")
+                if not isinstance(viewer_id, ViewerId):
+                    raise TypeError("viewer_id must be a ViewerId")
+
+                if title == "":
+                    title = filename
                 context.load_from_file(filename)
                 self.__send_context(level, title, log_entry_type, context)
             except Exception as e:
-                exc_message = getattr(e, "message", repr(e))
-                self.__log_internal_error(f"log_custom_file: {exc_message}")
+                return self.__process_internal_error(e)
         finally:
             context.close()
 
-    def log_custom_stream(self, title: str, stream,
-                          log_entry_type: LogEntryType, viewer_id: ViewerId,
-                          level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("Title must be a string")
-        if not isinstance(log_entry_type, LogEntryType):
-            raise TypeError("log_entry_type must be a LogEntryType")
-        if not isinstance(viewer_id, ViewerId):
-            raise TypeError("viewer_id must be a ViewerId")
-
-        if level is None:
-            level = self.parent.default_level
+    def log_custom_stream(self, title: str, stream, log_entry_type: LogEntryType, viewer_id: ViewerId,
+                          **kwargs) -> None:
+        level = self.__get_level(**kwargs)
         context = BinaryContext(viewer_id)
+
         try:
             try:
+                if not isinstance(title, str):
+                    raise TypeError("Title must be a string")
+                if not isinstance(log_entry_type, LogEntryType):
+                    raise TypeError("log_entry_type must be a LogEntryType")
+                if not isinstance(viewer_id, ViewerId):
+                    raise TypeError("viewer_id must be a ViewerId")
                 context.load_from_stream(stream)
                 self.__send_context(level, title, log_entry_type, context)
             except Exception as e:
-                self.__log_internal_error(f"log_custom_context {e.args[0]}")
+                return self.__process_internal_error(e)
         finally:
             context.close()
 
@@ -857,249 +833,268 @@ class Session:
         # seems to be no sense for such a method in Python
         pass
 
-    def log_text(self, title: str, text: str, level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("Title must be a string")
-        if not isinstance(text, str):
-            raise TypeError("Text must be a string")
+    def log_text(self, title: str, text: str, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+        try:
+            if not isinstance(title, str):
+                raise TypeError("Title must be a string")
+            if not isinstance(text, str):
+                raise TypeError("Text must be a string")
+            self.log_custom_text(title, text, LogEntryType.TEXT, ViewerId.DATA, level=level)
+        except Exception as e:
+            return self.__process_internal_error(e)
 
-        if level is None:
-            level = self.parent.default_level
+    def log_text_file(self, filename: str, title: str = "", **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+        try:
+            if not isinstance(filename, str):
+                raise TypeError("filename must be a string")
+            if not isinstance(title, str):
+                raise TypeError("Title must be a string")
 
-        self.log_custom_text(title, text, LogEntryType.TEXT, ViewerId.DATA, level)
+            self.log_custom_file(filename, LogEntryType.TEXT, ViewerId.DATA, title=title, level=level)
+        except Exception as e:
+            return self.__process_internal_error(e)
 
-    def log_text_file(self, filename: str, title: str = "", level: (Level, None) = None) -> None:
-        if not isinstance(filename, str):
-            raise TypeError("filename must be a string")
-        if not isinstance(title, str):
-            raise TypeError("Title must be a string")
+    def log_text_stream(self, title: str, stream, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
-        if level is None:
-            level = self.parent.default_level
+        try:
+            if not isinstance(title, str):
+                raise TypeError("title must be a string")
+            self.log_custom_stream(title, stream, LogEntryType.TEXT, ViewerId.DATA, level=level)
+        except Exception as e:
+            return self.__process_internal_error(e)
 
-        self.log_custom_file(filename, LogEntryType.TEXT, ViewerId.DATA, title=title, level=level)
+    def log_html(self, title: str, html: str, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+        try:
+            if not isinstance(title, str):
+                raise TypeError("title must be a string")
+            if not isinstance(html, str):
+                raise TypeError("stream must be a BytesIO")
 
-    def log_text_stream(self, title: str, stream, level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("title must be a string")
+            self.log_custom_text(title, html, LogEntryType.WEBCONTENT, ViewerId.WEB, level=level)
+        except Exception as e:
+            return self.__process_internal_error(e)
 
-        if level is None:
-            level = self.parent.default_level
+    def log_html_file(self, filename: str, title: str = "", **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+        try:
+            if not isinstance(filename, str):
+                raise TypeError("filename must be a string")
+            if not isinstance(title, str):
+                raise TypeError("title must be a string")
 
-        self.log_custom_stream(title, stream, LogEntryType.TEXT, ViewerId.DATA, level)
+            self.log_custom_file(filename, LogEntryType.WEBCONTENT, ViewerId.WEB, title=title, level=level)
+        except Exception as e:
+            return self.__process_internal_error(e)
 
-    def log_html(self, title: str, html: str, level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("title must be a string")
-        if not isinstance(html, str):
-            raise TypeError("stream must be a BytesIO")
+    def log_html_stream(self, title: str, stream: io.BytesIO, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+        try:
+            if not isinstance(title, str):
+                raise TypeError("title must be a string")
+            if not isinstance(stream, io.BytesIO):
+                raise TypeError("stream must be a BytesIO")
 
-        if level is None:
-            level = self.parent.default_level
-
-        self.log_custom_text(title, html, LogEntryType.WEBCONTENT, ViewerId.WEB, level)
-
-    def log_html_file(self, filename: str, title: str = "", level: (Level, None) = None) -> None:
-        if not isinstance(filename, str):
-            raise TypeError("filename must be a string")
-        if not isinstance(title, str):
-            raise TypeError("title must be a string")
-
-        if level is None:
-            level = self.parent.default_level
-
-        self.log_custom_file(filename, LogEntryType.WEBCONTENT, ViewerId.WEB, title=title, level=level)
-
-    def log_html_stream(self, title: str, stream: io.BytesIO, level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("title must be a string")
-        if not isinstance(stream, io.BytesIO):
-            raise TypeError("stream must be a BytesIO")
-
-        if level is None:
-            level = self.parent.default_level
-
-        self.log_custom_stream(title, stream, LogEntryType.WEBCONTENT, ViewerId.WEB, level=level)
+            self.log_custom_stream(title, stream, LogEntryType.WEBCONTENT, ViewerId.WEB, level=level)
+        except Exception as e:
+            return self.__process_internal_error(e)
 
     def log_binary(self, title: str, value: (bytes, bytearray),
-                   offset: int = 0, length: int = 0, level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("Name must be a string")
-        if not isinstance(value, bytes) and not isinstance(value, bytearray):
-            raise TypeError("Value must be a bytes sequence - bytes or bytearray")
-        if not isinstance(offset, int):
-            raise TypeError("offset must be an int")
-        if not isinstance(length, int):
-            raise TypeError("length must be an int")
-
-        if level is None:
-            level = self.parent.default_level
+                   offset: int = 0, length: int = 0, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+        context = BinaryViewerContext()
 
         if self.is_on_level(level):
-            context = BinaryViewerContext()
             try:
+                if not isinstance(title, str):
+                    raise TypeError("Name must be a string")
+                if not isinstance(value, bytes) and not isinstance(value, bytearray):
+                    raise TypeError("Value must be a bytes sequence - bytes or bytearray")
+                if not isinstance(offset, int):
+                    raise TypeError("offset must be an int")
+                if not isinstance(length, int):
+                    raise TypeError("length must be an int")
                 context.append_bytes(value, offset, length)
                 self.__send_context(level, title, LogEntryType.BINARY, context)
             except Exception as e:
-                return self.__log_internal_error(f"log_custom_context {e.args[0]}")
+                return self.__process_internal_error(e)
 
-    def log_binary_file(self, filename: str, title: str = "", level: (Level, None) = None) -> None:
-        if not isinstance(filename, str):
-            raise TypeError("filename must be a string")
-        if not isinstance(title, str):
-            raise TypeError("title must be a string")
+    def log_binary_file(self, filename: str, title: str = "", **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
-        if level is None:
-            level = self.parent.default_level
+        try:
+            if not isinstance(filename, str):
+                raise TypeError("filename must be a string")
+            if not isinstance(title, str):
+                raise TypeError("title must be a string")
 
-        self.log_custom_file(filename, LogEntryType.BINARY, ViewerId.BINARY, title=title, level=level)
+            self.log_custom_file(filename, LogEntryType.BINARY, ViewerId.BINARY, title=title, level=level)
+        except Exception as e:
+            return self.__process_internal_error(e)
 
-    def log_binary_stream(self, title: str, stream: io.BytesIO, level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("title must be a string")
-        if not isinstance(stream, io.BytesIO):
-            raise TypeError("stream must be a BytesIO")
+    def log_binary_stream(self, title: str, stream: io.BytesIO, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
-        if level is None:
-            level = self.parent.default_level
+        try:
+            if not isinstance(title, str):
+                raise TypeError("title must be a string")
+            if not isinstance(stream, io.BytesIO):
+                raise TypeError("stream must be a BytesIO")
 
-        self.log_custom_stream(title, stream, LogEntryType.BINARY, ViewerId.BINARY, level=level)
+            self.log_custom_stream(title, stream, LogEntryType.BINARY, ViewerId.BINARY, level=level)
+        except Exception as e:
+            return self.__process_internal_error(e)
 
-    def log_bitmap_file(self, filename: str, title: str = "", level: (Level, None) = None) -> None:
-        if not isinstance(filename, str):
-            raise TypeError("filename must be a string")
-        if not isinstance(title, str):
-            raise TypeError("title must be a string")
+    def log_bitmap_file(self, filename: str, title: str = "", **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+        try:
+            if not isinstance(filename, str):
+                raise TypeError("filename must be a string")
+            if not isinstance(title, str):
+                raise TypeError("title must be a string")
 
-        if level is None:
-            level = self.parent.default_level
+            self.log_custom_file(filename, LogEntryType.GRAPHIC, ViewerId.BITMAP, title, level=level)
+        except Exception as e:
+            return self.__process_internal_error(e)
 
-        self.log_custom_file(filename, LogEntryType.GRAPHIC, ViewerId.BITMAP, title, level)
+    def log_bitmap_stream(self, title: str, stream, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+        try:
+            if not isinstance(title, str):
+                raise TypeError("Title must be a string")
 
-    def log_bitmap_stream(self, title: str, stream, level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("Title must be a string")
+            self.log_custom_stream(title, stream, LogEntryType.GRAPHIC, ViewerId.BITMAP, level=level)
+        except Exception as e:
+            return self.__process_internal_error(e)
 
-        if level is None:
-            level = self.parent.default_level
+    def log_jpeg_file(self, filename: str, title: str = "", **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
-        self.log_custom_stream(title, stream, LogEntryType.GRAPHIC, ViewerId.BITMAP, level)
+        try:
+            if not isinstance(filename, str):
+                raise TypeError("filename must be a string")
+            if not isinstance(title, str):
+                raise TypeError("title must be a string")
 
-    def log_jpeg_file(self, filename: str, title: str = "", level: (Level, None) = None) -> None:
-        if not isinstance(filename, str):
-            raise TypeError("filename must be a string")
-        if not isinstance(title, str):
-            raise TypeError("title must be a string")
+            self.log_custom_file(filename, LogEntryType.GRAPHIC, ViewerId.JPEG, title, level=level)
+        except Exception as e:
+            return self.__process_internal_error(e)
 
-        if level is None:
-            level = self.parent.default_level
+    def log_jpeg_stream(self, title: str, stream, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
-        self.log_custom_file(filename, LogEntryType.GRAPHIC, ViewerId.JPEG, title, level)
+        try:
+            if not isinstance(title, str):
+                raise TypeError("Title must be a string")
 
-    def log_jpeg_stream(self, title: str, stream, level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("Title must be a string")
+            self.log_custom_stream(title, stream, LogEntryType.GRAPHIC, ViewerId.JPEG, level=level)
+        except Exception as e:
+            return self.__process_internal_error(e)
 
-        if level is None:
-            level = self.parent.default_level
+    def log_ico_file(self, filename: str, title: str = "", **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+        try:
+            if not isinstance(filename, str):
+                raise TypeError("filename must be a string")
+            if not isinstance(title, str):
+                raise TypeError("title must be a string")
+            if title == "":
+                title = filename
+            self.log_custom_file(filename, LogEntryType.GRAPHIC, ViewerId.ICON, title, level=level)
+        except Exception as e:
+            return self.__process_internal_error(e)
 
-        self.log_custom_stream(title, stream, LogEntryType.GRAPHIC, ViewerId.JPEG, level)
+    def log_icon_stream(self, title: str, stream, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+        try:
+            if not isinstance(title, str):
+                raise TypeError("Title must be a string")
 
-    def log_ico_file(self, filename: str, title: str = "", level: (Level, None) = None) -> None:
-        if not isinstance(filename, str):
-            raise TypeError("filename must be a string")
-        if not isinstance(title, str):
-            raise TypeError("title must be a string")
+            self.log_custom_stream(title, stream, LogEntryType.GRAPHIC, ViewerId.ICON, level=level)
+        except Exception as e:
+            return self.__process_internal_error(e)
 
-        if level is None:
-            level = self.parent.default_level
+    def log_metafile_file(self, filename: str, title: str = "", **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+        try:
+            if not isinstance(filename, str):
+                raise TypeError("filename must be a string")
+            if not isinstance(title, str):
+                raise TypeError("title must be a string")
 
-        if title == "":
-            title = filename
-        self.log_custom_file(filename, LogEntryType.GRAPHIC, ViewerId.ICON, title, level)
+            self.log_custom_file(filename, LogEntryType.GRAPHIC, ViewerId.METAFILE, title, level=level)
+        except Exception as e:
+            return self.__process_internal_error(e)
 
-    def log_icon_stream(self, title: str, stream, level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("Title must be a string")
+    def log_metafile_stream(self, title: str, stream, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+        try:
+            if not isinstance(title, str):
+                raise TypeError("Title must be a string")
+            self.log_custom_stream(title, stream, LogEntryType.GRAPHIC, ViewerId.METAFILE, level=level)
+        except Exception as e:
+            return self.__process_internal_error(e)
 
-        if level is None:
-            level = self.parent.default_level
+    def log_sql(self, title: str, source: str, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+        try:
+            self.log_source(title, source, SourceId.SQL, level=level)
+        except Exception as e:
+            return self.__process_internal_error(e)
 
-        self.log_custom_stream(title, stream, LogEntryType.GRAPHIC, ViewerId.ICON, level)
-
-    def log_metafile_file(self, filename: str, title: str = "", level: (Level, None) = None) -> None:
-        if not isinstance(filename, str):
-            raise TypeError("filename must be a string")
-        if not isinstance(title, str):
-            raise TypeError("title must be a string")
-
-        if level is None:
-            level = self.parent.default_level
-
-        self.log_custom_file(filename, LogEntryType.GRAPHIC, ViewerId.METAFILE, title, level)
-
-    def log_metafile_stream(self, title: str, stream, level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("Title must be a string")
-
-        if level is None:
-            level = self.parent.default_level
-
-        self.log_custom_stream(title, stream, LogEntryType.GRAPHIC, ViewerId.METAFILE, level)
-
-    def log_sql(self, title: str, source: str, level: (Level, None) = None) -> None:
-        self.log_source(title, source, SourceId.SQL, level)
-
-    def log_source(self, title: str, source: str, source_id: SourceId, level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("Title must be a string")
-        if not isinstance(source, str):
-            raise TypeError("Source must be a string")
-
-        if level is None:
-            level = self.parent.default_level
-
-        if self.is_on_level(level):
-            if not isinstance(source_id, SourceId):
-                return self.__log_internal_error("source_id must be a SourceId")
-            else:
-                self.log_custom_text(title, source, LogEntryType.SOURCE, source_id.viewer_id, level)
-
-    def log_source_file(self, filename: str, source_id: SourceId, title: str = "", level: (Level, None) = None) -> None:
-        if level is None:
-            level = self.parent.default_level
-
-        if self.is_on_level(level):
-            if not isinstance(source_id, SourceId):
-                return self.__log_internal_error("log_source_file: source_id must be a SourceId")
-            else:
-                self.log_custom_file(filename, LogEntryType.SOURCE, source_id.viewer_id, title, level)
-
-    def log_source_stream(self, title: str, stream, source_id: SourceId, level: (Level, None) = None) -> None:
-        if level is None:
-            level = self.parent.default_level
+    def log_source(self, title: str, source: str, source_id: SourceId, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            if not isinstance(source_id, SourceId):
-                return self.__log_internal_error("log_source_stream: source_id must be a SourceId")
-            else:
-                self.log_custom_stream(title, stream, LogEntryType.SOURCE, source_id.viewer_id, level)
-
-    def log_object(self, title: str, instance: object, non_public: bool = False, level: (Level, None) = None) -> None:
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            raise TypeError("level must be a Level")
-        if not isinstance(non_public, bool):
-            raise TypeError("non_public must be True or False")
-
-        if self.is_on_level(level):
-            if instance is None:
-                return self.__log_internal_error("log_object: instance argument is None")
-
-            context = InspectorViewerContext()
-
             try:
+                if not isinstance(title, str):
+                    raise TypeError("Title must be a string")
+                if not isinstance(source, str):
+                    raise TypeError("Source must be a string")
+                if not isinstance(source_id, SourceId):
+                    raise TypeError("source_id must be a SourceId")
+            except Exception as e:
+                return self.__process_internal_error(e)
+            self.log_custom_text(title, source, LogEntryType.SOURCE, source_id.viewer_id, level=level)
+
+    def log_source_file(self, filename: str, source_id: SourceId, title: str = "", **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+
+        if self.is_on_level(level):
+            try:
+                if not isinstance(source_id, SourceId):
+                    raise TypeError("source_id must be a SourceId")
+            except Exception as e:
+                return self.__process_internal_error(e)
+            self.log_custom_file(filename, LogEntryType.SOURCE, source_id.viewer_id, title, level=level)
+
+    def log_source_stream(self, title: str, stream, source_id: SourceId, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+
+        if self.is_on_level(level):
+            try:
+                if not isinstance(source_id, SourceId):
+                    raise TypeError("source_id must be a SourceId")
+            except Exception as e:
+                return self.__process_internal_error(e)
+            self.log_custom_stream(title, stream, LogEntryType.SOURCE, source_id.viewer_id, level=level)
+
+    def log_object(self, title: str, instance: object, non_public: bool = False, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+        context = InspectorViewerContext()
+
+        if self.is_on_level(level):
+            try:
+                if not isinstance(level, Level):
+                    raise TypeError("level must be a Level")
+                if not isinstance(non_public, bool):
+                    raise TypeError("non_public must be True or False")
+                if instance is None:
+                    raise TypeError("instance argument is None")
+
                 # we get field names from the instance
                 instance_fields = set(self.__get_fields(instance))
 
@@ -1138,8 +1133,7 @@ class Session:
 
                 self.__send_context(level, title, LogEntryType.OBJECT, context)
             except Exception as e:
-                exc_message = getattr(e, "message", repr(e))
-                self.__log_internal_error(f"log_object: {exc_message}")
+                return self.__process_internal_error(e)
 
     @staticmethod
     def __get_fields(cls):
@@ -1153,21 +1147,21 @@ class Session:
 
     def log_exception(self, exception: BaseException, title: str = ""):
         if self.is_on_level(Level.ERROR):
-            if not isinstance(exception, BaseException):
-                return self.__log_internal_error("log_exception: exception must be an Exception")
-            if not isinstance(title, str):
-                return self.__log_internal_error("log_exception: title must be a string")
-
-            if title == "":
-                title = getattr(exception, "message", repr(exception))
-
             context = DataViewerContext()
             try:
                 try:
+                    if not isinstance(exception, BaseException):
+                        raise TypeError("exception must be an Exception")
+                    if not isinstance(title, str):
+                        raise TypeError("title must be a string")
+
+                    if title == "":
+                        title = getattr(exception, "message", repr(exception))
+
                     file = io.StringIO()
                     try:
                         raise exception
-                    except BaseException:
+                    except Exception:
                         traceback.print_exc(file=file)
 
                     context.load_from_text(file.getvalue())
@@ -1175,67 +1169,58 @@ class Session:
                     del file
 
                 except Exception as e:
-                    exc_message = getattr(e, "message", repr(e))
-                    self.__log_internal_error(f"log_exception: {exc_message}")
+                    return self.__process_internal_error(e)
             finally:
                 context.close()
 
-    def log_current_thread(self, title: str = "", level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("title must be a string")
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            raise TypeError("level must be a Level")
+    def log_current_thread(self, title: str = "", **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            current_thread = threading.current_thread()
-            if title == "":
-                if current_thread.name:
-                    title = f"Current thread: {current_thread.name}"
-                else:
-                    title = "Current thread"
-            self.log_thread(title, current_thread, level)
+            try:
+                if not isinstance(title, str):
+                    raise TypeError("title must be a string")
+                current_thread = threading.current_thread()
+                if title == "":
+                    if current_thread.name:
+                        title = f"Current thread: {current_thread.name}"
+                    else:
+                        title = "Current thread"
+                self.log_thread(title, current_thread, level=level)
+            except Exception as e:
+                return self.__process_internal_error(e)
 
-    def log_thread(self, title: str, thread: threading.Thread, level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("title must be a string")
-        if not isinstance(thread, threading.Thread):
-            return self.__log_internal_error("log_thread: thread argument is not a threading.Thread")
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            raise TypeError("level must be a Level")
+    def log_thread(self, title: str, thread: threading.Thread, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
             context = ValueListViewerContext()
             try:
                 try:
+                    if not isinstance(title, str):
+                        raise TypeError("title must be a string")
+                    if not isinstance(thread, threading.Thread):
+                        raise TypeError("thread argument is not a threading.Thread")
                     context.append_key_value("Name", thread.name)
                     context.append_key_value("Ident", thread.ident)
                     context.append_key_value("Alive", thread.is_alive())
                     context.append_key_value("Daemon", thread.daemon)
                     self.__send_context(level, title, LogEntryType.TEXT, context)
                 except Exception as e:
-                    exc_message = getattr(e, "message", repr(e))
-                    self.__log_internal_error(f"log_thread: {exc_message}")
+                    return self.__process_internal_error(e)
             finally:
                 context.close()
 
-    def log_iterable(self, iterable, title: str = "", level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("title must be a string")
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            raise TypeError("level must be a Level")
+    def log_iterable(self, iterable, title: str = "", **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
             context = ListViewerContext()
-
             try:
-                it = iter(iterable)
 
+                if not isinstance(title, str):
+                    raise TypeError("title must be a string")
+                it = iter(iterable)
                 while True:
                     try:
                         nxt = next(it)
@@ -1247,31 +1232,27 @@ class Session:
 
                     except StopIteration:
                         break
-
                 if title == "":
                     title = "iterable"
                 self.__send_context(level, title, LogEntryType.TEXT, context)
             except Exception as e:
-                exc_message = getattr(e, "message", repr(e))
-                self.__log_internal_error(f"log_iterable: {exc_message}")
+                return self.__process_internal_error(e)
 
             finally:
                 context.close()
 
-    def log_dict(self, dictionary: dict, title: str = "", level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("title must be a string")
-        if not isinstance(title, str):
-            raise TypeError("dictionary must be a dict")
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            raise TypeError("level must be a Level")
+    def log_dict(self, dictionary: dict, title: str = "", **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
             context = ValueListViewerContext()
 
             try:
+                if not isinstance(title, str):
+                    raise TypeError("title must be a string")
+                if not isinstance(title, str):
+                    raise TypeError("dictionary must be a dict")
+
                 for elem in dictionary:
                     key = str(elem)
 
@@ -1285,8 +1266,7 @@ class Session:
                     title = "dictionary"
                 self.__send_context(level, title, LogEntryType.TEXT, context)
             except Exception as e:
-                exc_message = getattr(e, "message", repr(e))
-                self.__log_internal_error(f"log_dictionary: {exc_message}")
+                return self.__process_internal_error(e)
 
             finally:
                 context.close()
@@ -1302,38 +1282,34 @@ class Session:
                 context.append_line(frame.strip())
             return context
 
-    def log_current_stacktrace(self, title: str = "", level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("title must be a string")
-        if not isinstance(title, str):
-            raise TypeError("dictionary must be a dict")
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            raise TypeError("level must be a Level")
+    def log_current_stacktrace(self, title: str = "", **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
             context = self.__build_stacktrace()
-            if title == "":
-                title = "Current stack trace"
             try:
+                if not isinstance(title, str):
+                    raise TypeError("title must be a string")
+                if not isinstance(title, str):
+                    raise TypeError("dictionary must be a dict")
+                if title == "":
+                    title = "Current stack trace"
+
                 self.__send_context(level, title, LogEntryType.TEXT, context)
+            except Exception as e:
+                return self.__process_internal_error(e)
             finally:
                 context.close()
 
-    def log_system(self, title: str = "System information", level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("title must be a string")
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            raise TypeError("level must be a Level")
+    def log_system(self, title: str = "System information", **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            # context = ValueListViewerContext()
             context = InspectorViewerContext()
             try:
                 try:
+                    if not isinstance(title, str):
+                        raise TypeError("title must be a string")
                     context.start_group('Operating System')
                     context.append_key_value('Name', platform.system())
                     context.append_key_value('Version', platform.version())
@@ -1350,30 +1326,23 @@ class Session:
 
                     self.__send_context(level, title, LogEntryType.SYSTEM, context)
                 except Exception as e:
-                    exc_message = getattr(e, "message", repr(e))
-                    self.__log_internal_error(f"log_dictionary: {exc_message}")
-
+                    return self.__process_internal_error(e)
             finally:
                 context.close()
 
-    def log_cursor_metadata(self, cursor, title: str = "", level: (Level, None) = None) -> None:
-        if not self.__is_cursor(cursor):
-            raise TypeError("cursor does not pass compliance check with Python DB API 2.0")
-        if not isinstance(title, str):
-            raise TypeError("title must be a string")
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            raise TypeError("level must be a Level")
+    def log_cursor_metadata(self, cursor, title: str = "", **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            if not cursor.description:
-                self.__log_internal_error("log_cursor_data: cursor is empty")
-                return
-
             context = TableViewerContext()
             try:
                 try:
+                    if not self.__is_cursor(cursor):
+                        raise TypeError("cursor does not pass compliance check with Python DB API 2.0")
+                    if not isinstance(title, str):
+                        raise TypeError("title must be a string")
+                    if not cursor.description:
+                        raise ValueError("cursor is empty")
                     description = cursor.description
                     context.begin_row()
                     for column in description:
@@ -1388,28 +1357,25 @@ class Session:
                     context.end_row()
                     self.__send_context(level, title, LogEntryType.DATABASE_STRUCTURE, context)
                 except Exception as e:
-                    exc_message = getattr(e, "message", repr(e))
-                    self.__log_internal_error(f"log_cursor_data: {exc_message}")
+                    return self.__process_internal_error(e)
             finally:
                 context.close()
 
-    def log_cursor_data(self, cursor, title: str = "Table data", level: (Level, None) = None) -> None:
-        if not self.__is_cursor(cursor):
-            raise TypeError("cursor does not pass compliance check with Python DB API 2.0")
-        if not isinstance(title, str):
-            raise TypeError("title must be a string")
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            raise TypeError("level must be a Level")
+    def log_cursor_data(self, cursor, title: str = "Table data", **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            if not cursor.description:
-                self.__log_internal_error("log_cursor_data: cursor is empty")
-                return
             context = TableViewerContext()
             try:
                 try:
+
+                    if not self.__is_cursor(cursor):
+                        raise TypeError("cursor does not pass compliance check with Python DB API 2.0")
+                    if not isinstance(title, str):
+                        raise TypeError("title must be a string")
+                    if not cursor.description:
+                        raise ValueError("cursor is empty")
+
                     description = cursor.description
 
                     context.begin_row()
@@ -1428,8 +1394,7 @@ class Session:
                     self.__send_context(level, title, LogEntryType.DATABASE_STRUCTURE, context)
 
                 except Exception as e:
-                    exc_message = getattr(e, "message", repr(e))
-                    self.__log_internal_error(f"log_cursor_data: {exc_message}")
+                    return self.__process_internal_error(e)
             finally:
                 context.close()
 
@@ -1454,17 +1419,16 @@ class Session:
 
         return True
 
-    def log_string(self, title: str, string: str, level: (Level, None) = None) -> None:
-        if not isinstance(title, str):
-            raise TypeError("Title must be a string")
-        if not isinstance(string, str):
-            raise TypeError("Text must be a string")
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            raise TypeError("level must be a Level")
-
-        self.log_text(title, string, level)
+    def log_string(self, title: str, string: str, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+        try:
+            if not isinstance(title, str):
+                raise TypeError("Title must be a string")
+            if not isinstance(string, str):
+                raise TypeError("Text must be a string")
+            self.log_text(title, string, level=level)
+        except Exception as e:
+            return self.__process_internal_error(e)
 
     def clear_log(self) -> None:
         if self.is_on:
@@ -1499,246 +1463,219 @@ class Session:
 
         return value
 
-    def inc_counter(self, name: str, level: Optional[Level] = None) -> None:
-        if not isinstance(name, str):
-            self.__log_internal_error("inc_counter: name must be an str")
-            return
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            self.__log_internal_error("inc_counter: level must be a Level")
-            return
+    def inc_counter(self, name: str, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            value = self.__update_counter(name, increment=True)
-            self.__send_watch(level, name, str(value), WatchType.INT)
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("name must be an str")
+                value = self.__update_counter(name, increment=True)
+                self.__send_watch(level, name, str(value), WatchType.INT)
+            except Exception as e:
+                return self.__process_internal_error(e)
 
-    def dec_counter(self, name: str, level: Optional[Level] = None) -> None:
-        if not isinstance(name, str):
-            self.__log_internal_error("dec_counter: name must be an str")
-            return
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            self.__log_internal_error("dec_counter: level must be a Level")
-            return
+    def dec_counter(self, name: str, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            value = self.__update_counter(name, increment=False)
-            self.__send_watch(level, name, str(value), WatchType.INT)
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("name must be an str")
+                value = self.__update_counter(name, increment=False)
+                self.__send_watch(level, name, str(value), WatchType.INT)
+            except Exception as e:
+                return self.__process_internal_error(e)
 
     def reset_counter(self, name: str) -> None:
-        if not isinstance(name, str):
-            self.__log_internal_error("reset_counter: name must be an str")
-            return
+        try:
+            if not isinstance(name, str):
+                if not isinstance(name, str):
+                    raise TypeError("name must be an str")
+            key = name.lower()
+            with self.__counter as counter:
+                del counter[key]
+        except Exception as e:
+            return self.__process_internal_error(e)
 
-        key = name.lower()
+    def send_custom_log_entry(self, title: str, log_entry_type: LogEntryType, viewer_id: ViewerId,
+                              data: (bytes, bytearray), **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
-        with self.__counter as counter:
-            del counter[key]
-
-    def send_custom_log_entry(self, title: str, log_entry_type: LogEntryType,
-                              viewer_id: ViewerId, data: (bytes, bytearray),
-                              level: Optional[Level] = None) -> None:
-        if not isinstance(title, str):
-            self.__log_internal_error("send_custom_log_entry: title must be an str")
-            return
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            self.__log_internal_error("send_custom_log_entry: level must be a Level")
-            return
         if self.is_on_level(level):
-            if not isinstance(log_entry_type, LogEntryType):
-                self.__log_internal_error("send_custom_log_entry: log_entry_type must be a LogEntryType")
-                return
-            if not isinstance(viewer_id, ViewerId):
-                self.__log_internal_error("send_custom_log_entry: viewer_id must be a ViewerId")
-                return
-            if not isinstance(data, bytes) and not isinstance(data, bytearray):
-                self.__log_internal_error("send_custom_log_entry: data must be a bytes or bytearray")
-                return
+            try:
+                if not isinstance(title, str):
+                    raise TypeError("title must be a str")
+                if not isinstance(log_entry_type, LogEntryType):
+                    raise TypeError("log_entry_type must be a LogEntryType")
+                if not isinstance(viewer_id, ViewerId):
+                    raise TypeError("viewer_id must be a ViewerId")
+                if not isinstance(data, bytes) and not isinstance(data, bytearray):
+                    raise TypeError("data must be a bytes or bytearray")
 
-            self.__send_log_entry(level, title, log_entry_type, viewer_id, self.color, data)
+                self.__send_log_entry(level, title, log_entry_type, viewer_id, self.color, data)
+            except Exception as e:
+                return self.__process_internal_error(e)
 
     def send_custom_control_command(self, control_command_type: ControlCommandType,
-                                    data: (bytes, bytearray), level: Optional[Level] = None) -> None:
-
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            self.__log_internal_error("send_custom_log_entry: level must be a Level")
-            return
+                                    data: (bytes, bytearray), **kwargs) -> None:
+        level = self.__get_level(**kwargs)
         if self.is_on_level(level):
-            if not isinstance(control_command_type, ControlCommandType):
-                self.__log_internal_error(
-                    "send_custom_control_command: control_command_type must be a ControlCommandType")
-                return
-            if not isinstance(data, bytes) and not isinstance(data, bytearray):
-                self.__log_internal_error("send_custom_control_command: data must be a bytes or bytearray")
-                return
+            try:
+                if not isinstance(control_command_type, ControlCommandType):
+                    raise TypeError(
+                        "control_command_type must be a ControlCommandType")
+                if not isinstance(data, bytes) and not isinstance(data, bytearray):
+                    raise TypeError("data must be a bytes or bytearray")
+                self.__send_control_command(control_command_type, data)
+            except Exception as e:
+                return self.__process_internal_error(e)
 
-            self.__send_control_command(control_command_type, data)
-
-    def send_custom_watch(self, name: str, value: str,
-                          watch_type: WatchType, level: Optional[Level] = None) -> None:
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            self.__log_internal_error("send_custom_watch: level must be a Level")
-            return
+    def send_custom_watch(self, name: str, value: str, watch_type: WatchType, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
         if self.is_on_level(level):
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("name must be an str")
+                if not isinstance(value, str):
+                    raise TypeError("value must be an str")
+                if not isinstance(watch_type, WatchType):
+                    raise TypeError("watch_type must be a WatchType")
+
+                self.__send_watch(level, name, value, watch_type)
+            except Exception as e:
+                return self.__process_internal_error(e)
+
+    def send_custom_process_flow(self, title: str, process_flow_type: ProcessFlowType, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+        if self.is_on_level(level):
+            try:
+                if not isinstance(title, str):
+                    raise TypeError("title must be an str")
+                if not isinstance(process_flow_type, ProcessFlowType):
+                    raise TypeError("process_flow_type must be a ProcessFlowType")
+                self.__send_process_flow(level, title, process_flow_type)
+            except Exception as e:
+                return self.__process_internal_error(e)
+
+    def watch(self, name: str, value, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+        try:
             if not isinstance(name, str):
-                self.__log_internal_error(
-                    "send_custom_watch: name must be an str")
-                return
-            if not isinstance(value, str):
-                self.__log_internal_error(
-                    "send_custom_watch: value must be an str")
-                return
-            if not isinstance(watch_type, WatchType):
-                self.__log_internal_error("send_custom_watch: watch_type must be a WatchType")
-                return
+                raise TypeError("name must be a str")
+            if isinstance(value, bool):
+                return self.watch_bool(name, value, level=level)
+            if isinstance(value, int):
+                return self.watch_int(name, value, False, level=level)
+            if isinstance(value, str):
+                return self.watch_str(name, value, level=level)
+            if isinstance(value, bytes) or isinstance(value, bytearray):
+                return self.watch_byte(name, value, level=level)
+            if isinstance(value, float):
+                return self.watch_float(name, value, level=level)
+            if isinstance(value, datetime.time):
+                return self.watch_time(name, value, level=level)
+            if isinstance(value, datetime.datetime):
+                return self.watch_datetime(name, value, level=level)
+            if isinstance(value, object):
+                return self.watch_object(name, value, level=level)
+        except Exception as e:
+            return self.__process_internal_error(e)
 
-            self.__send_watch(level, name, value, watch_type)
-
-    def send_custom_process_flow(self, title: str, process_flow_type: ProcessFlowType,
-                                 level: Optional[Level] = None) -> None:
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            self.__log_internal_error("send_custom_process_flow: level must be a Level")
-            return
-        if self.is_on_level(level):
-            if not isinstance(title, str):
-                self.__log_internal_error("send_custom_process_flow: title must be an str")
-                return
-            if not isinstance(process_flow_type, ProcessFlowType):
-                self.__log_internal_error("send_custom_watch: process_flow_type must be a ProcessFlowType")
-                return
-
-            self.__send_process_flow(level, title, process_flow_type)
-
-    def watch(self, name: str, value, level: Optional[Level] = None) -> None:
-        if not isinstance(name, str):
-            self.__log_internal_error("watch: name must be an str")
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(name, str):
-            self.__log_internal_error("watch: level must be a Level")
-        if isinstance(value, bool):
-            return self.watch_bool(name, value, level)
-        if isinstance(value, int):
-            return self.watch_int(name, value, False, level)
-        if isinstance(value, str):
-            return self.watch_str(name, value, level)
-        if isinstance(value, bytes) or isinstance(value, bytearray):
-            return self.watch_byte(name, value, level)
-        if isinstance(value, float):
-            return self.watch_float(name, value, level)
-        if isinstance(value, datetime.time):
-            return self.watch_time(name, value, level)
-        if isinstance(value, datetime.datetime):
-            return self.watch_datetime(name, value, level)
-        if isinstance(value, object):
-            return self.watch_object(name, value, level)
-
-    def watch_str(self, name: str, value: str, level: Optional[Level] = None) -> None:
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            self.__log_internal_error("watch_str: level must be a Level")
+    def watch_str(self, name: str, value: str, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            if not isinstance(name, str):
-                self.__log_internal_error("watch_str: name must be an str")
-            if not isinstance(value, str):
-                self.__log_internal_error("watch_str: value must be an str")
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("name must be an str")
+                if not isinstance(value, str):
+                    raise TypeError("value must be an str")
+                self.__send_watch(level, name, value, WatchType.STR)
+            except Exception as e:
+                return self.__process_internal_error(e)
 
-            self.__send_watch(level, name, value, WatchType.STR)
-
-    def watch_byte(self, name: str, value: (bytes, bytearray), include_hex: bool = False,
-                   level: Optional[Level] = None) -> None:
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            self.__log_internal_error("watch_byte: level must be a Level")
+    def watch_byte(self, name: str, value: (bytes, bytearray), include_hex: bool = False, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            if not isinstance(name, str):
-                self.__log_internal_error("watch_byte: name must be an str")
-            if not isinstance(value, bytes) and not isinstance(value, bytearray):
-                self.__log_internal_error("watch_byte: value must be bytes or bytearray")
-            if not isinstance(include_hex, bool):
-                self.__log_internal_error("watch_byte: include_hex must be True or False")
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("name must be an str")
+                if not isinstance(value, bytes) and not isinstance(value, bytearray):
+                    raise TypeError("value must be bytes or bytearray")
+                if not isinstance(include_hex, bool):
+                    raise TypeError("include_hex must be True or False")
 
-            output = str(value)
-            if include_hex:
-                output += f" (0x{self.__to_hex(value, 2)})"
-            self.__send_watch(level, name, output, WatchType.INT)
+                output = str(value)
+                if include_hex:
+                    output += f" (0x{self.__to_hex(value, 2)})"
+                self.__send_watch(level, name, output, WatchType.INT)
+            except Exception as e:
+                return self.__process_internal_error(e)
 
-    def watch_int(self, name: str, value: int, include_hex: bool = False, level: Optional[Level] = None) -> None:
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            self.__log_internal_error("watch_int: level must be a Level")
-
-        if self.is_on_level(level):
-            if not isinstance(name, str):
-                self.__log_internal_error("watch_int: name must be an str")
-            if not isinstance(value, int):
-                self.__log_internal_error("watch_int: value must be int")
-            if not isinstance(include_hex, bool):
-                self.__log_internal_error("watch_int: include_hex must be True or False")
-
-            output = str(value)
-
-            if include_hex:
-                output += f" (0x{self.__to_hex(value, 16)})"
-
-            self.__send_watch(level, name, output, WatchType.INT)
-
-    def watch_float(self, name: str, value: float, level: Optional[Level] = None) -> None:
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            self.__log_internal_error("watch_float: level must be a Level")
+    def watch_int(self, name: str, value: int, include_hex: bool = False, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            if not isinstance(name, str):
-                self.__log_internal_error("watch_float: name must be an str")
-            if not isinstance(value, float):
-                self.__log_internal_error("watch_float: value must be float")
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("name must be an str")
+                if not isinstance(value, int):
+                    raise TypeError("value must be int")
+                if not isinstance(include_hex, bool):
+                    raise TypeError("include_hex must be True or False")
 
-            self.__send_watch(level, name, str(value), WatchType.FLOAT)
+                output = str(value)
 
-    def watch_bool(self, name: str, value: bool, level: Optional[Level] = None) -> None:
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            self.__log_internal_error("watch_bool: level must be a Level")
+                if include_hex:
+                    output += f" (0x{self.__to_hex(value, 16)})"
 
-        if self.is_on_level(level):
-            if not isinstance(name, str):
-                self.__log_internal_error("watch_bool: name must be an str")
-            if not isinstance(value, bool):
-                self.__log_internal_error("watch_bool: value must be boolean")
+                self.__send_watch(level, name, output, WatchType.INT)
+            except Exception as e:
+                return self.__process_internal_error(e)
 
-            self.__send_watch(level, name, str(value), WatchType.BOOL)
-
-    def watch_time(self, name: str, value: datetime.time, level: Optional[Level] = None) -> None:
-        if level is None:
-            level = self.parent.default_level
-        if not isinstance(level, Level):
-            self.__log_internal_error("watch_time: level must be a Level")
+    def watch_float(self, name: str, value: float, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
-            if not isinstance(name, str):
-                self.__log_internal_error("watch_time: name must be an str")
-            if not isinstance(value, datetime.time):
-                self.__log_internal_error("watch_time: value must be datetime.time")
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("name must be an str")
+                if not isinstance(value, float):
+                    raise TypeError("value must be float")
 
-            self.__send_watch(level, name, str(value), WatchType.TIMESTAMP)
+                self.__send_watch(level, name, str(value), WatchType.FLOAT)
+            except Exception as e:
+                return self.__process_internal_error(e)
+
+    def watch_bool(self, name: str, value: bool, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+
+        if self.is_on_level(level):
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("name must be an str")
+                if not isinstance(value, bool):
+                    raise TypeError("value must be boolean")
+
+                self.__send_watch(level, name, str(value), WatchType.BOOL)
+            except Exception as e:
+                return self.__process_internal_error(e)
+
+    def watch_time(self, name: str, value: datetime.time, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+
+        if self.is_on_level(level):
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("name must be an str")
+                if not isinstance(value, datetime.time):
+                    raise TypeError("value must be datetime.time")
+
+                self.__send_watch(level, name, str(value), WatchType.TIMESTAMP)
+            except Exception as e:
+                return self.__process_internal_error(e)
 
     def watch_datetime(self, name: str, value: datetime.datetime, level: Optional[Level] = None) -> None:
         if level is None:
