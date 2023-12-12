@@ -1,3 +1,4 @@
+import math
 import struct
 from io import BytesIO
 from enum import Enum
@@ -63,8 +64,8 @@ class BinaryFormatter(Formatter):
         self.__write_length(title)
         self.__write_length(hostname)
         self.__write_length(log_entry.data)
-        self.__write_int(log_entry.process_id)
-        self.__write_int(log_entry.thread_id)
+        self.__write_4bytes_int(log_entry.process_id)
+        self.__write_4bytes_int(self.__trim_int_to_4_bytes(log_entry.thread_id))
         self.__write_timestamp(log_entry.timestamp)
         self.__write_color(log_entry.color)
 
@@ -83,8 +84,8 @@ class BinaryFormatter(Formatter):
         self.__write_enum(process_flow.process_flow_type)
         self.__write_length(title)
         self.__write_length(host_name)
-        self.__write_int(process_flow.process_id)
-        self.__write_int(process_flow.thread_id)
+        self.__write_4bytes_int(process_flow.process_id)
+        self.__write_4bytes_int(self.__trim_int_to_4_bytes(process_flow.thread_id))
         self.__write_timestamp(process_flow.timestamp)
 
         self.__write_data(title)
@@ -115,23 +116,37 @@ class BinaryFormatter(Formatter):
 
     def __write_enum(self, value):
         if isinstance(value, Enum):
-            self.__write_int(value.value)
+            self.__write_4bytes_int(value.value)
         else:
-            self.__write_int(-1)
+            self.__write_4bytes_int(-1)
 
-    def __write_int(self, value: int, stream=None):
-        if isinstance(value, int):
-            byte1 = value & 0xFF
-            byte2 = (value >> 8) & 0xFF
-            byte3 = (value >> 16) & 0xFF
-            byte4 = (value >> 24) & 0xFF
-            bytestring = bytes([byte1, byte2, byte3, byte4])
-            if stream is None:
-                self.__stream.write(bytestring)
-            else:
-                stream.write(bytestring)
+    def __trim_int_to_4_bytes(self, value: int) -> int:
+        if not isinstance(value, int):
+            raise TypeError("only ints allowed")
+        byte1 = value & 0xFF
+        byte2 = (value >> 8) & 0xFF
+        byte3 = (value >> 16) & 0xFF
+        byte4 = (value >> 24) & 0xFF
+        bytestring = bytes([byte1, byte2, byte3, byte4])
+        return int.from_bytes(bytestring, byteorder="little")
+
+    def __write_4bytes_int(self, value: int, stream=None):
+        if not isinstance(value, int):
+            raise TypeError("only ints allowed")
+
+        bytes_needed = math.ceil(value.bit_length() / 8)
+        if bytes_needed > 4:
+            raise ValueError("only ints of length 4 bytes allowed")
+
+        byte1 = value & 0xFF
+        byte2 = (value >> 8) & 0xFF
+        byte3 = (value >> 16) & 0xFF
+        byte4 = (value >> 24) & 0xFF
+        bytestring = bytes([byte1, byte2, byte3, byte4])
+        if stream is None:
+            self.__stream.write(bytestring)
         else:
-            raise IOError("attempting to write a non-integer type to a place where only int is allowed")
+            stream.write(bytestring)
 
     def __write_timestamp(self, value: int) -> None:
         value = value
@@ -155,9 +170,9 @@ class BinaryFormatter(Formatter):
 
     def __write_length(self, content: bytes) -> None:
         if bytes and isinstance(content, bytes):
-            self.__write_int(len(content))
+            self.__write_4bytes_int(len(content))
         else:
-            self.__write_int(0)
+            self.__write_4bytes_int(0)
 
     def __write_data(self, value: bytes) -> None:
         if isinstance(value, bytes) and value:
@@ -177,11 +192,11 @@ class BinaryFormatter(Formatter):
             color = value.get_red() | value.get_green() << 8 | value.get_blue() << 16 | value.get_alpha() << 24
         # converting to signed int and writing it
         signed_int = struct.unpack("i", struct.pack("<I", color))[0]
-        self.__write_int(signed_int)
+        self.__write_4bytes_int(signed_int)
 
     def write(self, stream):
         self.__write_short(self.__packet.packet_type.value, stream=stream)
-        self.__write_int(self.__size, stream=stream)
+        self.__write_4bytes_int(self.__size, stream=stream)
         stream.write(self.__stream.getvalue())
 
     def __write_double(self, value: float) -> None:
