@@ -1,11 +1,13 @@
+from typing import Optional
+
 from protocols.scheduler_action import SchedulerAction
 from packets.packet import Packet
 
 
 class SchedulerCommand:
-    def __init__(self):
-        self.__action = SchedulerAction.CONNECT
-        self.__state: (Packet, None) = None
+    def __init__(self) -> None:
+        self.__action: SchedulerAction = SchedulerAction.CONNECT
+        self.__state: Optional[Packet] = None
 
     @property
     def action(self) -> SchedulerAction:
@@ -15,8 +17,6 @@ class SchedulerCommand:
     def action(self, action: SchedulerAction) -> None:
         if isinstance(action, SchedulerAction):
             self.__action = action
-        else:
-            raise TypeError("action must be SchedulerAction")
 
     @property
     def state(self) -> object:
