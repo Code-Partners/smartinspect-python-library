@@ -93,21 +93,3 @@ class TcpProtocol(Protocol):
         if len(server_answer) != self.__ANSWER_SIZE:
             raise SmartInspectException(
                 "Could not read server answer correctly: Connection has been closed unexpectedly")
-
-
-if __name__ == '__main__':
-    t = TcpProtocol()
-    t._internal_connect()
-    logentry = LogEntry(LogEntryType.MESSAGE, ViewerId.NO_VIEWER)
-
-    logentry.app_name = "Veronica"
-    logentry.hostname = "Don Macaron"
-    logentry.session_name = "Main Session"
-    logentry.timestamp = Clock.now()
-    logentry.color = Color.BLUE
-    title = ""
-    while title != "exit":
-        title = input("Please submit title:")
-        logentry.title = title
-        t._internal_write_packet(logentry)
-    t._internal_disconnect()
