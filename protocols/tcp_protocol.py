@@ -2,13 +2,9 @@
 
 import socket
 
-from common.clock import Clock
-from common.color.color import Color
 from common.exceptions import SmartInspectException
-from common.viewer_id import ViewerId
 from connections.builders import ConnectionsBuilder
 from formatters.binary_formatter import BinaryFormatter
-from packets.log_entry import LogEntry, LogEntryType
 from packets.packet import Packet
 # from smartinspect import SmartInspect
 from protocols.protocol import Protocol
