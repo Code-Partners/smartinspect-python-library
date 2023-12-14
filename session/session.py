@@ -457,10 +457,9 @@ class Session:
                     raise TypeError("Title must be a string")
                 if condition:
                     title = title.format(*args, **kwargs)
+                    self.__send_log_entry(level, title, LogEntryType.CONDITIONAL, ViewerId.TITLE)
             except Exception as e:
                 return self.__process_internal_error(e)
-
-            self.__send_log_entry(level, title, LogEntryType.CONDITIONAL, ViewerId.TITLE)
 
     @staticmethod
     def __to_hex(value: (int, bytes, bytearray), max_chars: int) -> str:
