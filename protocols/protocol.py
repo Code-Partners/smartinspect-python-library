@@ -175,7 +175,7 @@ class Protocol:
                 self.__schedule_disconnect()
                 self.__stop_scheduler()
             else:
-                self.__impl_disconnect()
+                self._impl_disconnect()
 
     def _impl_connect(self):
         if self.__keep_open and not self.__connected:
@@ -198,7 +198,7 @@ class Protocol:
         finally:
             self.__reconnect_tick_count = time.time() * 1000
 
-    def __impl_disconnect(self):
+    def _impl_disconnect(self):
         if self.__connected:
             try:
                 self._reset()
@@ -301,7 +301,7 @@ class Protocol:
                 self.__schedule_dispatch(command)
 
             else:
-                self.__impl_dispatch(command)
+                self._impl_dispatch(command)
 
     def __schedule_dispatch(self, command: ProtocolCommand) -> None:
         scheduler_command = SchedulerCommand()
@@ -310,7 +310,7 @@ class Protocol:
 
         self.__scheduler.schedule(scheduler_command)
 
-    def __impl_dispatch(self, command: ProtocolCommand):
+    def _impl_dispatch(self, command: ProtocolCommand):
         if self.__connected:
             try:
                 self._internal_dispatch(command)
