@@ -1081,7 +1081,7 @@ class Session:
                 return self.__process_internal_error(e)
             self.log_custom_stream(title, stream, LogEntryType.SOURCE, source_id.viewer_id, level=level)
 
-    def log_object(self, title: str, instance: object, non_public: bool = False, **kwargs) -> None:
+    def log_object(self, title: str, instance: object, include_non_public_fields: bool = False, **kwargs) -> None:
         level = self.__get_level(**kwargs)
         context = InspectorViewerContext()
 
@@ -1089,7 +1089,7 @@ class Session:
             try:
                 if not isinstance(level, Level):
                     raise TypeError("level must be a Level")
-                if not isinstance(non_public, bool):
+                if not isinstance(include_non_public_fields, bool):
                     raise TypeError("non_public must be True or False")
                 if instance is None:
                     raise TypeError("instance argument is None")
@@ -1110,7 +1110,7 @@ class Session:
                 fields = instance_fields.difference(class_fields)
 
                 # if non_public is False then we need to exclude fields, starting with '_' (thus, with '__' as well)
-                if non_public is False:
+                if include_non_public_fields is False:
                     fields = list(filter(lambda f: not f[0].startswith("_"), fields))
 
                 result = []
