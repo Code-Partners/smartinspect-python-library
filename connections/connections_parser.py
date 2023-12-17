@@ -16,6 +16,7 @@ class ConnectionsParser:
         length = len(connections)
         name = ""
         options = ""
+        symbol = ""
         pointer = 0
 
         while pointer < length - 1:
