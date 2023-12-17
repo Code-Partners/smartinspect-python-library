@@ -57,8 +57,9 @@ class SmartInspect:
         self.__is_multithreaded = False
 
     # this currently returns only current local time
-    def now(self) -> int:
-        return Clock.now(self.__resolution)
+    @staticmethod
+    def now() -> int:
+        return Clock.now()
 
     def get_resolution(self) -> ClockResolution:
         return self.__resolution
