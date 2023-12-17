@@ -352,7 +352,7 @@ class SmartInspect:
     def get_session(self, session_name: str) -> Session:
         return self.__sessions.get(session_name)
 
-    def _update_session(self, session: Session, new_name: str, old_name: str) -> None:
+    def update_session(self, session: Session, new_name: str, old_name: str) -> None:
         self.__sessions.update(session, new_name, old_name)
 
     def dispose(self) -> None:
