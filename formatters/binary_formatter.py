@@ -120,7 +120,8 @@ class BinaryFormatter(Formatter):
         else:
             self.__write_4bytes_int(-1)
 
-    def __trim_int_to_4_bytes(self, value: int) -> int:
+    @staticmethod
+    def __trim_int_to_4_bytes(value: int) -> int:
         if not isinstance(value, int):
             raise TypeError("only ints allowed")
         byte1 = value & 0xFF
