@@ -102,7 +102,7 @@ class Session:
             name = ""
 
         if self.__stored:
-            self.parent._update_session(self, name, self.__name)
+            self.parent.update_session(self, name, self.__name)
 
         self.__name = name
 
