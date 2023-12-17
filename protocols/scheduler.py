@@ -42,7 +42,7 @@ class Scheduler:
 
         try:
             self.__thread.join()
-        except InterruptedError as e:
+        except InterruptedError:
             pass
 
     def schedule(self, command: SchedulerCommand) -> bool:
