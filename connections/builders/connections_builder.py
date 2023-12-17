@@ -47,7 +47,7 @@ class ConnectionsBuilder:
                 isinstance(value, bool) or
                 isinstance(value, Level) or
                 isinstance(value, FileRotate)
-        ):
+                ):
             raise TypeError(".add_option method only accepts value of types str, int, bool, Level, FileRotate")
 
         if self.__has_options:
