@@ -387,7 +387,7 @@ class Protocol:
         try:
             if self._internal_reconnect():
                 self.__connected = True
-        except Exception as e:
+        except Exception:
             raise Exception  # these are swallowed in Jlib
 
         self.__failed = not self.__connected
@@ -395,7 +395,7 @@ class Protocol:
         if self.__failed:
             try:
                 self._reset()
-            except Exception as e:
+            except Exception:
                 raise Exception  # these are swallowed in Jlib
 
     def __do_reconnect(self) -> None:
