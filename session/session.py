@@ -1178,6 +1178,7 @@ class Session:
                         title = getattr(exception, "message", repr(exception))
 
                     file = io.StringIO()
+                    # noinspection PyBroadException
                     try:
                         raise exception
                     except Exception:
@@ -1293,6 +1294,7 @@ class Session:
     @staticmethod
     def __build_stacktrace() -> ViewerContext:
         context = ListViewerContext()
+        # noinspection PyBroadException
         try:
             raise Exception("Current stacktrace")
         except Exception:
