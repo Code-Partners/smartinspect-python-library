@@ -432,7 +432,7 @@ class Session:
             if not condition:
                 self.__send_log_entry(Level.ERROR, title, LogEntryType.ASSERT, ViewerId.TITLE)
 
-    def log_is_None(self, title: str, instance: object, **kwargs) -> None:
+    def log_is_none(self, title: str, instance: object, **kwargs) -> None:
         level = self.__get_level(**kwargs)
         if self.is_on_level(level):
             try:
