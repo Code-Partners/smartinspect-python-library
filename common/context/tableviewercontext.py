@@ -16,10 +16,10 @@ class TableViewerContext(ListViewerContext):
             self.__line_start = False
         else:
             self.append_text(", ")
-        self.append_text(self.__escape_CSV_entry(str(entry)))
+        self.append_text(self.__escape_csv_entry(str(entry)))
 
     @staticmethod
-    def __escape_CSV_entry(entry: str) -> str:
+    def __escape_csv_entry(entry: str) -> str:
         if len(entry) == 0:
             return entry
 
