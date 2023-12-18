@@ -8,27 +8,34 @@ class LogHeader(Packet):
     __HEADER_SIZE = 4
 
     def __init__(self):
-        self.__app_name: str = ""
-        self.__hostname: str = ""
+        super().__init__()
+        self.appname: str = ""
+        self.hostname: str = ""
 
-    def get_size(self):
-        return self.__HEADER_SIZE + self._get_string_size(self.get_content())
+    @property
+    def size(self):
+        return self.__HEADER_SIZE + self._get_string_size(self.content)
 
-    def get_content(self):
-        return f"hostname={self.__hostname}\r\nappname={self.__app_name}\r\n"
+    @property
+    def content(self):
+        return f"hostname={self.__hostname}\r\nappname={self.__appname}\r\n"
 
-    def get_hostname(self):
+    @property
+    def hostname(self):
         return self.__hostname
 
-    def set_hostname(self, hostname: str) -> None:
+    @hostname.setter
+    def hostname(self, hostname: str) -> None:
         self.__hostname = hostname
 
-    def get_app_name(self):
-        return self.__app_name
+    @property
+    def appname(self):
+        return self.__appname
 
-    def set_app_name(self, app_name: str) -> None:
-        self.__app_name = app_name
+    @appname.setter
+    def appname(self, appname: str) -> None:
+        self.__appname = appname
 
-    @staticmethod
-    def get_packet_type() -> PacketType:
-        return PacketType.LogHeader
+    @property
+    def packet_type(self) -> PacketType:
+        return PacketType.LOG_HEADER

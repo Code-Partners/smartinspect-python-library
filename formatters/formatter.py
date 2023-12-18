@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from packets import Packet
+from packets.packet import Packet
 
 
 class Formatter(ABC):

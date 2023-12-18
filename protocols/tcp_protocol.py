@@ -1,21 +1,18 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
 
 import socket
-import time
 
-from smartinspect import SmartInspect
-from protocols.protocol import Protocol
 from common.exceptions import SmartInspectException
-from formatters import BinaryFormatter
 from connections.builders import ConnectionsBuilder
+from formatters.binary_formatter import BinaryFormatter
 from packets.packet import Packet
-from packets.log_entry import LogEntry, LogEntryType
-from common import ViewerId, Color
+from protocols.protocol import Protocol
 
 
 class TcpProtocol(Protocol):
     __BUFFER_SIZE = 0x2000
-    __CLIENT_BANNER = bytearray(f"SmartInspect Java Library v{SmartInspect.get_version()}\n", encoding="UTF-8")
+    __CLIENT_BANNER = bytearray(f"SmartInspect Python Library v\n", encoding="UTF-8")
+    # __CLIENT_BANNER = bytearray(f"SmartInspect Python Library v{SmartInspect.get_version()}\n", encoding="UTF-8")
     __ANSWER_SIZE = 2
     _hostname = "127.0.0.1"
     _timeout = 30000
@@ -29,8 +26,7 @@ class TcpProtocol(Protocol):
         self.__socket = None
         self.__stream = None
 
-    @staticmethod
-    def _get_name() -> str:
+    def _get_name(self) -> str:
         return "tcp"
 
     def _is_valid_option(self, option_name: str) -> bool:
@@ -92,21 +88,3 @@ class TcpProtocol(Protocol):
         if len(server_answer) != self.__ANSWER_SIZE:
             raise SmartInspectException(
                 "Could not read server answer correctly: Connection has been closed unexpectedly")
-
-
-if __name__ == '__main__':
-    t = TcpProtocol()
-    t._internal_connect()
-    logentry = LogEntry(LogEntryType.Message, ViewerId.NO_VIEWER)
-
-    logentry.set_app_name("Veronica")
-    logentry.set_hostname("Don Macaron")
-    logentry.set_session_name("Main Session")
-    logentry.set_timestamp(time.time() - time.timezone)
-    logentry.set_color(Color.BLUE)
-    title = ""
-    while title != "exit":
-        title = input("Please submit title:")
-        logentry.set_title(title)
-        t._internal_write_packet(logentry)
-    t._internal_disconnect()

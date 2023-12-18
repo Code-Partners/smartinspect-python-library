@@ -1,5 +1,5 @@
 from enum import Enum
-from .rgbacolor import RGBAColor
+from common.color.rgbacolor import RGBAColor
 
 
 class Color(Enum):

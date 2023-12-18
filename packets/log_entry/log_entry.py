@@ -3,7 +3,7 @@ from packets.packet import Packet
 from packets.packet_type import PacketType
 from .log_entry_type import LogEntryType
 from common.viewer_id import ViewerId
-from common.color import Color
+from common.color.color import Color
 
 
 class LogEntry(Packet):
@@ -11,102 +11,123 @@ class LogEntry(Packet):
     HEADER_SIZE = 48
 
     def __init__(self, log_entry_type: LogEntryType, viewer_id: ViewerId):
-        self._log_entry_type = None
-        self._viewer_id = None
+        super().__init__()
+        self.log_entry_type = log_entry_type
+        self.viewer_id = viewer_id
+        self.thread_id = super().thread_id
+        self.process_id = self.PROCESS_ID
+        self.data = b""
+        self.appname = ""
+        self.session_name = ""
+        self.title = ""
+        self.hostname = ""
+        self.timestamp = 0
+        self.color = Color.TRANSPARENT
 
-        self.set_log_entry_type(log_entry_type)
-        self.set_viewer_id(viewer_id)
-        self._thread_id = super()._get_thread_id()
-        self._process_id = self.PROCESS_ID
-        self._data = bytearray()
-        self._app_name = ""
-        self._session_name = ""
-        self._title = ""
-        self._hostname = ""
-        self._timestamp = 0
-        self._color = Color.TRANSPARENT
-
-    def get_size(self) -> int:
+    @property
+    def size(self) -> int:
         result = self.HEADER_SIZE + \
-                 self._get_string_size(self._app_name) + \
-                 self._get_string_size(self._session_name) + \
-                 self._get_string_size(self._title) + \
-                 self._get_string_size(self._hostname) + \
-                 len(self._data)
+                 self._get_string_size(self.__appname) + \
+                 self._get_string_size(self.__session_name) + \
+                 self._get_string_size(self.__title) + \
+                 self._get_string_size(self.__hostname) + \
+                 len(self.__data)
         return result
 
-    @staticmethod
-    def get_packet_type() -> PacketType:
-        return PacketType.LogEntry
+    @property
+    def packet_type(self) -> PacketType:
+        return PacketType.LOG_ENTRY
 
-    def get_app_name(self) -> str:
-        return self._app_name
+    @property
+    def appname(self) -> str:
+        return self.__appname
 
-    def set_app_name(self, app_name: str) -> None:
-        self._app_name = app_name
+    @appname.setter
+    def appname(self, appname: str) -> None:
+        self.__appname = appname
 
-    def get_session_name(self) -> str:
-        return self._session_name
+    @property
+    def session_name(self) -> str:
+        return self.__session_name
 
-    def set_session_name(self, session_name: str) -> None:
-        self._session_name = session_name
+    @session_name.setter
+    def session_name(self, session_name: str) -> None:
+        self.__session_name = session_name
 
-    def get_title(self) -> str:
-        return self._title
+    @property
+    def title(self) -> str:
+        return self.__title
 
-    def set_title(self, title: str) -> None:
-        self._title = title
+    @title.setter
+    def title(self, title: str) -> None:
+        self.__title = title
 
-    def get_hostname(self) -> str:
-        return self._hostname
+    @property
+    def hostname(self) -> str:
+        return self.__hostname
 
-    def set_hostname(self, hostname: str) -> None:
-        self._hostname = hostname
+    @hostname.setter
+    def hostname(self, hostname: str) -> None:
+        self.__hostname = hostname
 
-    def get_log_entry_type(self) -> LogEntryType:
+    @property
+    def log_entry_type(self) -> LogEntryType:
         return self._log_entry_type
 
-    def set_log_entry_type(self, log_entry_type: LogEntryType) -> None:
+    @log_entry_type.setter
+    def log_entry_type(self, log_entry_type: LogEntryType) -> None:
         if isinstance(log_entry_type, LogEntryType):
             self._log_entry_type = log_entry_type
         else:
             raise TypeError("log_entry_type must be a LogEntryType instance")
 
-    def get_viewer_id(self):
+    @property
+    def viewer_id(self):
         return self._viewer_id
 
-    def set_viewer_id(self, viewer: ViewerId) -> None:
+    @viewer_id.setter
+    def viewer_id(self, viewer: ViewerId) -> None:
         if isinstance(viewer, ViewerId):
             self._viewer_id = viewer
         else:
             raise TypeError("viewer must be a ViewerType instance")
 
-    def get_data(self) -> bytearray:
-        return self._data
+    @property
+    def data(self) -> bytearray:
+        return self.__data
 
-    def set_data(self, data: bytearray) -> None:
-        self._data = data
+    @data.setter
+    def data(self, data: bytearray) -> None:
+        self.__data = data
 
-    def get_process_id(self) -> int:
-        return self._process_id
+    @property
+    def process_id(self) -> int:
+        return self.__process_id
 
-    def set_process_id(self, process_id: int) -> None:
-        self._process_id = process_id
+    @process_id.setter
+    def process_id(self, process_id: int) -> None:
+        self.__process_id = process_id
 
-    def get_thread_id(self) -> int:
-        return self._thread_id
+    @property
+    def thread_id(self) -> int:
+        return self.__thread_id
 
-    def set_thread_id(self, thread_id: int) -> None:
-        self._thread_id = thread_id
+    @thread_id.setter
+    def thread_id(self, thread_id: int) -> None:
+        self.__thread_id = thread_id
 
-    def get_timestamp(self) -> int:
-        return self._timestamp
+    @property
+    def timestamp(self) -> int:
+        return self.__timestamp
 
-    def set_timestamp(self, timestamp: float) -> None:
-        self._timestamp = timestamp
+    @timestamp.setter
+    def timestamp(self, timestamp: int) -> None:
+        self.__timestamp = timestamp
 
-    def get_color(self):
-        return self._color
+    @property
+    def color(self):
+        return self.__color
 
-    def set_color(self, color: Color):
-        self._color = color
+    @color.setter
+    def color(self, color: Color):
+        self.__color = color
