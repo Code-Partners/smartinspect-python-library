@@ -2,7 +2,6 @@
 
 import threading
 import time
-# from abc import ABC
 
 from common.events.error_event import ErrorEvent
 from common.exceptions import ProtocolException, SmartInspectException
