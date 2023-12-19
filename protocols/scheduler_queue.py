@@ -1,7 +1,9 @@
+import logging
 from typing import Optional
 
 from protocols.scheduler_action import SchedulerAction
 from protocols.scheduler_command import SchedulerCommand
+
 
 
 class SchedulerQueueItem:
@@ -36,6 +38,7 @@ class SchedulerQueue:
 
         self.__count += 1
         self.__size += item.command.size + self.__OVERHEAD
+        logging.debug("added")
 
     def dequeue(self) -> Optional[SchedulerCommand]:
         item = self.__head
