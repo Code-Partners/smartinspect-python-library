@@ -18,7 +18,7 @@ class TextContext(ViewerContext):
             data = bytes(self.__data, encoding="UTF-8")
             result = self.__BOM + data
             return result
-        except TypeError as e:
+        except TypeError:
             return bytes()
 
     def reset_data(self) -> None:

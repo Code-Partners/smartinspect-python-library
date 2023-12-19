@@ -2,15 +2,10 @@
 
 import socket
 
-from common.clock import Clock
-from common.color.color import Color
 from common.exceptions import SmartInspectException
-from common.viewer_id import ViewerId
 from connections.builders import ConnectionsBuilder
 from formatters.binary_formatter import BinaryFormatter
-from packets.log_entry import LogEntry, LogEntryType
 from packets.packet import Packet
-# from smartinspect import SmartInspect
 from protocols.protocol import Protocol
 
 
@@ -93,21 +88,3 @@ class TcpProtocol(Protocol):
         if len(server_answer) != self.__ANSWER_SIZE:
             raise SmartInspectException(
                 "Could not read server answer correctly: Connection has been closed unexpectedly")
-
-
-if __name__ == '__main__':
-    t = TcpProtocol()
-    t._internal_connect()
-    logentry = LogEntry(LogEntryType.MESSAGE, ViewerId.NO_VIEWER)
-
-    logentry.app_name = "Veronica"
-    logentry.hostname = "Don Macaron"
-    logentry.session_name = "Main Session"
-    logentry.timestamp = Clock.now()
-    logentry.color = Color.BLUE
-    title = ""
-    while title != "exit":
-        title = input("Please submit title:")
-        logentry.title = title
-        t._internal_write_packet(logentry)
-    t._internal_disconnect()

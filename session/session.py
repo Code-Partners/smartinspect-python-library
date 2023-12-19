@@ -102,7 +102,7 @@ class Session:
             name = ""
 
         if self.__stored:
-            self.parent._update_session(self, name, self.__name)
+            self.parent.update_session(self, name, self.__name)
 
         self.__name = name
 
@@ -432,7 +432,7 @@ class Session:
             if not condition:
                 self.__send_log_entry(Level.ERROR, title, LogEntryType.ASSERT, ViewerId.TITLE)
 
-    def log_is_None(self, title: str, instance: object, **kwargs) -> None:
+    def log_is_none(self, title: str, instance: object, **kwargs) -> None:
         level = self.__get_level(**kwargs)
         if self.is_on_level(level):
             try:
@@ -457,10 +457,9 @@ class Session:
                     raise TypeError("Title must be a string")
                 if condition:
                     title = title.format(*args, **kwargs)
+                    self.__send_log_entry(level, title, LogEntryType.CONDITIONAL, ViewerId.TITLE)
             except Exception as e:
                 return self.__process_internal_error(e)
-
-            self.__send_log_entry(level, title, LogEntryType.CONDITIONAL, ViewerId.TITLE)
 
     @staticmethod
     def __to_hex(value: (int, bytes, bytearray), max_chars: int) -> str:
@@ -512,15 +511,33 @@ class Session:
                 return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_byte_value(self, name: str, value: (bytes, bytearray), include_hex: bool = False, **kwargs) -> None:
+    def log_bytes_value(self, name: str, value: bytes, include_hex: bool = False, **kwargs) -> None:
         level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
             try:
                 if not isinstance(name, str):
                     raise TypeError("Name must be a string")
-                if not isinstance(value, bytes) and not isinstance(value, bytearray):
-                    raise TypeError("Value must be a bytes sequence - bytes or bytearray")
+                if not isinstance(value, bytes):
+                    raise TypeError("Value must be a bytes sequence")
+                if not isinstance(include_hex, bool):
+                    raise TypeError("include_hex must be a bool")
+                title = f"{name} = '{value}'"
+                if include_hex:
+                    title += f" (0x{self.__to_hex(value, 2)})"
+            except Exception as e:
+                return self.__process_internal_error(e)
+            self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
+
+    def log_bytearray_value(self, name: str, value: bytearray, include_hex: bool = False, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+
+        if self.is_on_level(level):
+            try:
+                if not isinstance(name, str):
+                    raise TypeError("Name must be a string")
+                if not isinstance(value, bytearray):
+                    raise TypeError("Value must be a bytearray")
                 if not isinstance(include_hex, bool):
                     raise TypeError("include_hex must be a bool")
                 title = f"{name} = '{value}'"
@@ -701,8 +718,10 @@ class Session:
             return self.log_int_value(name, value, level=level)
         if isinstance(value, str):
             return self.log_str_value(name, value, level=level)
-        if isinstance(value, bytes) or isinstance(value, bytearray):
-            return self.log_byte_value(name, value, level=level)
+        if isinstance(value, bytes):
+            return self.log_bytes_value(name, value, level=level)
+        if isinstance(value, bytearray):
+            return self.log_bytearray_value(name, value, level=level)
         if isinstance(value, float):
             return self.log_float_value(name, value, level=level)
         if isinstance(value, datetime.time):
@@ -1082,7 +1101,7 @@ class Session:
                 return self.__process_internal_error(e)
             self.log_custom_stream(title, stream, LogEntryType.SOURCE, source_id.viewer_id, level=level)
 
-    def log_object(self, title: str, instance: object, non_public: bool = False, **kwargs) -> None:
+    def log_object(self, title: str, instance: object, include_non_public_fields: bool = False, **kwargs) -> None:
         level = self.__get_level(**kwargs)
         context = InspectorViewerContext()
 
@@ -1090,7 +1109,7 @@ class Session:
             try:
                 if not isinstance(level, Level):
                     raise TypeError("level must be a Level")
-                if not isinstance(non_public, bool):
+                if not isinstance(include_non_public_fields, bool):
                     raise TypeError("non_public must be True or False")
                 if instance is None:
                     raise TypeError("instance argument is None")
@@ -1111,7 +1130,7 @@ class Session:
                 fields = instance_fields.difference(class_fields)
 
                 # if non_public is False then we need to exclude fields, starting with '_' (thus, with '__' as well)
-                if non_public is False:
+                if include_non_public_fields is False:
                     fields = list(filter(lambda f: not f[0].startswith("_"), fields))
 
                 result = []
@@ -1159,6 +1178,7 @@ class Session:
                         title = getattr(exception, "message", repr(exception))
 
                     file = io.StringIO()
+                    # noinspection PyBroadException
                     try:
                         raise exception
                     except Exception:
@@ -1274,6 +1294,7 @@ class Session:
     @staticmethod
     def __build_stacktrace() -> ViewerContext:
         context = ListViewerContext()
+        # noinspection PyBroadException
         try:
             raise Exception("Current stacktrace")
         except Exception:

@@ -1,4 +1,5 @@
 import threading
+from typing import Type
 
 from protocols.protocol import Protocol
 from common.exceptions import SmartInspectException
@@ -12,7 +13,7 @@ class ProtocolFactory:
     __lock = threading.Lock()
 
     @classmethod
-    def register_protocol(cls, name: str, protocol_class: Protocol):
+    def register_protocol(cls, name: str, protocol_class: Type[Protocol]):
         with cls.__lock:
             if isinstance(name, str) and issubclass(protocol_class, Protocol):
                 name = name.strip().lower()

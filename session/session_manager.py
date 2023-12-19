@@ -51,7 +51,8 @@ class SessionManager:
         if info is not None:
             self.__assign(session, info)
 
-    def __assign(self, session: Session, info: SessionInfo) -> None:
+    @staticmethod
+    def __assign(session: Session, info: SessionInfo) -> None:
         if info.active:
             if info.has_color:
                 session.color = info.color
@@ -125,7 +126,7 @@ class SessionManager:
         name = session.name.lower()
 
         with self.__lock:
-            self.__defaults._assign(session)
+            self.__defaults.assign(session)
 
         if store is True:
             self.__sessions[name] = session

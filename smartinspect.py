@@ -57,8 +57,9 @@ class SmartInspect:
         self.__is_multithreaded = False
 
     # this currently returns only current local time
-    def now(self) -> int:
-        return Clock.now(self.__resolution)
+    @staticmethod
+    def now() -> int:
+        return Clock.now()
 
     def get_resolution(self) -> ClockResolution:
         return self.__resolution
@@ -168,7 +169,7 @@ class SmartInspect:
         protocol = ProtocolFactory.get_protocol(name, options)
         listener = ProtocolListener()
 
-        def on_error(obj, error):
+        def on_error(error):
             self.__do_error(error.get_exception())
 
         listener.on_error = on_error
@@ -351,7 +352,7 @@ class SmartInspect:
     def get_session(self, session_name: str) -> Session:
         return self.__sessions.get(session_name)
 
-    def _update_session(self, session: Session, new_name: str, old_name: str) -> None:
+    def update_session(self, session: Session, new_name: str, old_name: str) -> None:
         self.__sessions.update(session, new_name, old_name)
 
     def dispose(self) -> None:

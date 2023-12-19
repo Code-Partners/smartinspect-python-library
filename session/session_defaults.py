@@ -9,10 +9,10 @@ class SessionDefaults:
         self.__color: Color = Color.TRANSPARENT
         self.__level: Level = Level.DEBUG
 
-    def _assign(self, session: Session) -> None:
-        session.active = self.__active
-        session.color = self.__color
-        session.level = self.__level
+    def assign(self, session: Session) -> None:
+        self.__active = session.active
+        self.__color = session.color
+        self.__level = session.level
 
     def is_active(self) -> bool:
         return self.__active

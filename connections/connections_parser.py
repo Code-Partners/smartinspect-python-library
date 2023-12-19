@@ -18,6 +18,7 @@ class ConnectionsParser:
         length = len(connections)
         name = ""
         options = ""
+        symbol = ""
         pointer = 0
 
         while pointer < length - 1:
@@ -87,13 +88,3 @@ class ConnectionsParser:
             if len(connections) > 0:
                 self.__internal_parse(connections, callback)
 
-
-if __name__ == "__main__":
-    protocols = "text(filename=\"C:\\log.txt\", pattern=\"%pattern%\", maxsize=\"1MB\", buffer=\"5MB\", " \
-                "level=\"debug\", caption=\"Caption\", reconnect=\"true\"), mem(maxsize=\"123\", " \
-                "reconnect.interval=\"123\", backlog.enabled=\"true\", backlog.queue=\"1MB\"), " \
-                "pipe(pipename=\"pipe\", backlog.flushon=\"control\", backlog.keepopen=\"false\", " \
-                "async.enabled=\"true\"), " \
-                "tcp(reconnect=\"true\", async.enabled=\"true\", async.queue=\"100KB\", host=\"example.com\", " \
-                "port=\"1234\")"
-    ConnectionsParser().parse(protocols, ConnectionsParserListener())

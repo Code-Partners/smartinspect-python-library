@@ -44,7 +44,7 @@ class BinaryContext(ViewerContext):
         if not self.__data.closed:
             try:
                 self.__data.close()
-            except OSError as e:
+            except OSError:
                 pass
         # we are not expecting an exception
 

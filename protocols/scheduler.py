@@ -110,7 +110,7 @@ class Scheduler:
 
         try:
             self.__thread.join()
-        except InterruptedError as e:
+        except InterruptedError:
             pass
 
     @property

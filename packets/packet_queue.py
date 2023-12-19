@@ -74,16 +74,3 @@ class PacketQueue:
     @property
     def count(self) -> int:
         return self.__count
-
-
-# if __name__ == '__main__':
-#     pq = PacketQueue()
-#     pq.backlog = 100
-#     pq.push(LogEntry(LogEntryType.MESSAGE, ViewerId.NO_VIEWER))
-#     print(pq.count, pq.backlog)
-#     pq.push(LogEntry(LogEntryType.MESSAGE, ViewerId.NO_VIEWER))
-#     print(pq.count, pq.backlog)
-#     pq.push(LogEntry(LogEntryType.MESSAGE, ViewerId.NO_VIEWER))
-#     pq.push(LogEntry(LogEntryType.MESSAGE, ViewerId.NO_VIEWER))
-#     pq.clear()
-#     print(pq.count, pq.backlog)
