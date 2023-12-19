@@ -1,5 +1,3 @@
-from abc import ABC, abstractmethod
-
 from connections.options_parser_event import OptionsParserEvent
 
 
