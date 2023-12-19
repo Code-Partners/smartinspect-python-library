@@ -1,4 +1,4 @@
-from io import TextIOWrapper
+from io import StringIO
 
 from common.context.viewer_context import ViewerContext
 from common.viewer_id import ViewerId
@@ -34,11 +34,11 @@ class TextContext(ViewerContext):
                 self.__data += string
 
     def load_from_stream(self, input_stream):
-        if not isinstance(input_stream, TextIOWrapper):
-            raise TypeError("input_stream argument must be a TextIOWrapper")
+        if not isinstance(input_stream, StringIO):
+            raise TypeError("input_stream argument must be a StringIO")
         else:
-            with TextIOWrapper(input_stream, encoding='utf-8') as stream_reader:
-                string = stream_reader.read()
+            with input_stream as stream:
+                string = stream.read()
                 self.__data += string
 
     # @staticmethod
