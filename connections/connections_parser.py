@@ -1,3 +1,5 @@
+import logging
+
 from connections.connections_parser_listener import ConnectionsParserListener
 from common.events.connections_parser_event import ConnectionsParserEvent
 from common.exceptions import SmartInspectException
@@ -68,8 +70,8 @@ class ConnectionsParser:
                 # Skip the ',' character.
                 pointer += 1
 
-            print(f'name>>> {name}')
-            print(f'options>>> {options}')
+            logging.debug(f'name>>> {name}')
+            logging.debug(f'options>>> {options}')
 
             self.__do_protocol(callback, name, options)
             name = ""
