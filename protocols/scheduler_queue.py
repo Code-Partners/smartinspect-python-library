@@ -24,7 +24,9 @@ class SchedulerQueue:
 
     def enqueue(self, command: SchedulerCommand) -> None:
         if isinstance(command, SchedulerCommand):
+            logging.debug("sch_queue_enqueue")
             queue_item = SchedulerQueueItem(command)
+            logging.debug("sch_queue_enqueue")
             self.__add(queue_item)
 
     def __add(self, item: SchedulerQueueItem) -> None:
