@@ -72,10 +72,14 @@ class Scheduler:
         self.__protocol = protocol
         self.__condition = threading.Condition()
         self.__queue = SchedulerQueue()
-        self.__buffer: List[SchedulerCommand] = []
+        self.__buffer: List[Optional[SchedulerCommand]] = [None] * self.__BUFFER_SIZE
         self.__started: bool = False
         self.__stopped: bool = False
         self.__thread: Optional[SchedulerThread] = None
+
+    @property
+    def stopped(self):
+        return self.__stopped
 
     @property
     def protocol(self):
