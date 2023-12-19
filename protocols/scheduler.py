@@ -1,3 +1,4 @@
+import logging
 import threading
 from typing import List, Optional
 
@@ -9,22 +10,24 @@ from protocols.scheduler_queue import SchedulerQueue
 class SchedulerThread(threading.Thread):
     def __init__(self, scheduler) -> None:
         super().__init__()
-        self.__parent = scheduler
+        self.__parent: Scheduler = scheduler
 
     @property
     def parent(self):
         return self.__parent
 
     def run(self) -> None:
+
+        logging.debug("sch_thread_running")
         while True:
+            logging.debug("sch_thread_about to dequeue")
             count: int = self.parent.dequeue()
+            logging.debug(count)
             if count == 0:
                 break
 
             if not self.run_commands(count):
                 break
-
-        self.parent.buffer = None
 
     def run_commands(self, count: int) -> bool:
         for i in range(count):
@@ -86,8 +89,6 @@ class Scheduler:
     def buffer(self):
         return self.__buffer
 
-    
-
     def start(self) -> None:
         with self.condition:
             if self.__started:
@@ -135,31 +136,35 @@ class Scheduler:
 
     def __enqueue(self, command: SchedulerCommand) -> bool:
         if (not self.__started) or self.__stopped:
+            logging.warning(" returning False - not started or stopped")
             return False
 
         command_size = command.size
         if command_size > self.threshold:
+            logging.warning(" returning False - command size > threshold")
             return False
-
+        #
         with self.condition:
-            if (not self.throttle) or self.protocol.failed:
-                if self.__queue.size + command_size > self.threshold:
-                    self.__queue.trim(command_size)
-            else:
-                while self.__queue.size + command_size > self.threshold:
-                    try:
-                        self.condition.wait()
-                    except InterruptedError:
-                        ...
+            # if (not self.throttle) or self.protocol.failed:
+            #     if self.__queue.size + command_size > self.threshold:
+            #         self.__queue.trim(command_size)
+            # else:
+            #     while self.__queue.size + command_size > self.threshold:
+            #         try:
+            #             self.condition.wait()
+            #         except InterruptedError:
+            #             ...
             self.__queue.enqueue(command)
+            logging.warning("about to notify Condition")
             self.condition.notify()
-
+            logging.warning("after notifying Condition")
+        logging.warning("returning True")
         return True
 
-    def __dequeue(self) -> int:
+    def dequeue(self) -> int:
         count = 0
         buffer_length = len(self.__buffer)
-
+        logging.warning(f"buffer_length {buffer_length}")
         with self.condition:
             while self.__queue.count == 0:
                 if self.__stopped:
@@ -173,8 +178,10 @@ class Scheduler:
             while self.__queue.count > 0 and count < buffer_length:
                 self.__buffer[count] = self.__queue.dequeue()
                 count += 1
-
+                logging.warning(f"count {count}")
+            logging.warning("reached")
             self.condition.notify()
+            logging.warning("after notify")
 
         return count
 
@@ -182,5 +189,3 @@ class Scheduler:
         with self.condition:
             self.__queue.clear()
             self.condition.notify()
-
-    
