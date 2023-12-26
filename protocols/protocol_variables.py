@@ -72,14 +72,15 @@ class ProtocolVariables:
         if not isinstance(connections, str):
             raise TypeError('connections must be a string')
 
-        for key in self.__items.keys():
-            key = self.__make_key(key)
-            pair = self.__items.get(key)
+        with self.__lock:
+            for key in self.__items.keys():
+                key = self.__make_key(key)
+                pair = self.__items.get(key)
 
-            if pair is not None:
-                key = "$" + pair.key + "$"
-                value = pair.value
-                connections = self.__replace(connections, key, value)
+                if pair is not None:
+                    key = "$" + pair.key + "$"
+                    value = pair.value
+                    connections = self.__replace(connections, key, value)
 
         return connections
 
