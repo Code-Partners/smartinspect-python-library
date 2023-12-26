@@ -397,7 +397,24 @@ class Protocol:
                 raise Exception  # these are swallowed in Jlib
 
     def __do_reconnect(self) -> None:
-        pass
+        if self.__reconnect_interval > 0:
+            tick_count = time.time() * 1000
+            if tick_count - self.__reconnect_tick_count < self.__reconnect_interval:
+                return
+
+            try:
+               if self._internal_reconnect():
+                   self.__connected = True
+            except Exception:
+                pass
+
+            self.__failed = not self.__connected
+            if self.__failed:
+                try:
+                    self._reset()
+                except Exception:
+                    pass
+                    
 
     def __add_option(self, protocol: str, key: str, value: str) -> None:
         if self.__map_option(key, value):
