@@ -46,8 +46,9 @@ class SchedulerQueue:
         item = self.__head
         if item is None:
             return None
-        self.__remove(item)
-        return item.command
+        else:
+            self.__remove(item)
+            return item.command
 
     def __remove(self, item: SchedulerQueueItem) -> None:
         if item == self.__head:
