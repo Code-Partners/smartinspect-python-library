@@ -54,7 +54,7 @@ class ConnectionsBuilder:
             self.__buffer += ", "
 
         self.__buffer += key + "=\""
-        value = str(value)
+        value = str(value).lower()
         value = self.__escape(value)
         self.__buffer += value + "\""
 
