@@ -275,7 +275,7 @@ class Protocol:
     def __start_scheduler(self):
         self.__scheduler = Scheduler(self)
         self.__scheduler.threshold = self.__async_queue
-        self.__throttle = self.__async_throttle
+        self.__scheduler.throttle = self.__async_throttle
         self.__scheduler.start()
 
     def __stop_scheduler(self):
