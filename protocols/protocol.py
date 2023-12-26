@@ -35,7 +35,7 @@ class Protocol:
         self.__scheduler = None
         self.__connected = False
         # self.__reconnect = False
-        self.__keep_open = False
+        # self.__keep_open = False
         # self.__caption = ""
         self.__initialized = False
         # self.__backlog_enabled = False
@@ -59,7 +59,6 @@ class Protocol:
         pass
 
     def _load_options(self) -> None:
-        # pass
         self.__level = self._get_level_option("level", Level.DEBUG)
         self.__caption = self._get_string_option("caption", self._get_name())
         self.__reconnect = self._get_boolean_option("reconnect", False)
@@ -69,9 +68,9 @@ class Protocol:
         self.__backlog_queue = self._get_size_option("backlog.queue", 2048)
         self.__backlog_flushon = self._get_level_option("backlog.flushon", Level.ERROR)
         self.__backlog_keep_open = self._get_boolean_option("backlog.keepopen", False)
-        #
-        # self.__queue.set_backlog(self.__backlog_queue)
-        # self.__keep_open = (not self.__backlog_enabled) or self.__backlog_keep_open
+
+        self.__queue.backlog = self.__backlog_queue
+        self.__keep_open = (not self.__backlog_enabled) or self.__backlog_keep_open
         self.__async_enabled = self._get_boolean_option("async.enabled", False)
         self.__async_throttle = self._get_boolean_option("async.throttle", True)
         self.__async_queue = self._get_size_option("async.queue", 2048)
