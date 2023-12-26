@@ -34,10 +34,7 @@ class BinaryFormatter(Formatter):
 
     # There is no evident benefit in resetting position in BytesIO buffer over creating a new one
     def __reset_stream(self):
-        if self.__size > self.__MAX_STREAM_CAPACITY:
-            self.__stream = BytesIO()
-        else:
-            self.__stream.seek(0)
+        self.__stream = BytesIO()
 
     def compile(self, packet: Packet) -> int:
         self.__reset_stream()
