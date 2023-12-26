@@ -36,7 +36,7 @@ class SchedulerQueue:
         else:
             self.__tail.next = item
             item.prev = self.__tail
-            self.__head = item
+            self.__tail = item
 
         self.__count += 1
         self.__size += item.command.size + self.__OVERHEAD
