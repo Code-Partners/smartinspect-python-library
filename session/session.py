@@ -212,7 +212,7 @@ class Session:
             try:
                 if not isinstance(method_name, str):
                     raise TypeError('Method name must be a string')
-                method_name = method_name.format(*args)
+                method_name = method_name.format(*args, **kwargs)
                 instance = kwargs.get("instance")
                 if instance is not None:
                     class_name = instance.__class__.__name__
