@@ -61,7 +61,6 @@ class SessionManager:
             if info.has_active:
                 session.active = info.active
         else:
-            # but what is the sense of it actually?
             if info.has_active:
                 session.active = info.active
             if info.has_level:
