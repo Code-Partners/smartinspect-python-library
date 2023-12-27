@@ -121,8 +121,10 @@ class SessionManager:
 
         return info
 
-    def __load_defaults(self, config):
-        pass
+    def __load_defaults(self, config: Configuration) -> None:
+        self.__defaults.set_active(config.read_boolean("sessiondefaults.active", self.__defaults.is_active()))
+        self.__defaults.set_level(config.read_level("sessiondefaults.level", self.__defaults.get_level()))
+        self.__defaults.set_color(config.read_color("sessiondefaults.color", self.__defaults.get_color()))
 
     def get_defaults(self) -> SessionDefaults:
         """Returns default property values for new sessions"""
