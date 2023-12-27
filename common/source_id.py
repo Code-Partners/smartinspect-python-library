@@ -21,7 +21,7 @@ class SourceId(Enum):
     def viewer_id(self):
         return self.__viewer_id
 
-    # do we need the __str__(to_string method here?)
+    # Left as reference to SI Java lib
     def __str__(self):
         if self.__str == "":
             self.__str = str(self.viewer_id)
