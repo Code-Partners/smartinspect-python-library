@@ -378,21 +378,19 @@ class Session:
                 if not isinstance(details, str):
                     raise TypeError("Name must be a string")
 
-                if name:
-                    key = name.lower()
-                    value = self.__checkpoints.get(key)
-                    if value is None:
-                        value = 0
-                    value += 1
-                    self.__checkpoints[key] = value
+                with self.__checkpoint_lock:
+                    if name:
+                        key = name.lower()
+                        value = self.__checkpoints.get(key)
+                        if value is None:
+                            value = 0
+                        value += 1
+                        self.__checkpoints[key] = value
 
-                    title = name + " #" + str(value)
-                    if details:
-                        title += "(" + details + ")"
-
-                else:
-                    with self.__checkpoint_lock:
-
+                        title = name + " #" + str(value)
+                        if details:
+                            title += "(" + details + ")"
+                    else:
                         self.__checkpoint_counter += 1
                         counter = self.__checkpoint_counter
 
