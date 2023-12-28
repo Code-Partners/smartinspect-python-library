@@ -14,6 +14,7 @@ from common.events.watch_event import WatchEvent
 from common.exceptions import InvalidConnectionsException, SmartInspectException
 from common.exceptions import LoadConnectionsException, LoadConfigurationException
 from common.level import Level
+from common.locked_set import LockedSet
 from common.protocol_command import ProtocolCommand
 from common.listener.protocol_listener import ProtocolListener
 from common.listener.smartinspect_listener import SmartInspectListener
@@ -48,8 +49,7 @@ class SmartInspect:
         self.__enabled = False
         self.appname = appname
         self.__hostname = self.__obtain_hostname()
-        # need to provide a lock for listeners collection
-        self.__listeners = set()
+        self.__listeners = LockedSet()
         self.__sessions = SessionManager()
         self.__resolution = ClockResolution.STANDARD
         self.__variables = ProtocolVariables()
@@ -88,7 +88,6 @@ class SmartInspect:
         self.__update_protocols()
 
     def __update_protocols(self):
-        # does it really do _what is expected_?
         with self.__lock:
             for protocol in self.__protocols:
                 protocol.appname = self.__appname
@@ -342,7 +341,6 @@ class SmartInspect:
             session = session
         else:
             raise TypeError("session parameter must be a string (session name) or a Session instance")
-
         self.__sessions.add(session, store)
         return session
 
@@ -419,7 +417,7 @@ class SmartInspect:
         return hostname
 
     def __do_error(self, exception: Exception):
-        with self.__lock:
+        with self.__listeners:
             error_event = ErrorEvent(self, exception)
             for listener in self.__listeners:
                 listener.on_error(error_event)
@@ -447,8 +445,7 @@ class SmartInspect:
                     self.__do_error(e)
 
     def _do_filter(self, packet: Packet) -> bool:
-        # here and in other do_methods the listeners collection itself is a lock in java...
-        with self.__lock:
+        with self.__listeners:
             if len(self.__listeners) > 0:
                 event = FilterEvent(self, packet)
 
@@ -460,14 +457,14 @@ class SmartInspect:
         return False
 
     def _do_process_flow(self, process_flow: ProcessFlow):
-        with self.__lock:
+        with self.__listeners:
             if len(self.__listeners) > 0:
                 event = ProcessFlowEvent(self, process_flow)
                 for listener in self.__listeners:
                     listener.on_process_flow(event)
 
     def _do_watch(self, watch: Watch):
-        with self.__lock:
+        with self.__listeners:
             if len(self.__listeners) > 0:
                 event = WatchEvent(self, watch)
 
@@ -475,20 +472,15 @@ class SmartInspect:
                     listener.on_watch(event)
 
     def _do_log_entry(self, log_entry: LogEntry):
-        # here and in other do_methods the listeners collection itself is a lock in java...
-        with self.__lock:
+        with self.__listeners:
             if len(self.__listeners) > 0:
                 event = LogEntryEvent(self, log_entry)
                 for listener in self.__listeners:
                     listener.on_log_entry(event)
 
     def _do_control_command(self, control_command: ControlCommand):
-        # here and in other do_methods the listeners collection itself is a lock in java...
-        with self.__lock:
+        with self.__listeners:
             if len(self.__listeners):
                 event = ControlCommandEvent(self, control_command)
                 for listener in self.__listeners:
                     listener.on_control_command(event)
-
-
-
