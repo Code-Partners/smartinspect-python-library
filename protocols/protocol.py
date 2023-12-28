@@ -38,6 +38,7 @@ class Protocol:
         # self.__keep_open = False
         # self.__caption = ""
         self.__initialized = False
+        self.__failed = False
         # self.__backlog_enabled = False
 
     def __create_options(self, options: str) -> None:
