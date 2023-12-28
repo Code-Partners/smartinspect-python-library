@@ -378,25 +378,6 @@ class Protocol:
                 self.__connected = False
                 self._internal_disconnect()
 
-    def __reconnect(self) -> None:
-        if self.__reconnect_interval > 0:
-            tick_count = int(round(time.time() * 1000))
-            if tick_count - self.__reconnect_tick_count < self.__reconnect_interval:
-                return
-        try:
-            if self._internal_reconnect():
-                self.__connected = True
-        except Exception:
-            raise Exception  # these are swallowed in Jlib
-
-        self.__failed = not self.__connected
-
-        if self.__failed:
-            try:
-                self._reset()
-            except Exception:
-                raise Exception  # these are swallowed in Jlib
-
     def __do_reconnect(self) -> None:
         if self.__reconnect_interval > 0:
             tick_count = time.time() * 1000
@@ -404,18 +385,17 @@ class Protocol:
                 return
 
             try:
-               if self._internal_reconnect():
-                   self.__connected = True
+                if self._internal_reconnect():
+                    self.__connected = True
             except Exception:
-                pass
+                raise Exception  # these are swallowed in Jlib
 
             self.__failed = not self.__connected
             if self.__failed:
                 try:
                     self._reset()
                 except Exception:
-                    pass
-                    
+                    raise Exception  # these are swallowed in Jlib
 
     def __add_option(self, protocol: str, key: str, value: str) -> None:
         if self.__map_option(key, value):
