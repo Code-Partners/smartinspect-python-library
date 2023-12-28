@@ -159,8 +159,8 @@ class Protocol:
 
                 self.__start_scheduler()
                 self.__schedule_connect()
-
-            self._impl_connect()
+            else:
+                self._impl_connect()
 
     def disconnect(self) -> None:
         with self.__lock:
