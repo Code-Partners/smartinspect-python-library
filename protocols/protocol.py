@@ -1,5 +1,4 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
-
 import threading
 import time
 
@@ -8,6 +7,7 @@ from common.exceptions import ProtocolException, SmartInspectException
 from common.file_rotate import FileRotate
 from common.level import Level
 from common.listener.protocol_listener import ProtocolListener
+from common.locked_set import LockedSet
 from common.lookup_table import LookupTable
 from common.protocol_command import ProtocolCommand
 from connections.builders import ConnectionsBuilder
@@ -27,7 +27,7 @@ class Protocol:
         self.__lock: threading.Lock = threading.Lock()
         self.__options = LookupTable()
         self.__queue = PacketQueue()
-        self.__listeners = set()
+        self.__listeners = LockedSet()
         self.__appname = ""
         self.__hostname = ""
         # self.__level = Level.MESSAGE
@@ -267,10 +267,10 @@ class Protocol:
             raise protocol_exception
 
     def _do_error(self, exception: Exception):
-        # TODO add lock
-        error_event = ErrorEvent(self, exception)
-        for listener in self.__listeners:
-            listener.on_error(error_event)
+        with self.__listeners:
+            error_event = ErrorEvent(self, exception)
+            for listener in self.__listeners:
+                listener.on_error(error_event)
 
     def __start_scheduler(self):
         self.__scheduler = Scheduler(self)
@@ -335,14 +335,14 @@ class Protocol:
                 self.__initialized = True
 
     def add_listener(self, listener: ProtocolListener):
-        # TODO implement lock
-        if isinstance(listener, ProtocolListener):
-            self.__listeners.add(listener)
+        with self.__listeners:
+            if isinstance(listener, ProtocolListener):
+                self.__listeners.add(listener)
 
     def remove_listener(self, listener: ProtocolListener):
-        # TODO implement lock
-        if isinstance(listener, ProtocolListener):
-            self.__listeners.remove(listener)
+        with self.__listeners:
+            if isinstance(listener, ProtocolListener):
+                self.__listeners.remove(listener)
 
     def _internal_reconnect(self) -> bool:
         self._internal_connect()
