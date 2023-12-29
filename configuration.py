@@ -104,9 +104,6 @@ class Configuration:
                     encoding = "UTF-16LE"
                     pushback = 1
 
-                # add other encodings?
-
-            # is there any need for rewind?
             if pushback > 0:
                 file.seek(len(bom) - pushback, io.SEEK_SET)
 
