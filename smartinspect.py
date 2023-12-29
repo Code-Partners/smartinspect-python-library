@@ -14,10 +14,10 @@ from common.events.watch_event import WatchEvent
 from common.exceptions import InvalidConnectionsException, SmartInspectException
 from common.exceptions import LoadConnectionsException, LoadConfigurationException
 from common.level import Level
-from common.locked_set import LockedSet
-from common.protocol_command import ProtocolCommand
 from common.listener.protocol_listener import ProtocolListener
 from common.listener.smartinspect_listener import SmartInspectListener
+from common.locked_set import LockedSet
+from common.protocol_command import ProtocolCommand
 from configuration import Configuration
 from connections import ConnectionsParser
 from connections.connections_parser_listener import ConnectionsParserListener
