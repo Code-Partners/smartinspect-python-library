@@ -1,3 +1,4 @@
+import logging
 import math
 import struct
 from io import BytesIO
@@ -193,8 +194,11 @@ class BinaryFormatter(Formatter):
         self.__write_4bytes_int(signed_int)
 
     def write(self, stream):
+        logging.debug("Writing packet to output stream.")
         self.__write_short(self.__packet.packet_type.value, stream=stream)
         self.__write_4bytes_int(self.__size, stream=stream)
+        logging.debug(f"stream = {self.__stream.getvalue()}")
+        logging.debug(f"stream_size is = {len(self.__stream.getvalue())}")
         stream.write(self.__stream.getvalue())
 
     def __write_double(self, value: float) -> None:
