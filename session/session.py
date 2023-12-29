@@ -8,17 +8,19 @@ import threading
 import traceback
 from typing import Optional, Union
 
+from common.color.color import Color
 from common.context.binary_context import BinaryContext
 from common.context.binary_viewer_context import BinaryViewerContext
-from common.color.color import Color
 from common.context.data_viewer_context import DataViewerContext
 from common.context.inspector_viewer_context import InspectorViewerContext
-from common.level import Level
 from common.context.list_viewer_context import ListViewerContext
-from common.locked_dictionary import LockedDictionary
+from common.context.tableviewercontext import TableViewerContext
 from common.context.text_context import TextContext
 from common.context.value_list_viewer_context import ValueListViewerContext
 from common.context.viewer_context import ViewerContext
+from common.level import Level
+from common.locked_dictionary import LockedDictionary
+from common.source_id import SourceId
 from common.viewer_id import ViewerId
 from packets.control_command import ControlCommand
 from packets.control_command_type import ControlCommandType
@@ -26,8 +28,6 @@ from packets.log_entry import LogEntryType, LogEntry
 from packets.process_flow import ProcessFlowType, ProcessFlow
 from packets.watch import Watch
 from packets.watch_type import WatchType
-from common.source_id import SourceId
-from common.context.tableviewercontext import TableViewerContext
 
 
 class Session:
