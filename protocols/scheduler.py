@@ -18,11 +18,8 @@ class SchedulerThread(threading.Thread):
 
     def run(self) -> None:
 
-        logging.debug("sch_thread_running")
         while True:
-            logging.debug("sch_thread_about to dequeue")
             count: int = self.parent.dequeue()
-            logging.debug(count)
             if count == 0:
                 break
 
@@ -45,9 +42,11 @@ class SchedulerThread(threading.Thread):
 
         return True
 
+    # noinspection PyProtectedMember
     def __run_command(self, command: SchedulerCommand) -> None:
         action = command.action
         protocol = self.parent.protocol
+        # noinspection PyBroadException
         try:
             if action == SchedulerAction.CONNECT:
                 protocol._impl_connect()
@@ -76,6 +75,8 @@ class Scheduler:
         self.__started: bool = False
         self.__stopped: bool = False
         self.__thread: Optional[SchedulerThread] = None
+        self.__threshold = 0
+        self.__throttle = False
 
     @property
     def stopped(self):
@@ -139,36 +140,34 @@ class Scheduler:
         return self.__enqueue(command)
 
     def __enqueue(self, command: SchedulerCommand) -> bool:
-        if (not self.__started) or self.__stopped:
-            logging.warning(" returning False - not started or stopped")
+        if not self.__started:
+            return False
+        if self.stopped:
             return False
 
         command_size = command.size
+        logging.debug(f"Threshold is {self.threshold}")
         if command_size > self.threshold:
-            logging.warning(" returning False - command size > threshold")
+            logging.debug(f"Command size > threshold: {command_size} > {self.threshold}; ignoring")
             return False
-        #
+        
         with self.condition:
-            # if (not self.throttle) or self.protocol.failed:
-            #     if self.__queue.size + command_size > self.threshold:
-            #         self.__queue.trim(command_size)
-            # else:
-            #     while self.__queue.size + command_size > self.threshold:
-            #         try:
-            #             self.condition.wait()
-            #         except InterruptedError:
-            #             ...
+            if self.throttle is False or self.protocol.failed:
+                if self.__queue.size + command_size > self.threshold:
+                    self.__queue.trim(command_size)
+            else:
+                while self.__queue.size + command_size > self.threshold:
+                    try:
+                        self.condition.wait()
+                    except InterruptedError:
+                        ...
             self.__queue.enqueue(command)
-            logging.warning("about to notify Condition")
             self.condition.notify()
-            logging.warning("after notifying Condition")
-        logging.warning("returning True")
         return True
 
     def dequeue(self) -> int:
         count = 0
-        buffer_length = len(self.__buffer)
-        logging.warning(f"buffer_length {buffer_length}")
+        buffer_length = sum(list(map(lambda x: x is not None, self.__buffer)))
         with self.condition:
             while self.__queue.count == 0:
                 if self.__stopped:
@@ -179,14 +178,13 @@ class Scheduler:
                 except InterruptedError:
                     ...
 
-            while self.__queue.count > 0 and count < buffer_length:
-                self.__buffer[count] = self.__queue.dequeue()
+            while self.__queue.count > 0:
+                command = self.__queue.dequeue()
+                self.__buffer[count] = command
                 count += 1
-                logging.warning(f"count {count}")
-            logging.warning("reached")
+                if count >= buffer_length:
+                    break
             self.condition.notify()
-            logging.warning("after notify")
-
         return count
 
     def clear(self) -> None:
