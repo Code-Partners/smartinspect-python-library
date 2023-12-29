@@ -5,7 +5,6 @@ from protocols.scheduler_action import SchedulerAction
 from protocols.scheduler_command import SchedulerCommand
 
 
-
 class SchedulerQueueItem:
     def __init__(self, command: SchedulerCommand) -> None:
         self.command: SchedulerCommand = command
@@ -24,9 +23,7 @@ class SchedulerQueue:
 
     def enqueue(self, command: SchedulerCommand) -> None:
         if isinstance(command, SchedulerCommand):
-            logging.debug("sch_queue_enqueue")
             queue_item = SchedulerQueueItem(command)
-            logging.debug("sch_queue_enqueue")
             self.__add(queue_item)
 
     def __add(self, item: SchedulerQueueItem) -> None:
@@ -40,7 +37,6 @@ class SchedulerQueue:
 
         self.__count += 1
         self.__size += item.command.size + self.__OVERHEAD
-        logging.debug("added")
 
     def dequeue(self) -> Optional[SchedulerCommand]:
         item = self.__head
@@ -86,7 +82,6 @@ class SchedulerQueue:
                     return True
 
             queue_item = queue_item.next
-
         return False
 
     def clear(self) -> None:
@@ -100,4 +95,3 @@ class SchedulerQueue:
     @property
     def size(self) -> int:
         return self.__size
-
