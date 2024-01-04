@@ -480,7 +480,7 @@ class Session:
         else:
             return hex_value.zfill(max_chars)
 
-    def log_bool_value(self, name: str, value: bool, **kwargs) -> None:
+    def log_bool(self, name: str, value: bool, **kwargs) -> None:
         level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
@@ -495,7 +495,7 @@ class Session:
 
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_str_value(self, name: str, value: str, **kwargs) -> None:
+    def log_str(self, name: str, value: str, **kwargs) -> None:
         level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
@@ -509,7 +509,7 @@ class Session:
                 return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_bytes_value(self, name: str, value: bytes, include_hex: bool = False, **kwargs) -> None:
+    def log_bytes(self, name: str, value: bytes, include_hex: bool = False, **kwargs) -> None:
         level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
@@ -527,7 +527,7 @@ class Session:
                 return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_bytearray_value(self, name: str, value: bytearray, include_hex: bool = False, **kwargs) -> None:
+    def log_bytearray(self, name: str, value: bytearray, include_hex: bool = False, **kwargs) -> None:
         level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
@@ -545,7 +545,7 @@ class Session:
                 return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_int_value(self, name: str, value: int, include_hex: bool = False, **kwargs) -> None:
+    def log_int(self, name: str, value: int, include_hex: bool = False, **kwargs) -> None:
         level = self.__get_level(**kwargs)
 
         if level is None:
@@ -566,7 +566,7 @@ class Session:
                 return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_float_value(self, name: str, value: float, **kwargs) -> None:
+    def log_float(self, name: str, value: float, **kwargs) -> None:
         level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
@@ -592,7 +592,7 @@ class Session:
                 return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_time_value(self, name: str, value: datetime.time, **kwargs) -> None:
+    def log_time(self, name: str, value: datetime.time, **kwargs) -> None:
         level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
@@ -607,7 +607,7 @@ class Session:
 
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_datetime_value(self, name: str, value: datetime.datetime, **kwargs) -> None:
+    def log_datetime(self, name: str, value: datetime.datetime, **kwargs) -> None:
         level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
@@ -621,7 +621,7 @@ class Session:
                 return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_list_value(self, name: str, value: list, **kwargs) -> None:
+    def log_list(self, name: str, value: list, **kwargs) -> None:
         level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
@@ -635,7 +635,7 @@ class Session:
                 return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_tuple_value(self, name: str, value: tuple, **kwargs) -> None:
+    def log_tuple(self, name: str, value: tuple, **kwargs) -> None:
         level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
@@ -649,7 +649,7 @@ class Session:
                 return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_set_value(self, name: str, value: set, **kwargs) -> None:
+    def log_set(self, name: str, value: set, **kwargs) -> None:
         level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
@@ -677,7 +677,7 @@ class Session:
                 return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_complex_value(self, name: str, value: complex, **kwargs) -> None:
+    def log_complex(self, name: str, value: complex, **kwargs) -> None:
         level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
@@ -693,7 +693,7 @@ class Session:
 
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_fraction_value(self, name: str, value: fractions.Fraction, **kwargs) -> None:
+    def log_fraction(self, name: str, value: fractions.Fraction, **kwargs) -> None:
         level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
@@ -707,39 +707,39 @@ class Session:
                 return self.__process_internal_error(e)
             self.__send_log_entry(level, title, LogEntryType.VARIABLE_VALUE, ViewerId.TITLE)
 
-    def log_value(self, name: str, value, **kwargs) -> None:
+    def log(self, name: str, value, **kwargs) -> None:
         level = self.__get_level(**kwargs)
 
         if isinstance(value, bool):
-            return self.log_bool_value(name, value, level=level)
+            return self.log_bool(name, value, level=level)
         if isinstance(value, int):
-            return self.log_int_value(name, value, level=level)
+            return self.log_int(name, value, level=level)
         if isinstance(value, str):
-            return self.log_str_value(name, value, level=level)
+            return self.log_str(name, value, level=level)
         if isinstance(value, bytes):
-            return self.log_bytes_value(name, value, level=level)
+            return self.log_bytes(name, value, level=level)
         if isinstance(value, bytearray):
-            return self.log_bytearray_value(name, value, level=level)
+            return self.log_bytearray(name, value, level=level)
         if isinstance(value, float):
-            return self.log_float_value(name, value, level=level)
+            return self.log_float(name, value, level=level)
         if isinstance(value, datetime.time):
-            return self.log_time_value(name, value, level=level)
+            return self.log_time(name, value, level=level)
         if isinstance(value, datetime.datetime):
-            return self.log_datetime_value(name, value, level=level)
+            return self.log_datetime(name, value, level=level)
         if isinstance(value, list):
-            return self.log_list_value(name, value, level=level)
+            return self.log_list(name, value, level=level)
         if isinstance(value, object):
             return self.log_object_value(name, value, level=level)
         if isinstance(value, tuple):
-            return self.log_tuple_value(name, value, level=level)
+            return self.log_tuple(name, value, level=level)
         if isinstance(value, set):
-            return self.log_set_value(name, value, level=level)
+            return self.log_set(name, value, level=level)
         if isinstance(value, dict):
             return self.log_dict_value(name, value, level=level)
         if isinstance(value, complex):
-            return self.log_complex_value(name, value, level=level)
+            return self.log_complex(name, value, level=level)
         if isinstance(value, fractions.Fraction):
-            return self.log_fraction_value(name, value, level=level)
+            return self.log_fraction(name, value, level=level)
 
     def log_custom_context(self, title: str, logentry_type: LogEntryType, context: ViewerContext, **kwargs) -> None:
         level = self.__get_level(**kwargs)
