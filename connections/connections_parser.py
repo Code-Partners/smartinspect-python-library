@@ -1,6 +1,6 @@
-from connections.connections_parser_listener import ConnectionsParserListener
 from common.events.connections_parser_event import ConnectionsParserEvent
 from common.exceptions import SmartInspectException
+from connections.connections_parser_listener import ConnectionsParserListener
 
 
 class ConnectionsParser:
@@ -69,9 +69,6 @@ class ConnectionsParser:
                 # Skip the ',' character.
                 pointer += 1
 
-            print(f'name>>> {name}')
-            print(f'options>>> {options}')
-
             self.__do_protocol(callback, name, options)
             name = ""
             options = ""
@@ -85,4 +82,3 @@ class ConnectionsParser:
             connections = connections.strip()
             if len(connections) > 0:
                 self.__internal_parse(connections, callback)
-

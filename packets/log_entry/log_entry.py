@@ -26,12 +26,14 @@ class LogEntry(Packet):
 
     @property
     def size(self) -> int:
-        result = self.HEADER_SIZE + \
-                 self._get_string_size(self.__appname) + \
-                 self._get_string_size(self.__session_name) + \
-                 self._get_string_size(self.__title) + \
-                 self._get_string_size(self.__hostname) + \
-                 len(self.__data)
+        data_length = 0 if self.__data is None else len(self.__data)
+
+        result = (self.HEADER_SIZE +
+                  self._get_string_size(self.__appname) +
+                  self._get_string_size(self.__session_name) +
+                  self._get_string_size(self.__title) +
+                  self._get_string_size(self.__hostname) +
+                  data_length)
         return result
 
     @property

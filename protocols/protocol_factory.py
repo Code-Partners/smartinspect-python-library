@@ -21,16 +21,18 @@ class ProtocolFactory:
 
     @classmethod
     def get_protocol(cls, name: str, options: str):
-        if not isinstance(name, str):
-            return None
+        with cls.__lock:
+            if not isinstance(name, str):
+                return None
 
-        protocol_class = cls.__lookup.get(name, None)
-        if protocol_class is not None:
-            protocol = cls.__create_instance(protocol_class)
-            protocol.initialize(options)
-            return protocol
-        else:
-            raise SmartInspectException(cls.__PROTOCOL_NOT_FOUND)
+            protocol_class = cls.__lookup.get(name, None)
+            if protocol_class is not None:
+                protocol = cls.__create_instance(protocol_class)
+                # noinspection PyUnresolvedReferences
+                protocol.initialize(options)
+                return protocol
+            else:
+                raise SmartInspectException(cls.__PROTOCOL_NOT_FOUND)
 
     @classmethod
     def __create_instance(cls, protocol_class):

@@ -1,10 +1,9 @@
-from io import TextIOWrapper
+from io import StringIO
 
 from common.context.viewer_context import ViewerContext
 from common.viewer_id import ViewerId
 
 
-# TODO this is not yet finished and needs thorough walk-through
 class TextContext(ViewerContext):
     __BOM = b'\xef\xbb\xbf'
 
@@ -29,23 +28,23 @@ class TextContext(ViewerContext):
             raise TypeError("file_name argument must be a string")
 
         else:
-            with open(file_name, 'r', encoding="utf-8") as file_reader:
-                string = file_reader.read()
+            with open(file_name, 'r', encoding="utf-8") as file:
+                string = file.read()
                 self.__data += string
 
     def load_from_stream(self, input_stream):
-        if not isinstance(input_stream, TextIOWrapper):
-            raise TypeError("input_stream argument must be a TextIOWrapper")
+        if not isinstance(input_stream, StringIO):
+            raise TypeError("input_stream argument must be a StringIO")
         else:
-            with TextIOWrapper(input_stream, encoding='utf-8') as stream_reader:
-                string = stream_reader.read()
+            with input_stream as stream:
+                string = stream.read()
                 self.__data += string
 
-    # @staticmethod
-    # def _escape_line(line: str):
-    #     if not isinstance(line, str):
-    #         raise TypeError("escape line must be a string")
-    #     return line
+    @staticmethod
+    def _escape_line(line: str):
+        if not isinstance(line, str):
+            raise TypeError("line must be a string")
+        return line
 
     def append_line(self, line: str):
         if not isinstance(line, str):

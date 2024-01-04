@@ -35,5 +35,5 @@ class ControlCommand(Packet):
 
     @property
     def size(self):
-        return self.__HEADER_SIZE + len(self.data)
-
+        data_size = 0 if self.data is None else len(self.data)
+        return self.__HEADER_SIZE + data_size

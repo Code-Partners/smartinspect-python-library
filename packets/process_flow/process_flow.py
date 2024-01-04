@@ -17,7 +17,7 @@ class ProcessFlow(Packet):
         self.process_id: int = self.__PROCESS_ID
 
     @property
-    def size(self):
+    def size(self) -> int:
         return self.__HEADER_SIZE + \
                self._get_string_size(self.__title) + \
                self._get_string_size(self.__hostname)

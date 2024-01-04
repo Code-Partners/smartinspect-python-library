@@ -1,5 +1,4 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
-
 import threading
 import time
 
@@ -8,6 +7,7 @@ from common.exceptions import ProtocolException, SmartInspectException
 from common.file_rotate import FileRotate
 from common.level import Level
 from common.listener.protocol_listener import ProtocolListener
+from common.locked_set import LockedSet
 from common.lookup_table import LookupTable
 from common.protocol_command import ProtocolCommand
 from connections.builders import ConnectionsBuilder
@@ -27,7 +27,7 @@ class Protocol:
         self.__lock: threading.Lock = threading.Lock()
         self.__options = LookupTable()
         self.__queue = PacketQueue()
-        self.__listeners = set()
+        self.__listeners = LockedSet()
         self.__appname = ""
         self.__hostname = ""
         # self.__level = Level.MESSAGE
@@ -35,9 +35,10 @@ class Protocol:
         self.__scheduler = None
         self.__connected = False
         # self.__reconnect = False
-        self.__keep_open = False
+        # self.__keep_open = False
         # self.__caption = ""
         self.__initialized = False
+        self.__failed = False
         # self.__backlog_enabled = False
 
     def __create_options(self, options: str) -> None:
@@ -59,7 +60,6 @@ class Protocol:
         pass
 
     def _load_options(self) -> None:
-        # pass
         self.__level = self._get_level_option("level", Level.DEBUG)
         self.__caption = self._get_string_option("caption", self._get_name())
         self.__reconnect = self._get_boolean_option("reconnect", False)
@@ -69,9 +69,9 @@ class Protocol:
         self.__backlog_queue = self._get_size_option("backlog.queue", 2048)
         self.__backlog_flushon = self._get_level_option("backlog.flushon", Level.ERROR)
         self.__backlog_keep_open = self._get_boolean_option("backlog.keepopen", False)
-        #
-        # self.__queue.set_backlog(self.__backlog_queue)
-        # self.__keep_open = (not self.__backlog_enabled) or self.__backlog_keep_open
+
+        self.__queue.backlog = self.__backlog_queue
+        self.__keep_open = (not self.__backlog_enabled) or self.__backlog_keep_open
         self.__async_enabled = self._get_boolean_option("async.enabled", False)
         self.__async_throttle = self._get_boolean_option("async.throttle", True)
         self.__async_queue = self._get_size_option("async.queue", 2048)
@@ -159,8 +159,8 @@ class Protocol:
 
                 self.__start_scheduler()
                 self.__schedule_connect()
-
-            self._impl_connect()
+            else:
+                self._impl_connect()
 
     def disconnect(self) -> None:
         with self.__lock:
@@ -174,7 +174,7 @@ class Protocol:
                 self.__schedule_disconnect()
                 self.__stop_scheduler()
             else:
-                self.__impl_disconnect()
+                self._impl_disconnect()
 
     def _impl_connect(self):
         if self.__keep_open and not self.__connected:
@@ -197,7 +197,7 @@ class Protocol:
         finally:
             self.__reconnect_tick_count = time.time() * 1000
 
-    def __impl_disconnect(self):
+    def _impl_disconnect(self):
         if self.__connected:
             try:
                 self._reset()
@@ -268,15 +268,15 @@ class Protocol:
             raise protocol_exception
 
     def _do_error(self, exception: Exception):
-        # TODO add lock
-        error_event = ErrorEvent(self, exception)
-        for listener in self.__listeners:
-            listener.on_error(error_event)
+        with self.__listeners:
+            error_event = ErrorEvent(self, exception)
+            for listener in self.__listeners:
+                listener.on_error(error_event)
 
     def __start_scheduler(self):
         self.__scheduler = Scheduler(self)
         self.__scheduler.threshold = self.__async_queue
-        self.__throttle = self.__async_throttle
+        self.__scheduler.throttle = self.__async_throttle
         self.__scheduler.start()
 
     def __stop_scheduler(self):
@@ -300,7 +300,7 @@ class Protocol:
                 self.__schedule_dispatch(command)
 
             else:
-                self.__impl_dispatch(command)
+                self._impl_dispatch(command)
 
     def __schedule_dispatch(self, command: ProtocolCommand) -> None:
         scheduler_command = SchedulerCommand()
@@ -309,7 +309,7 @@ class Protocol:
 
         self.__scheduler.schedule(scheduler_command)
 
-    def __impl_dispatch(self, command: ProtocolCommand):
+    def _impl_dispatch(self, command: ProtocolCommand):
         if self.__connected:
             try:
                 self._internal_dispatch(command)
@@ -336,14 +336,14 @@ class Protocol:
                 self.__initialized = True
 
     def add_listener(self, listener: ProtocolListener):
-        # TODO implement lock
-        if isinstance(listener, ProtocolListener):
-            self.__listeners.add(listener)
+        with self.__listeners:
+            if isinstance(listener, ProtocolListener):
+                self.__listeners.add(listener)
 
     def remove_listener(self, listener: ProtocolListener):
-        # TODO implement lock
-        if isinstance(listener, ProtocolListener):
-            self.__listeners.remove(listener)
+        with self.__listeners:
+            if isinstance(listener, ProtocolListener):
+                self.__listeners.remove(listener)
 
     def _internal_reconnect(self) -> bool:
         self._internal_connect()
@@ -378,27 +378,24 @@ class Protocol:
                 self.__connected = False
                 self._internal_disconnect()
 
-    def __reconnect(self) -> None:
+    def __do_reconnect(self) -> None:
         if self.__reconnect_interval > 0:
-            tick_count = int(round(time.time() * 1000))
+            tick_count = time.time() * 1000
             if tick_count - self.__reconnect_tick_count < self.__reconnect_interval:
                 return
-        try:
-            if self._internal_reconnect():
-                self.__connected = True
-        except Exception:
-            raise Exception  # these are swallowed in Jlib
 
-        self.__failed = not self.__connected
-
-        if self.__failed:
             try:
-                self._reset()
+                if self._internal_reconnect():
+                    self.__connected = True
             except Exception:
                 raise Exception  # these are swallowed in Jlib
 
-    def __do_reconnect(self) -> None:
-        pass
+            self.__failed = not self.__connected
+            if self.__failed:
+                try:
+                    self._reset()
+                except Exception:
+                    raise Exception  # these are swallowed in Jlib
 
     def __add_option(self, protocol: str, key: str, value: str) -> None:
         if self.__map_option(key, value):

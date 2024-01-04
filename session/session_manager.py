@@ -61,7 +61,6 @@ class SessionManager:
             if info.has_active:
                 session.active = info.active
         else:
-            # but what is the sense of it actually?
             if info.has_active:
                 session.active = info.active
             if info.has_level:
@@ -69,8 +68,37 @@ class SessionManager:
             if info.has_color:
                 session.color = info.color
 
-    def __load_infos(self, config):
-        pass
+    def __load_infos(self, config: Configuration) -> None:
+        for i in range(config.get_count()):
+            key: str = config.read_key(i)
+
+            if len(key) < len(self.__PREFIX):
+                continue
+
+            prefix = key[:len(self.__PREFIX)]
+
+            if prefix.lower() != self.__PREFIX:
+                continue
+
+            suffix = key[len(self.__PREFIX):]
+
+            idx = suffix.rfind(".")
+
+            if idx == -1:
+                continue
+
+            name = suffix[:idx].lower()
+
+            if self.__session_infos.get(name) is not None:
+                continue
+
+            info = self.__load_info(name, config)
+            self.__session_infos[name] = info
+
+            session = self.__sessions.get(name)
+
+            if session is not None:
+                self.__assign(session, info)
 
     def __load_info(self, name: str, config: Configuration) -> SessionInfo:
         info = SessionInfo()
@@ -93,8 +121,10 @@ class SessionManager:
 
         return info
 
-    def __load_defaults(self, config):
-        pass
+    def __load_defaults(self, config: Configuration) -> None:
+        self.__defaults.set_active(config.read_boolean("sessiondefaults.active", self.__defaults.is_active()))
+        self.__defaults.set_level(config.read_level("sessiondefaults.level", self.__defaults.get_level()))
+        self.__defaults.set_color(config.read_color("sessiondefaults.color", self.__defaults.get_color()))
 
     def get_defaults(self) -> SessionDefaults:
         """Returns default property values for new sessions"""

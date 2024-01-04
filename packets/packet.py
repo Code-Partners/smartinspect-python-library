@@ -8,9 +8,10 @@ class Packet(ABC):
     __PACKET_HEADER: int = 6
 
     def __init__(self):
-        self.__lock: (threading.Lock, None) = None
-        self.threadsafe: bool = False
+        self.__condition: (threading.Condition, None) = None
+        self.__threadsafe: bool = False
         self.level: Level = Level.MESSAGE
+        self.__locked = False
 
     @property
     @abstractmethod
@@ -38,12 +39,15 @@ class Packet(ABC):
 
     @threadsafe.setter
     def threadsafe(self, threadsafe: bool) -> None:
+        if threadsafe == self.__threadsafe:
+            return
+
         self.__threadsafe = threadsafe
 
         if threadsafe:
-            self.__lock = threading.Lock()
+            self.__condition = threading.Condition()
         else:
-            self.__lock = None
+            self.__condition = None
 
     @property
     def level(self) -> Level:
@@ -61,9 +65,19 @@ class Packet(ABC):
     def size(self) -> int:
         pass
 
-    def lock(self):
-        # TODO implement lock
-        pass
+    def lock(self) -> None:
+        if self.threadsafe:
+            with self.__condition:
+                while self.__locked:
+                    try:
+                        self.__condition.wait()
+                    except InterruptedError:
+                        pass
+
+                self.__locked = True
 
     def unlock(self):
-        pass
+        if self.threadsafe:
+            with self.__condition:
+                self.__locked = False
+                self.__condition.notify()
