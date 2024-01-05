@@ -385,18 +385,24 @@ class Protocol:
             if tick_count - self.__reconnect_tick_count < self.__reconnect_interval:
                 return
 
+            # noinspection PyBroadException
             try:
                 if self._internal_reconnect():
                     self.__connected = True
             except Exception:
-                raise Exception  # these are swallowed in Jlib
+                pass
+            # Reconnect exceptions are not reported,
+            # but we need to record that the last connection attempt
+            # has failed (see below).
 
             self.__failed = not self.__connected
             if self.__failed:
+                # noinspection PyBroadException
                 try:
                     self._reset()
                 except Exception:
-                    raise Exception  # these are swallowed in Jlib
+                    pass
+            # Ignored.
 
     def __add_option(self, protocol: str, key: str, value: str) -> None:
         if self.__map_option(key, value):
