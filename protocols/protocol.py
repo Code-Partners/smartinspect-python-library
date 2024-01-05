@@ -1,4 +1,5 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
+
 import threading
 import time
 
@@ -30,16 +31,16 @@ class Protocol:
         self.__listeners = LockedSet()
         self.__appname = ""
         self.__hostname = ""
-        # self.__level = Level.MESSAGE
-        # self.__async_enabled = False
+        self.__level = Level.MESSAGE
+        self.__async_enabled = False
         self.__scheduler = None
         self.__connected = False
-        # self.__reconnect = False
-        # self.__keep_open = False
-        # self.__caption = ""
+        self.__reconnect = False
+        self.__keep_open = False
+        self.__caption = ""
         self.__initialized = False
         self.__failed = False
-        # self.__backlog_enabled = False
+        self.__backlog_enabled = False
 
     def __create_options(self, options: str) -> None:
         try:
@@ -64,7 +65,7 @@ class Protocol:
         self.__caption = self._get_string_option("caption", self._get_name())
         self.__reconnect = self._get_boolean_option("reconnect", False)
         self.__reconnect_interval = self._get_timespan_option("reconnect_interval", 0)
-        #
+        
         self.__backlog_enabled = self._get_boolean_option("backlog.enabled", False)
         self.__backlog_queue = self._get_size_option("backlog.queue", 2048)
         self.__backlog_flushon = self._get_level_option("backlog.flushon", Level.ERROR)
@@ -113,7 +114,6 @@ class Protocol:
         builder.add_option("backlog.queue", int(self.__backlog_queue / 1024))
 
         # general options
-
         builder.add_option("level", self.__level)
         builder.add_option("caption", self.__caption)
         builder.add_option("reconnect", self.__reconnect)
@@ -231,7 +231,8 @@ class Protocol:
         if (
                 not self.__connected and
                 not self.__reconnect and
-                self.__keep_open):
+                self.__keep_open
+        ):
             return
 
         level = packet.level
