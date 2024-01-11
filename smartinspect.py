@@ -169,7 +169,7 @@ class SmartInspect:
         listener = ProtocolListener()
 
         def on_error(error):
-            self.__do_error(error.get_exception())
+            self.__do_error(error.exception)
 
         listener.on_error = on_error
         protocol.add_listener(listener)
