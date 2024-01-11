@@ -64,7 +64,7 @@ class Protocol:
         self.__level = self._get_level_option("level", Level.DEBUG)
         self.__caption = self._get_string_option("caption", self._get_name())
         self.__reconnect = self._get_boolean_option("reconnect", False)
-        self.__reconnect_interval = self._get_timespan_option("reconnect_interval", 0)
+        self.__reconnect_interval = self._get_timespan_option("reconnect.interval", 0)
         
         self.__backlog_enabled = self._get_boolean_option("backlog.enabled", False)
         self.__backlog_queue = self._get_size_option("backlog.queue", 2048)
