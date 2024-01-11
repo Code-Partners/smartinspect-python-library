@@ -1,5 +1,4 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
-
 import socket
 
 from common.exceptions import SmartInspectException
