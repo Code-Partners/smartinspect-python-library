@@ -1,5 +1,4 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
-
 import threading
 import time
 
@@ -21,6 +20,7 @@ from packets.packet_queue import PacketQueue
 from protocols.scheduler import Scheduler
 from protocols.scheduler_action import SchedulerAction
 from protocols.scheduler_command import SchedulerCommand
+from protocols.scheduler_queue import SchedulerQueueEnd
 
 
 class Protocol:
@@ -217,15 +217,15 @@ class Protocol:
             if self.__async_enabled:
                 if self.__scheduler is None:
                     return
-                self.__schedule_write_packet(packet)
+                self.schedule_write_packet(packet, SchedulerQueueEnd.TAIL)
             else:
                 self._impl_write_packet(packet)
 
-    def __schedule_write_packet(self, packet: Packet) -> None:
+    def schedule_write_packet(self, packet: Packet, insert_to: SchedulerQueueEnd) -> None:
         command = SchedulerCommand()
         command.action = SchedulerAction.WRITE_PACKET
         command.state = packet
-        self.__scheduler.schedule(command)
+        self.__scheduler.schedule(command, insert_to)
 
     def _impl_write_packet(self, packet: Packet) -> None:
         if (
@@ -287,7 +287,7 @@ class Protocol:
     def __schedule_connect(self) -> None:
         command = SchedulerCommand()
         command.action = SchedulerAction.CONNECT
-        self.__scheduler.schedule(command)
+        self.__scheduler.schedule(command, SchedulerQueueEnd.TAIL)
 
     def get_caption(self) -> str:
         return self.__caption
@@ -308,7 +308,7 @@ class Protocol:
         scheduler_command.action = SchedulerAction.DISPATCH
         scheduler_command.state = command
 
-        self.__scheduler.schedule(scheduler_command)
+        self.__scheduler.schedule(scheduler_command, SchedulerQueueEnd.TAIL)
 
     def _impl_dispatch(self, command: ProtocolCommand):
         if self.__connected:
@@ -462,7 +462,7 @@ class Protocol:
     def __schedule_disconnect(self) -> None:
         command = SchedulerCommand()
         command.action = SchedulerAction.DISCONNECT
-        self.__scheduler.schedule(command)
+        self.__scheduler.schedule(command, SchedulerQueueEnd.TAIL)
 
     def dispose(self) -> None:
         self.disconnect()
