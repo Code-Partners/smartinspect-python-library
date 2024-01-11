@@ -2,8 +2,8 @@ import logging
 from enum import Enum
 from typing import Optional
 
-from protocols.scheduler_action import SchedulerAction
-from protocols.scheduler_command import SchedulerCommand
+from scheduler.scheduler_action import SchedulerAction
+from scheduler.scheduler_command import SchedulerCommand
 
 
 class SchedulerQueueEnd(Enum):

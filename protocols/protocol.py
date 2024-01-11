@@ -17,10 +17,10 @@ from connections.options_parser_listener import OptionsParserListener
 from packets.log_header import LogHeader
 from packets.packet import Packet
 from packets.packet_queue import PacketQueue
-from protocols.scheduler import Scheduler
-from protocols.scheduler_action import SchedulerAction
-from protocols.scheduler_command import SchedulerCommand
-from protocols.scheduler_queue import SchedulerQueueEnd
+from scheduler.scheduler import Scheduler
+from scheduler.scheduler_action import SchedulerAction
+from scheduler.scheduler_command import SchedulerCommand
+from scheduler.scheduler_queue import SchedulerQueueEnd
 
 
 class Protocol:

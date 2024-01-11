@@ -5,9 +5,9 @@ from typing import List, Optional
 
 from packets.log_entry import LogEntry
 from packets.log_header import LogHeader
-from protocols.scheduler_action import SchedulerAction
-from protocols.scheduler_command import SchedulerCommand
-from protocols.scheduler_queue import SchedulerQueue, SchedulerQueueEnd
+from scheduler.scheduler_action import SchedulerAction
+from scheduler.scheduler_command import SchedulerCommand
+from scheduler.scheduler_queue import SchedulerQueue, SchedulerQueueEnd
 
 
 class SchedulerThread(threading.Thread):
