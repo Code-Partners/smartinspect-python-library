@@ -1,23 +1,26 @@
 import logging
 import threading
+import time
 from typing import List, Optional
 
-from protocols.scheduler_action import SchedulerAction
-from protocols.scheduler_command import SchedulerCommand
-from protocols.scheduler_queue import SchedulerQueue
+from packets.log_entry import LogEntry
+from packets.log_header import LogHeader
+from scheduler.scheduler_action import SchedulerAction
+from scheduler.scheduler_command import SchedulerCommand
+from scheduler.scheduler_queue import SchedulerQueue, SchedulerQueueEnd
 
 
 class SchedulerThread(threading.Thread):
     def __init__(self, scheduler) -> None:
         super().__init__()
         self.__parent: Scheduler = scheduler
+        self.consecutive_packet_write_fail_count = 0
 
     @property
     def parent(self):
         return self.__parent
 
     def run(self) -> None:
-
         while True:
             count: int = self.parent.dequeue()
             if count == 0:
@@ -25,6 +28,17 @@ class SchedulerThread(threading.Thread):
 
             if not self.run_commands(count):
                 break
+
+            from protocols.tcp_protocol import TcpProtocol
+            if isinstance(self.parent.protocol, TcpProtocol):
+
+                if self.consecutive_packet_write_fail_count > 0:
+                    try:
+                        logging.debug("Previous packet failed to send, waiting one second before trying again")
+
+                        time.sleep(1)
+                    except InterruptedError as e:
+                        raise RuntimeError(e)
 
     def run_commands(self, count: int) -> bool:
         for i in range(count):
@@ -51,8 +65,7 @@ class SchedulerThread(threading.Thread):
             if action == SchedulerAction.CONNECT:
                 protocol._impl_connect()
             elif action == SchedulerAction.WRITE_PACKET:
-                packet = command.state
-                protocol._impl_write_packet(packet)
+                self.__write_packet_action(command)
             elif action == SchedulerAction.DISCONNECT:
                 protocol._impl_disconnect()
             elif action == SchedulerAction.DISPATCH:
@@ -62,16 +75,51 @@ class SchedulerThread(threading.Thread):
         except Exception:
             ...
 
+    # noinspection PyProtectedMember
+    def __write_packet_action(self, command):
+        packet = command.state
+        protocol = self.parent.protocol
+        
+        protocol._impl_write_packet(packet)
+        from protocols.tcp_protocol import TcpProtocol
+        if isinstance(protocol, TcpProtocol) and protocol.failed:
+            # commented out, as this attribute is feature of CloudProtocol
+
+            # if not protocol.is_reconnect_allowed():
+            #     logging.debug("Reconnect is disabled, no need to requeue packet we failed to send")
+            #     return
+
+            self.consecutive_packet_write_fail_count += 1
+            logging.debug("Sending packet failed, scheduling again to the head of the queue, "
+                          "consecutive fail count = %s", self.consecutive_packet_write_fail_count)
+
+            if isinstance(packet, LogEntry):
+                logging.debug("title: %s", packet.title)
+            elif isinstance(packet, LogHeader):
+                logging.debug("title: %s", packet.content)
+
+            protocol.schedule_write_packet(packet, SchedulerQueueEnd.HEAD)
+        else:
+            self.consecutive_packet_write_fail_count = 0
+
 
 class Scheduler:
     __BUFFER_SIZE = 0x10
+    __TCP_PROTOCOL_BUFFER_SIZE = 0x1
 
     def __init__(self, protocol):
         super().__init__()
         self.__protocol = protocol
         self.__condition = threading.Condition()
         self.__queue = SchedulerQueue()
-        self.__buffer: List[Optional[SchedulerCommand]] = [None] * self.__BUFFER_SIZE
+
+        # if protocol is TcpProtocol - respective buffer size is set
+        from protocols.tcp_protocol import TcpProtocol
+        self.__buffer: List[Optional[SchedulerCommand]] = [
+            [None] * self.__BUFFER_SIZE,
+            [None] * self.__TCP_PROTOCOL_BUFFER_SIZE,
+        ][isinstance(self.__protocol, TcpProtocol)]
+
         self.__started: bool = False
         self.__stopped: bool = False
         self.__thread: Optional[SchedulerThread] = None
@@ -134,40 +182,44 @@ class Scheduler:
             raise TypeError("throttle must be bool")
         self.__throttle = throttle
 
-    def schedule(self, command: SchedulerCommand) -> bool:
+    def schedule(self, command: SchedulerCommand, insert_to: SchedulerQueueEnd) -> bool:
         if not isinstance(command, SchedulerCommand):
             raise TypeError("command must be a SchedulerCommand")
-        return self.__enqueue(command)
+        if not isinstance(insert_to, SchedulerQueueEnd):
+            raise TypeError("insert_to must be a SchedulerQueueEnd")
+        return self.__enqueue(command, insert_to)
 
-    def __enqueue(self, command: SchedulerCommand) -> bool:
+    def __enqueue(self, command: SchedulerCommand, insert_to: SchedulerQueueEnd) -> bool:
         if not self.__started:
             return False
         if self.stopped:
             return False
-
         command_size = command.size
-        logging.debug(f"Threshold is {self.threshold}")
+
         if command_size > self.threshold:
-            logging.debug(f"Command size > threshold: {command_size} > {self.threshold}; ignoring")
+            logging.debug(f"Packet is bigger than scheduler queue size (set with async.queue option), ignored")
             return False
-        
+
         with self.condition:
             if self.throttle is False or self.protocol.failed:
                 if self.__queue.size + command_size > self.threshold:
+                    logging.debug(f"Throttle: %s, protocol.failed: %s, trimming",
+                                  self.throttle, self.protocol.failed)
                     self.__queue.trim(command_size)
             else:
                 while self.__queue.size + command_size > self.threshold:
                     try:
+                        logging.debug(f"Throttle: %s, waiting to enqueue", self.throttle)
                         self.condition.wait()
                     except InterruptedError:
                         ...
-            self.__queue.enqueue(command)
+            self.__queue.enqueue(command, insert_to)
             self.condition.notify()
         return True
 
     def dequeue(self) -> int:
         count = 0
-        buffer_length = sum(list(map(lambda x: x is not None, self.__buffer)))
+        buffer_length = len(self.__buffer)
         with self.condition:
             while self.__queue.count == 0:
                 if self.__stopped:

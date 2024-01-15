@@ -1,7 +1,14 @@
+import logging
+from enum import Enum
 from typing import Optional
 
-from protocols.scheduler_action import SchedulerAction
-from protocols.scheduler_command import SchedulerCommand
+from scheduler.scheduler_action import SchedulerAction
+from scheduler.scheduler_command import SchedulerCommand
+
+
+class SchedulerQueueEnd(Enum):
+    HEAD = 0
+    TAIL = 1
 
 
 class SchedulerQueueItem:
@@ -20,12 +27,17 @@ class SchedulerQueue:
         self.__head: Optional[SchedulerQueueItem] = None
         self.__tail: Optional[SchedulerQueueItem] = None
 
-    def enqueue(self, command: SchedulerCommand) -> None:
+    def enqueue(self, command: SchedulerCommand, insert_to: SchedulerQueueEnd) -> None:
         if isinstance(command, SchedulerCommand):
             queue_item = SchedulerQueueItem(command)
-            self.__add(queue_item)
+            if insert_to == SchedulerQueueEnd.TAIL:
+                self._add_to_queue_tail(queue_item)
+            else:
+                self._insert_to_queue_head(queue_item)
 
-    def __add(self, item: SchedulerQueueItem) -> None:
+            logging.debug(f"Item added queue size = {self.__size} bytes")
+
+    def _add_to_queue_tail(self, item: SchedulerQueueItem) -> None:
         if self.__tail is None:
             self.__head = item
             self.__tail = item
@@ -33,6 +45,19 @@ class SchedulerQueue:
             self.__tail.next = item
             item.prev = self.__tail
             self.__tail = item
+
+        self.__count += 1
+        self.__size += item.command.size + self.__OVERHEAD
+
+    def _insert_to_queue_head(self, item: SchedulerQueueItem) -> None:
+        if self.__tail is None:
+            self.__tail = item
+            self.__head = item
+        else:
+            prev_head = self.__head
+            self.__head = item
+            item.next = prev_head
+            prev_head.prev = item
 
         self.__count += 1
         self.__size += item.command.size + self.__OVERHEAD
@@ -78,6 +103,8 @@ class SchedulerQueue:
                 self.__remove(queue_item)
 
                 if removed_bytes >= size:
+                    logging.debug(f"{removed_bytes} bytes trimmed")
+
                     return True
 
             queue_item = queue_item.next

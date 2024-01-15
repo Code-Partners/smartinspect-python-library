@@ -1,7 +1,7 @@
 from typing import Optional, Union
 
 from common.protocol_command import ProtocolCommand
-from protocols.scheduler_action import SchedulerAction
+from scheduler.scheduler_action import SchedulerAction
 from packets.packet import Packet
 
 

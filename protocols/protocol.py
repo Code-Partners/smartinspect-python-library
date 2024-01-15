@@ -17,9 +17,10 @@ from connections.options_parser_listener import OptionsParserListener
 from packets.log_header import LogHeader
 from packets.packet import Packet
 from packets.packet_queue import PacketQueue
-from protocols.scheduler import Scheduler
-from protocols.scheduler_action import SchedulerAction
-from protocols.scheduler_command import SchedulerCommand
+from scheduler.scheduler import Scheduler
+from scheduler.scheduler_action import SchedulerAction
+from scheduler.scheduler_command import SchedulerCommand
+from scheduler.scheduler_queue import SchedulerQueueEnd
 
 
 class Protocol:
@@ -30,16 +31,16 @@ class Protocol:
         self.__listeners = LockedSet()
         self.__appname = ""
         self.__hostname = ""
-        # self.__level = Level.MESSAGE
-        # self.__async_enabled = False
+        self.__level = Level.MESSAGE
+        self.__async_enabled = False
         self.__scheduler = None
         self.__connected = False
-        # self.__reconnect = False
-        # self.__keep_open = False
-        # self.__caption = ""
+        self.__reconnect = False
+        self.__keep_open = False
+        self.__caption = ""
         self.__initialized = False
         self.__failed = False
-        # self.__backlog_enabled = False
+        self.__backlog_enabled = False
 
     def __create_options(self, options: str) -> None:
         try:
@@ -63,8 +64,8 @@ class Protocol:
         self.__level = self._get_level_option("level", Level.DEBUG)
         self.__caption = self._get_string_option("caption", self._get_name())
         self.__reconnect = self._get_boolean_option("reconnect", False)
-        self.__reconnect_interval = self._get_timespan_option("reconnect_interval", 0)
-        #
+        self.__reconnect_interval = self._get_timespan_option("reconnect.interval", 0)
+        
         self.__backlog_enabled = self._get_boolean_option("backlog.enabled", False)
         self.__backlog_queue = self._get_size_option("backlog.queue", 2048)
         self.__backlog_flushon = self._get_level_option("backlog.flushon", Level.ERROR)
@@ -113,7 +114,6 @@ class Protocol:
         builder.add_option("backlog.queue", int(self.__backlog_queue / 1024))
 
         # general options
-
         builder.add_option("level", self.__level)
         builder.add_option("caption", self.__caption)
         builder.add_option("reconnect", self.__reconnect)
@@ -217,21 +217,22 @@ class Protocol:
             if self.__async_enabled:
                 if self.__scheduler is None:
                     return
-                self.__schedule_write_packet(packet)
+                self.schedule_write_packet(packet, SchedulerQueueEnd.TAIL)
             else:
                 self._impl_write_packet(packet)
 
-    def __schedule_write_packet(self, packet: Packet) -> None:
+    def schedule_write_packet(self, packet: Packet, insert_to: SchedulerQueueEnd) -> None:
         command = SchedulerCommand()
         command.action = SchedulerAction.WRITE_PACKET
         command.state = packet
-        self.__scheduler.schedule(command)
+        self.__scheduler.schedule(command, insert_to)
 
     def _impl_write_packet(self, packet: Packet) -> None:
         if (
                 not self.__connected and
                 not self.__reconnect and
-                self.__keep_open):
+                self.__keep_open
+        ):
             return
 
         level = packet.level
@@ -286,7 +287,7 @@ class Protocol:
     def __schedule_connect(self) -> None:
         command = SchedulerCommand()
         command.action = SchedulerAction.CONNECT
-        self.__scheduler.schedule(command)
+        self.__scheduler.schedule(command, SchedulerQueueEnd.TAIL)
 
     def get_caption(self) -> str:
         return self.__caption
@@ -307,7 +308,7 @@ class Protocol:
         scheduler_command.action = SchedulerAction.DISPATCH
         scheduler_command.state = command
 
-        self.__scheduler.schedule(scheduler_command)
+        self.__scheduler.schedule(scheduler_command, SchedulerQueueEnd.TAIL)
 
     def _impl_dispatch(self, command: ProtocolCommand):
         if self.__connected:
@@ -384,18 +385,24 @@ class Protocol:
             if tick_count - self.__reconnect_tick_count < self.__reconnect_interval:
                 return
 
-            try:
-                if self._internal_reconnect():
-                    self.__connected = True
-            except Exception:
-                raise Exception  # these are swallowed in Jlib
+        # noinspection PyBroadException
+        try:
+            if self._internal_reconnect():
+                self.__connected = True
+        except Exception:
+            pass
+            # Reconnect exceptions are not reported,
+            # but we need to record that the last connection attempt
+            # has failed (see below).
 
-            self.__failed = not self.__connected
-            if self.__failed:
-                try:
-                    self._reset()
-                except Exception:
-                    raise Exception  # these are swallowed in Jlib
+        self.__failed = not self.__connected
+        if self.__failed:
+            # noinspection PyBroadException
+            try:
+                self._reset()
+            except Exception:
+                pass
+            # Ignored.
 
     def __add_option(self, protocol: str, key: str, value: str) -> None:
         if self.__map_option(key, value):
@@ -455,7 +462,7 @@ class Protocol:
     def __schedule_disconnect(self) -> None:
         command = SchedulerCommand()
         command.action = SchedulerAction.DISCONNECT
-        self.__scheduler.schedule(command)
+        self.__scheduler.schedule(command, SchedulerQueueEnd.TAIL)
 
     def dispose(self) -> None:
         self.disconnect()
