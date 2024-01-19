@@ -1,6 +1,7 @@
 import threading
 from typing import Type
 
+from protocols.cloud.cloud_protocol import CloudProtocol
 from protocols.protocol import Protocol
 from common.exceptions import SmartInspectException
 from protocols.tcp_protocol import TcpProtocol
@@ -8,7 +9,10 @@ from protocols.tcp_protocol import TcpProtocol
 
 class ProtocolFactory:
     __protocol_class = Protocol
-    __lookup = {"tcp": TcpProtocol}
+    __lookup = {
+        "tcp": TcpProtocol,
+        "cloud": CloudProtocol,
+    }
     __PROTOCOL_NOT_FOUND = "The requested protocol is unknown"
     __lock = threading.Lock()
 
@@ -40,6 +44,3 @@ class ProtocolFactory:
             return object.__new__(protocol_class)
         except Exception as e:
             raise SmartInspectException(e.args[0])
-
-
-
