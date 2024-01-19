@@ -212,7 +212,7 @@ class Protocol:
                 self._handle_exception(exception.args[0])
 
     def _reset(self):
-        self.__connected = False
+        self._connected = False
         self.__queue.clear()
         try:
             self._internal_disconnect()
@@ -220,7 +220,7 @@ class Protocol:
             self.__reconnect_tick_count = time.time() * 1000
 
     def _impl_disconnect(self):
-        if self.__connected:
+        if self._connected:
             try:
                 self._reset()
             except Exception as exception:
@@ -231,7 +231,7 @@ class Protocol:
     def is_asynchronous(self) -> bool:
         return self.__async_enabled
 
-    def write_packet(self, packet: Packet):
+    def write_packet(self, packet: Packet) -> None:
         with self.__lock:
             if packet.level.value < self.__level.value:
                 return
@@ -251,7 +251,7 @@ class Protocol:
 
     def _impl_write_packet(self, packet: Packet) -> None:
         if (
-                not self.__connected and
+                not self._connected and
                 not self.__reconnect and
                 self.__keep_open
         ):
@@ -333,7 +333,7 @@ class Protocol:
         self.__scheduler.schedule(scheduler_command, SchedulerQueueEnd.TAIL)
 
     def _impl_dispatch(self, command: ProtocolCommand):
-        if self.__connected:
+        if self._connected:
             try:
                 self._internal_dispatch(command)
             except Exception as e:
@@ -382,15 +382,15 @@ class Protocol:
             packet = self.__queue.pop()
 
     def __forward_packet(self, packet: Packet, disconnect: bool) -> None:
-        if not self.__connected:
+        if not self._connected:
             if not self.__keep_open:
                 self._internal_connect()
-                self.__connected = True
+                self._connected = True
                 self.__failed = False
             else:
                 self.__do_reconnect()
 
-        if self.__connected:
+        if self._connected:
             packet.lock()
             try:
                 self._internal_write_packet(packet)
@@ -398,7 +398,7 @@ class Protocol:
                 packet.unlock()
 
             if disconnect:
-                self.__connected = False
+                self._connected = False
                 self._internal_disconnect()
 
     def __do_reconnect(self) -> None:
@@ -410,14 +410,14 @@ class Protocol:
         # noinspection PyBroadException
         try:
             if self._internal_reconnect():
-                self.__connected = True
+                self._connected = True
         except Exception:
             pass
             # Reconnect exceptions are not reported,
             # but we need to record that the last connection attempt
             # has failed (see below).
 
-        self.__failed = not self.__connected
+        self.__failed = not self._connected
         if self.__failed:
             # noinspection PyBroadException
             try:
