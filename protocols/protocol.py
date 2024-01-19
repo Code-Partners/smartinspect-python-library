@@ -1,4 +1,5 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
+import logging
 import threading
 import time
 
@@ -21,6 +22,8 @@ from scheduler.scheduler import Scheduler
 from scheduler.scheduler_action import SchedulerAction
 from scheduler.scheduler_command import SchedulerCommand
 from scheduler.scheduler_queue import SchedulerQueueEnd
+
+logger = logging.getLogger(__name__)
 
 
 class Protocol:
