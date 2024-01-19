@@ -1,0 +1,2 @@
+class FileRotater:
+    pass

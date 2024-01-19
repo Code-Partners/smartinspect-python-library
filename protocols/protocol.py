@@ -1,4 +1,5 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
+import logging
 import threading
 import time
 
@@ -22,6 +23,8 @@ from scheduler.scheduler_action import SchedulerAction
 from scheduler.scheduler_command import SchedulerCommand
 from scheduler.scheduler_queue import SchedulerQueueEnd
 
+logger = logging.getLogger(__name__)
+
 
 class Protocol:
     def __init__(self):
@@ -34,7 +37,7 @@ class Protocol:
         self.__level = Level.MESSAGE
         self.__async_enabled = False
         self.__scheduler = None
-        self.__connected = False
+        self._connected = False
         self.__reconnect = False
         self.__keep_open = False
         self.__caption = ""
@@ -63,9 +66,9 @@ class Protocol:
     def _load_options(self) -> None:
         self.__level = self._get_level_option("level", Level.DEBUG)
         self.__caption = self._get_string_option("caption", self._get_name())
-        self.__reconnect = self._get_boolean_option("reconnect", False)
+        self.__reconnect = self._get_boolean_option("reconnect", self._get_reconnect_default_value())
         self.__reconnect_interval = self._get_timespan_option("reconnect.interval", 0)
-        
+
         self.__backlog_enabled = self._get_boolean_option("backlog.enabled", False)
         self.__backlog_queue = self._get_size_option("backlog.queue", 2048)
         self.__backlog_flushon = self._get_level_option("backlog.flushon", Level.ERROR)
@@ -73,10 +76,22 @@ class Protocol:
 
         self.__queue.backlog = self.__backlog_queue
         self.__keep_open = (not self.__backlog_enabled) or self.__backlog_keep_open
-        self.__async_enabled = self._get_boolean_option("async.enabled", False)
+        self.__async_enabled = self._get_boolean_option("async.enabled", self._get_async_enabled_default_value())
         self.__async_throttle = self._get_boolean_option("async.throttle", True)
-        self.__async_queue = self._get_size_option("async.queue", 2048)
+        self.__async_queue = self._get_size_option("async.queue", self._get_async_queue_default_value())
         self.__async_clear_on_disconnect = self._get_boolean_option("async.clearondisconnect", False)
+
+    @staticmethod
+    def _get_reconnect_default_value() -> bool:
+        return False
+
+    @staticmethod
+    def _get_async_enabled_default_value() -> bool:
+        return False
+
+    @staticmethod
+    def _get_async_queue_default_value() -> int:
+        return 2 * 1024
 
     def _get_string_option(self, key: str, default_value: str) -> str:
         return self.__options.get_string_value(key, default_value)
@@ -119,10 +134,15 @@ class Protocol:
         builder.add_option("reconnect", self.__reconnect)
         builder.add_option("reconnect.interval", int(self.__reconnect_interval))
 
-    def _internal_write_log_header(self):
-        log_header: LogHeader = LogHeader()
-        log_header.hostname = self.__hostname
-        log_header.appname = self.__appname
+    def _compose_log_header_packet(self) -> LogHeader:
+        log_header = LogHeader()
+        log_header.add_value("hostname", self.__hostname)
+        log_header.add_value("appname", self.__appname)
+
+        return log_header
+
+    def _internal_write_log_header(self) -> None:
+        log_header = self._compose_log_header_packet()
         self._internal_write_packet(log_header)
 
     def _internal_write_packet(self, packet: Packet):
@@ -177,20 +197,22 @@ class Protocol:
                 self._impl_disconnect()
 
     def _impl_connect(self):
-        if self.__keep_open and not self.__connected:
+        if self.__keep_open and not self._connected:
             try:
                 try:
                     self._internal_connect()
-                    self.__connected = True
+                    self._connected = True
                     self.__failed = False
+                    logger.debug(f"{self.__class__.__name__} connected succesfully")
                 except Exception as exception:
                     self._reset()
                     raise exception
             except Exception as exception:
+                logger.debug(f"There was an exception during connection: {type(exception)} - {str(exception)}")
                 self._handle_exception(exception.args[0])
 
     def _reset(self):
-        self.__connected = False
+        self._connected = False
         self.__queue.clear()
         try:
             self._internal_disconnect()
@@ -198,7 +220,7 @@ class Protocol:
             self.__reconnect_tick_count = time.time() * 1000
 
     def _impl_disconnect(self):
-        if self.__connected:
+        if self._connected:
             try:
                 self._reset()
             except Exception as exception:
@@ -209,7 +231,7 @@ class Protocol:
     def is_asynchronous(self) -> bool:
         return self.__async_enabled
 
-    def write_packet(self, packet: Packet):
+    def write_packet(self, packet: Packet) -> None:
         with self.__lock:
             if packet.level.value < self.__level.value:
                 return
@@ -229,7 +251,7 @@ class Protocol:
 
     def _impl_write_packet(self, packet: Packet) -> None:
         if (
-                not self.__connected and
+                not self._connected and
                 not self.__reconnect and
                 self.__keep_open
         ):
@@ -311,7 +333,7 @@ class Protocol:
         self.__scheduler.schedule(scheduler_command, SchedulerQueueEnd.TAIL)
 
     def _impl_dispatch(self, command: ProtocolCommand):
-        if self.__connected:
+        if self._connected:
             try:
                 self._internal_dispatch(command)
             except Exception as e:
@@ -360,15 +382,15 @@ class Protocol:
             packet = self.__queue.pop()
 
     def __forward_packet(self, packet: Packet, disconnect: bool) -> None:
-        if not self.__connected:
+        if not self._connected:
             if not self.__keep_open:
                 self._internal_connect()
-                self.__connected = True
+                self._connected = True
                 self.__failed = False
             else:
                 self.__do_reconnect()
 
-        if self.__connected:
+        if self._connected:
             packet.lock()
             try:
                 self._internal_write_packet(packet)
@@ -376,7 +398,7 @@ class Protocol:
                 packet.unlock()
 
             if disconnect:
-                self.__connected = False
+                self._connected = False
                 self._internal_disconnect()
 
     def __do_reconnect(self) -> None:
@@ -388,14 +410,14 @@ class Protocol:
         # noinspection PyBroadException
         try:
             if self._internal_reconnect():
-                self.__connected = True
+                self._connected = True
         except Exception:
             pass
             # Reconnect exceptions are not reported,
             # but we need to record that the last connection attempt
             # has failed (see below).
 
-        self.__failed = not self.__connected
+        self.__failed = not self._connected
         if self.__failed:
             # noinspection PyBroadException
             try:

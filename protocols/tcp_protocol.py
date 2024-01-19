@@ -12,7 +12,7 @@ class TcpProtocol(Protocol):
     __BUFFER_SIZE = 0x2000
     __CLIENT_BANNER = bytearray(f"SmartInspect Python Library v\n", encoding="UTF-8")
     # __CLIENT_BANNER = bytearray(f"SmartInspect Python Library v{SmartInspect.get_version()}\n", encoding="UTF-8")
-    __ANSWER_SIZE = 2
+    __ANSWER_BUFFER_SIZE = 0x2000
     _hostname = "127.0.0.1"
     _timeout = 30000
     _port = 4228
@@ -44,29 +44,39 @@ class TcpProtocol(Protocol):
         self._timeout = self._get_integer_option("timeout", 30000)
         self._port = self._get_integer_option("port", 4228)
 
-    def __do_handshake(self):
+    def _do_handshake(self) -> None:
+        self._read_server_banner()
+        self._send_client_banner()
+
+    def _read_server_banner(self) -> None:
         answer = self.__stream.readline().strip()
         if not answer:
             raise SmartInspectException("Could not read server banner correctly: " +
                                         "Connection has been closed unexpectedly")
+
+    def _send_client_banner(self) -> None:
         self.__stream.write(self.__CLIENT_BANNER)
         self.__stream.flush()
 
     def _internal_connect(self):
-        socket_ = self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        socket_.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        socket_.settimeout(self._timeout)
         try:
-            socket_.connect((self._hostname, self._port))
-            self.__stream = socket_.makefile("rwb", self.__BUFFER_SIZE)
-            self.__do_handshake()
-            self._internal_write_log_header()
-        except ConnectionError as e:
+            self.__socket = self._internal_initialize_socket()
+        except Exception as e:
             raise SmartInspectException(f"There was a connection error. \n"
                                         f"Check if SI Console is running on {self._hostname}:{self._port} \n"
-                                        f"Your system returned: {e.errno}: {e.strerror}")
-        except SmartInspectException as e:
-            raise e
+                                        f"Your system returned: {type(e)} - {str(e)}")
+
+        self.__stream = self.__socket.makefile("rwb", self.__BUFFER_SIZE)
+        self._do_handshake()
+        self._internal_write_log_header()
+
+    def _internal_initialize_socket(self) -> socket.socket:
+        socket_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        socket_.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        socket_.settimeout(self._timeout)
+        socket_.connect((self._hostname, self._port))
+
+        return socket_
 
     def _internal_disconnect(self) -> None:
         if self.__stream:
@@ -83,7 +93,12 @@ class TcpProtocol(Protocol):
     def _internal_write_packet(self, packet: Packet) -> None:
         self.__formatter.format(packet, self.__stream)
         self.__stream.flush()
-        server_answer = self.__stream.readline(self.__ANSWER_SIZE)
-        if len(server_answer) != self.__ANSWER_SIZE:
+
+        server_answer = self.__socket.recv(self.__ANSWER_BUFFER_SIZE)
+        self._internal_validate_write_packet_answer(server_answer)
+
+    @staticmethod
+    def _internal_validate_write_packet_answer(server_answer: bytes) -> None:
+        if len(server_answer) != 2:
             raise SmartInspectException(
                 "Could not read server answer correctly: Connection has been closed unexpectedly")
