@@ -134,10 +134,15 @@ class Protocol:
         builder.add_option("reconnect", self.__reconnect)
         builder.add_option("reconnect.interval", int(self.__reconnect_interval))
 
-    def _internal_write_log_header(self):
-        log_header: LogHeader = LogHeader()
-        log_header.hostname = self.__hostname
-        log_header.appname = self.__appname
+    def _compose_log_header_packet(self) -> LogHeader:
+        log_header = LogHeader()
+        log_header.add_value("hostname", self.__hostname)
+        log_header.add_value("appname", self.__appname)
+
+        return log_header
+
+    def _internal_write_log_header(self) -> None:
+        log_header = self._compose_log_header_packet()
         self._internal_write_packet(log_header)
 
     def _internal_write_packet(self, packet: Packet):
