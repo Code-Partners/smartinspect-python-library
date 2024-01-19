@@ -37,7 +37,7 @@ class Protocol:
         self.__level = Level.MESSAGE
         self.__async_enabled = False
         self.__scheduler = None
-        self.__connected = False
+        self._connected = False
         self.__reconnect = False
         self.__keep_open = False
         self.__caption = ""
@@ -66,9 +66,9 @@ class Protocol:
     def _load_options(self) -> None:
         self.__level = self._get_level_option("level", Level.DEBUG)
         self.__caption = self._get_string_option("caption", self._get_name())
-        self.__reconnect = self._get_boolean_option("reconnect", False)
+        self.__reconnect = self._get_boolean_option("reconnect", self._get_reconnect_default_value())
         self.__reconnect_interval = self._get_timespan_option("reconnect.interval", 0)
-        
+
         self.__backlog_enabled = self._get_boolean_option("backlog.enabled", False)
         self.__backlog_queue = self._get_size_option("backlog.queue", 2048)
         self.__backlog_flushon = self._get_level_option("backlog.flushon", Level.ERROR)
@@ -76,10 +76,22 @@ class Protocol:
 
         self.__queue.backlog = self.__backlog_queue
         self.__keep_open = (not self.__backlog_enabled) or self.__backlog_keep_open
-        self.__async_enabled = self._get_boolean_option("async.enabled", False)
+        self.__async_enabled = self._get_boolean_option("async.enabled", self._get_async_enabled_default_value())
         self.__async_throttle = self._get_boolean_option("async.throttle", True)
-        self.__async_queue = self._get_size_option("async.queue", 2048)
+        self.__async_queue = self._get_size_option("async.queue", self._get_async_queue_default_value())
         self.__async_clear_on_disconnect = self._get_boolean_option("async.clearondisconnect", False)
+
+    @staticmethod
+    def _get_reconnect_default_value() -> bool:
+        return False
+
+    @staticmethod
+    def _get_async_enabled_default_value() -> bool:
+        return False
+
+    @staticmethod
+    def _get_async_queue_default_value() -> int:
+        return 2 * 1024
 
     def _get_string_option(self, key: str, default_value: str) -> str:
         return self.__options.get_string_value(key, default_value)
