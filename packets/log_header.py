@@ -11,6 +11,7 @@ class LogHeader(Packet):
         super().__init__()
         self.appname: str = ""
         self.hostname: str = ""
+        self._values: dict = dict()
 
     @property
     def size(self):
@@ -18,7 +19,13 @@ class LogHeader(Packet):
 
     @property
     def content(self):
-        return f"hostname={self.__hostname}\r\nappname={self.__appname}\r\n"
+        content = []
+
+        for key, value in self._values.items():
+            content.append(f"{key}={value}\r\n")
+
+        result = ''.join(content)
+        return result
 
     @property
     def hostname(self):
@@ -39,3 +46,11 @@ class LogHeader(Packet):
     @property
     def packet_type(self) -> PacketType:
         return PacketType.LOG_HEADER
+
+    def add_value(self, key: str, value: str) -> None:
+        if not isinstance(key, str):
+            raise TypeError("key must be an str")
+        if not isinstance(value, str):
+            raise TypeError("value must be an str")
+
+        self._values[key] = value
