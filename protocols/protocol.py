@@ -197,16 +197,18 @@ class Protocol:
                 self._impl_disconnect()
 
     def _impl_connect(self):
-        if self.__keep_open and not self.__connected:
+        if self.__keep_open and not self._connected:
             try:
                 try:
                     self._internal_connect()
-                    self.__connected = True
+                    self._connected = True
                     self.__failed = False
+                    logger.debug(f"{self.__class__.__name__} connected succesfully")
                 except Exception as exception:
                     self._reset()
                     raise exception
             except Exception as exception:
+                logger.debug(f"There was an exception during connection: {type(exception)} - {str(exception)}")
                 self._handle_exception(exception.args[0])
 
     def _reset(self):
