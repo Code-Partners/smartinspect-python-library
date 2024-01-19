@@ -12,7 +12,7 @@ class TcpProtocol(Protocol):
     __BUFFER_SIZE = 0x2000
     __CLIENT_BANNER = bytearray(f"SmartInspect Python Library v\n", encoding="UTF-8")
     # __CLIENT_BANNER = bytearray(f"SmartInspect Python Library v{SmartInspect.get_version()}\n", encoding="UTF-8")
-    __ANSWER_SIZE = 2
+    __ANSWER_BUFFER_SIZE = 0x2000
     _hostname = "127.0.0.1"
     _timeout = 30000
     _port = 4228
@@ -83,7 +83,12 @@ class TcpProtocol(Protocol):
     def _internal_write_packet(self, packet: Packet) -> None:
         self.__formatter.format(packet, self.__stream)
         self.__stream.flush()
-        server_answer = self.__stream.readline(self.__ANSWER_SIZE)
-        if len(server_answer) != self.__ANSWER_SIZE:
+
+        server_answer = self.__socket.recv(self.__ANSWER_BUFFER_SIZE)
+        self._internal_validate_write_packet_answer(server_answer)
+
+    @staticmethod
+    def _internal_validate_write_packet_answer(server_answer: bytes) -> None:
+        if len(server_answer) != 2:
             raise SmartInspectException(
                 "Could not read server answer correctly: Connection has been closed unexpectedly")
