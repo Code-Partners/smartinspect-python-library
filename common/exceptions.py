@@ -1,4 +1,4 @@
-class SmartInspectException(Exception):
+class SmartInspectError(Exception):
     def __init__(self, message):
         super().__init__(message)
 
@@ -7,12 +7,12 @@ class SmartInspectException(Exception):
         return self.args[0]
 
 
-class InvalidConnectionsException(Exception):
+class InvalidConnectionsError(Exception):
     def __init__(self, message):
         super().__init__(message)
 
 
-class ProtocolException(Exception):
+class ProtocolError(Exception):
     def __init__(self, message):
         super().__init__(message)
         self.__protocol_name: str = ""
@@ -35,7 +35,7 @@ class ProtocolException(Exception):
         return self.__protocol_options
 
 
-class LoadConnectionsException(SmartInspectException):
+class LoadConnectionsError(SmartInspectError):
     def __init__(self, filename: str, exception: str):
         super().__init__(exception)
         self.__filename = filename
@@ -49,7 +49,7 @@ class LoadConnectionsException(SmartInspectException):
         self.__filename = filename
 
 
-class LoadConfigurationException(SmartInspectException):
+class LoadConfigurationError(SmartInspectError):
     def __init__(self, filename: str, exception: str):
         super().__init__(exception)
         self.__filename = filename
