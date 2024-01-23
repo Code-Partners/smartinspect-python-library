@@ -1,4 +1,4 @@
-from common.exceptions import SmartInspectError
+from common.exceptions import SmartInspectException
 from connections.options_parser_event import OptionsParserEvent
 from connections.options_parser_listener import OptionsParserListener
 
@@ -35,7 +35,7 @@ class OptionsParser:
 
             if c != '=':
                 # The options string is invalid because the '=' character is missing.
-                raise SmartInspectError(f'Missing "=" at "{protocol}" protocol')
+                raise SmartInspectException(f'Missing "=" at "{protocol}" protocol')
             elif i < length:
                 i += 1
 
