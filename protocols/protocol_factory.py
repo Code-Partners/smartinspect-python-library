@@ -3,7 +3,7 @@ from typing import Type
 
 from protocols.cloud.cloud_protocol import CloudProtocol
 from protocols.protocol import Protocol
-from common.exceptions import SmartInspectException
+from common.exceptions import SmartInspectError
 from protocols.tcp_protocol import TcpProtocol
 
 
@@ -36,11 +36,11 @@ class ProtocolFactory:
                 protocol.initialize(options)
                 return protocol
             else:
-                raise SmartInspectException(cls.__PROTOCOL_NOT_FOUND)
+                raise SmartInspectError(cls.__PROTOCOL_NOT_FOUND)
 
     @classmethod
     def __create_instance(cls, protocol_class):
         try:
             return object.__new__(protocol_class)
         except Exception as e:
-            raise SmartInspectException(e.args[0])
+            raise SmartInspectError(e.args[0])
