@@ -11,8 +11,8 @@ from common.events.filter_event import FilterEvent
 from common.events.log_entry_event import LogEntryEvent
 from common.events.process_flow_event import ProcessFlowEvent
 from common.events.watch_event import WatchEvent
-from common.exceptions import InvalidConnectionsException, SmartInspectException
-from common.exceptions import LoadConnectionsException, LoadConfigurationException
+from common.exceptions import InvalidConnectionsError, SmartInspectError
+from common.exceptions import LoadConnectionsError, LoadConfigurationError
 from common.level import Level
 from common.listener.protocol_listener import ProtocolListener
 from common.listener.smartinspect_listener import SmartInspectListener
@@ -161,7 +161,7 @@ class SmartInspect:
             parser.parse(self.__variables.expand(connections), listener)
         except Exception as e:
             self.__remove_connections()
-            raise InvalidConnectionsException(e.args[0])
+            raise InvalidConnectionsError(e.args[0])
 
     def __add_connection(self, name: str, options: str) -> None:
 
@@ -208,11 +208,11 @@ class SmartInspect:
                 if config.contains("connections"):
                     return config.read_string("connections", "")
             except Exception:
-                raise SmartInspectException(self.__CONNECTIONS_NOT_FOUND_ERROR)
+                raise SmartInspectError(self.__CONNECTIONS_NOT_FOUND_ERROR)
             finally:
                 config.clear()
         except Exception as e:
-            raise LoadConnectionsException(filename, e.args[0])
+            raise LoadConnectionsError(filename, e.args[0])
 
     def get_connections(self):
         return self.__connections
@@ -239,7 +239,7 @@ class SmartInspect:
             try:
                 self.__apply_connections(connections)
                 result = True
-            except InvalidConnectionsException as e:
+            except InvalidConnectionsError as e:
                 self.__do_error(e)
 
         return result
@@ -259,7 +259,7 @@ class SmartInspect:
             try:
                 config.load_from_file(filename)
             except Exception as e:
-                exc = LoadConfigurationException(filename, e.args[0])
+                exc = LoadConfigurationError(filename, e.args[0])
                 self.__do_error(exc)
 
             with self.__lock:
@@ -309,7 +309,7 @@ class SmartInspect:
             try:
                 protocol = self.__find_protocol(caption)
                 if protocol is None:
-                    raise SmartInspectException(self.__CAPTION_NOT_FOUND)
+                    raise SmartInspectError(self.__CAPTION_NOT_FOUND)
 
                 protocol.dispatch(ProtocolCommand(action, state))
             except Exception as e:
