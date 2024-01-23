@@ -4,7 +4,7 @@ import threading
 import time
 
 from common.events.error_event import ErrorEvent
-from common.exceptions import ProtocolException, SmartInspectException
+from common.exceptions import ProtocolError, SmartInspectError
 from common.file_rotate import FileRotate
 from common.level import Level
 from common.listener.protocol_listener import ProtocolListener
@@ -56,7 +56,7 @@ class Protocol:
             listener.on_option = on_option
             parser.parse(self._get_name(), options, listener)
 
-        except SmartInspectException as e:
+        except SmartInspectError as e:
             self.__remove_options()
             raise e
 
@@ -281,7 +281,7 @@ class Protocol:
 
     def _handle_exception(self, message: str):
         self.__failed = True
-        protocol_exception = ProtocolException(message)
+        protocol_exception = ProtocolError(message)
         protocol_exception.set_protocol_name(self._get_name())
         protocol_exception.set_protocol_options(self.__get_options())
 
@@ -430,7 +430,7 @@ class Protocol:
         if self.__map_option(key, value):
             return
         if not self._is_valid_option(key):
-            raise SmartInspectException(f"Option \"{key}\" is not available for protocol \"{protocol}\"")
+            raise SmartInspectError(f"Option \"{key}\" is not available for protocol \"{protocol}\"")
 
         self.__options.put(key, value)
 
