@@ -73,6 +73,33 @@ class BinaryFormatter(Formatter):
         self.__write_data(hostname)
         self.__write_data(log_entry.data)
 
+    def __compile_log_header(self) -> None:
+        log_header = self.__packet
+        content: bytes = log_header.content.encode('utf-8')
+        self.__write_length(content)
+        self.__write_data(content)
+
+    def __compile_watch(self) -> None:
+        watch: Watch = self.__packet
+
+        name = self.__encode_string(watch.name)
+        value = self.__encode_string(watch.value)
+
+        self.__write_length(name)
+        self.__write_length(value)
+        self.__write_enum(watch.watch_type)
+        self.__write_timestamp(watch.timestamp)
+
+        self.__write_data(name)
+        self.__write_data(value)
+
+    def __compile_control_command(self) -> None:
+        control_command: ControlCommand = self.__packet
+
+        self.__write_enum(control_command.control_command_type)
+        self.__write_length(control_command.data)
+        self.__write_data(control_command.data)
+
     def __compile_process_flow(self) -> None:
         process_flow: ProcessFlow = self.__packet
 
@@ -88,20 +115,6 @@ class BinaryFormatter(Formatter):
 
         self.__write_data(title)
         self.__write_data(host_name)
-
-    def __compile_watch(self) -> None:
-        watch: Watch = self.__packet
-
-        name = self.__encode_string(watch.name)
-        value = self.__encode_string(watch.value)
-
-        self.__write_length(name)
-        self.__write_length(value)
-        self.__write_enum(watch.watch_type)
-        self.__write_timestamp(watch.timestamp)
-
-        self.__write_data(name)
-        self.__write_data(value)
 
     @staticmethod
     def __encode_string(value: str) -> bytearray:
@@ -153,19 +166,6 @@ class BinaryFormatter(Formatter):
         timestamp = value // self.__MICROSECONDS_PER_DAY + self.__DAY_OFFSET
         timestamp += (value % self.__MICROSECONDS_PER_DAY) / self.__MICROSECONDS_PER_DAY
         self.__write_double(timestamp)
-
-    def __compile_log_header(self) -> None:
-        log_header = self.__packet
-        content: bytes = log_header.content.encode('utf-8')
-        self.__write_length(content)
-        self.__write_data(content)
-
-    def __compile_control_command(self) -> None:
-        control_command: ControlCommand = self.__packet
-
-        self.__write_enum(control_command.control_command_type)
-        self.__write_length(control_command.data)
-        self.__write_data(control_command.data)
 
     def __write_length(self, content: bytes) -> None:
         if bytes and isinstance(content, bytes):
