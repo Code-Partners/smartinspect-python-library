@@ -15,6 +15,7 @@ from packets.packet import Packet
 # from packets.packet_type import PacketType
 from protocols.cloud.chunk import Chunk
 from protocols.tcp_protocol import TcpProtocol
+from protocols.cloud.exceptions import *
 
 logger = logging.getLogger(__name__)
 
@@ -241,6 +242,62 @@ class CloudProtocol(TcpProtocol):
 
     def disconnect(self) -> None:
         super().disconnect()
+
+    def _internal_validate_write_packet_answer(self, server_answer: bytes) -> None:
+        answer_length = len(server_answer)
+        answer = server_answer.decode("UTF-8")
+
+        logger.debug("Answer = {}; byte read count = {}".format(answer, answer_length))
+
+        if answer_length == 2 and answer == "OK":
+            pass
+        elif answer.startswith("SmartInspectProtocolException"):
+            try:
+                self._handle_error_reply(answer)
+            except CloudProtocolErrorWarning as e:
+                logger.warning("SmartInspect cloud protocol warning - {}".format(str(e)))
+
+            except CloudProtocolErrorReconnectAllowed as e:
+                logger.warning("SmartInspect cloud protocol error allowing reconnects - {}".format(str(e)))
+
+                super()._internal_validate_write_packet_answer(server_answer)
+            except CloudProtocolErrorReconnectForbidden as e:
+                logger.warning("SmartInspect cloud protocol error forbidding reconnects - {}".format(str(e)))
+
+                self._reconnect_allowed = False
+                super()._internal_validate_write_packet_answer(server_answer)
+
+        else:
+            super()._internal_validate_write_packet_answer(server_answer)
+
+    def _internal_reconnect(self) -> bool:
+        if self._reconnect_allowed:
+            logger.debug("Trying to reconnect")
+            return super()._internal_reconnect()
+        else:
+            logger.debug("Reconnect forbidden")
+
+            return False
+
+    @staticmethod
+    def _handle_error_reply(error_msg: str) -> None:
+        error_msg_parts = error_msg.split(" - ", 1)
+
+        if len(error_msg_parts) != 2:
+            logger.warning(error_msg_parts)
+            raise TypeError("error_msg must split into 2 parts by ' - ' separator")
+
+        exception_type = error_msg_parts[0]
+        exception_msg = error_msg_parts[1]
+
+        if exception_type.startswith("SmartInspectProtocolExceptionWarning"):
+            raise CloudProtocolErrorWarning(exception_msg)
+        elif exception_type.startswith("SmartInspectProtocolExceptionReconnectAllowed"):
+            raise CloudProtocolErrorReconnectAllowed(exception_msg)
+        elif exception_type.startswith("SmartInspectProtocolExceptionReconnectForbidden"):
+            raise CloudProtocolErrorReconnectForbidden(exception_msg)
+        else:
+            raise TypeError("Unknown protocol exception type prefix")
 
     # noinspection PyUnusedLocal
     @staticmethod

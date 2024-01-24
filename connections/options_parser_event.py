@@ -1,4 +1,4 @@
-from common.exceptions import SmartInspectException
+from common.exceptions import SmartInspectError
 
 
 class OptionsParserEvent:
@@ -15,7 +15,7 @@ class OptionsParserEvent:
     @source.setter
     def source(self, source: object) -> None:
         if source is None:
-            raise SmartInspectException("source is None")
+            raise SmartInspectError("source is None")
         self.__source = source
 
     @property

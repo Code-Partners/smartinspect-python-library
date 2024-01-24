@@ -1,7 +1,7 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
 import socket
 
-from common.exceptions import SmartInspectException
+from common.exceptions import SmartInspectError
 from connections.builders import ConnectionsBuilder
 from formatters.binary_formatter import BinaryFormatter
 from packets.packet import Packet
@@ -51,8 +51,8 @@ class TcpProtocol(Protocol):
     def _read_server_banner(self) -> None:
         answer = self.__stream.readline().strip()
         if not answer:
-            raise SmartInspectException("Could not read server banner correctly: " +
-                                        "Connection has been closed unexpectedly")
+            raise SmartInspectError("Could not read server banner correctly: " +
+                                    "Connection has been closed unexpectedly")
 
     def _send_client_banner(self) -> None:
         self.__stream.write(self.__CLIENT_BANNER)
@@ -62,9 +62,9 @@ class TcpProtocol(Protocol):
         try:
             self.__socket = self._internal_initialize_socket()
         except Exception as e:
-            raise SmartInspectException(f"There was a connection error. \n"
-                                        f"Check if SI Console is running on {self._hostname}:{self._port} \n"
-                                        f"Your system returned: {type(e)} - {str(e)}")
+            raise SmartInspectError(f"There was a connection error. \n"
+                                    f"Check if SI Console is running on {self._hostname}:{self._port} \n"
+                                    f"Your system returned: {type(e)} - {str(e)}")
 
         self.__stream = self.__socket.makefile("rwb", self.__BUFFER_SIZE)
         self._do_handshake()
@@ -100,5 +100,5 @@ class TcpProtocol(Protocol):
     @staticmethod
     def _internal_validate_write_packet_answer(server_answer: bytes) -> None:
         if len(server_answer) != 2:
-            raise SmartInspectException(
+            raise SmartInspectError(
                 "Could not read server answer correctly: Connection has been closed unexpectedly")

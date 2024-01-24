@@ -1,5 +1,5 @@
 from common.events.connections_parser_event import ConnectionsParserEvent
-from common.exceptions import SmartInspectException
+from common.exceptions import SmartInspectError
 from connections.connections_parser_listener import ConnectionsParserListener
 
 
@@ -32,7 +32,7 @@ class ConnectionsParser:
             if symbol != "(":
                 # The connections string is invalid because the '('
                 # character is missing.
-                raise SmartInspectException(
+                raise SmartInspectError(
                     f"Missing \"(\" at position {pointer + 1}"
                 )
             else:
@@ -55,14 +55,14 @@ class ConnectionsParser:
                 options += symbol
 
             if quoted:
-                raise SmartInspectException(
+                raise SmartInspectError(
                     f"Quoted values not closed at protocol \"{name}\""
                 )
 
             if symbol != ')':
                 # The connections string is invalid because the ')'
                 # character is missing.
-                raise SmartInspectException(
+                raise SmartInspectError(
                     f"Missing \")\" at position {pointer + 1}"
                 )
             elif pointer < length and connections[pointer] == ',':
