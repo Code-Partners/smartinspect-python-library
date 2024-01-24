@@ -12,6 +12,7 @@ from packets.watch import Watch
 from packets.control_command import ControlCommand
 from packets.log_entry import LogEntry
 from common.color.rgbacolor import RGBAColor
+from protocols.cloud.chunk import Chunk
 
 
 class BinaryFormatter(Formatter):
@@ -24,6 +25,7 @@ class BinaryFormatter(Formatter):
         PacketType.WATCH: "__compile_watch",
         PacketType.CONTROL_COMMAND: "__compile_control_command",
         PacketType.PROCESS_FLOW: "__compile_process_flow",
+        PacketType.CHUNK: "__compile_packet_chunk",
     }
 
     def __init__(self):
@@ -115,6 +117,15 @@ class BinaryFormatter(Formatter):
 
         self.__write_data(title)
         self.__write_data(host_name)
+
+    def __compile_packet_chunk(self) -> None:
+        chunk: Chunk = self.__packet
+        self.__write_short(chunk.header_size)
+        self.__write_short(chunk.chunk_format)
+        self.__write_4bytes_int(chunk.packet_count)
+        self.__write_4bytes_int(chunk.stream.getbuffer().nbytes)
+
+        self.__stream.write(chunk.stream)
 
     @staticmethod
     def __encode_string(value: str) -> bytearray:
