@@ -54,7 +54,7 @@ class CloudProtocol(TcpProtocol):
         self._virtual_file_size: int = 0
         self._chunking_enabled: bool = True
         self._chunk_max_size: int = self._DEFAULT_CHUNK_MAX_SIZE
-        self._chunk_max_age: int = 1000  # milliseconds
+        self._chunk_max_age: int = self._DEFAULT_CHUNK_MAX_AGE  # milliseconds
         self._virtual_file_max_size: int = self._DEFAULT_VIRTUAL_FILE_MAX_SIZE
         self._chunk: Chunk | None = None
         self._chunking_lock = threading.Lock()
