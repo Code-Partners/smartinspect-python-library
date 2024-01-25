@@ -1,6 +1,3 @@
-# import concurrent.futures
-from concurrent.futures import ThreadPoolExecutor
-# from datetime import datetime
 import re
 import collections
 import logging
@@ -12,8 +9,9 @@ from common.file_rotater import FileRotater
 from connections.builders import ConnectionsBuilder
 from packets.log_header import LogHeader
 from packets.packet import Packet
-# from packets.packet_type import PacketType
+from packets.packet_type import PacketType
 from protocols.cloud.chunk import Chunk
+from protocols.cloud.exceptions.scheduled_executor import ScheduledExecutor
 from protocols.tcp_protocol import TcpProtocol
 from protocols.cloud.exceptions import *
 
@@ -66,7 +64,7 @@ class CloudProtocol(TcpProtocol):
         self._tls_certificate_location: str = ""
         self._tls_certificate_filepath: str = ""
         self._tls_certificate_password: str = ""
-        self._chunk_flush_executor: ThreadPoolExecutor | None = None
+        self._chunk_flush_executor: ScheduledExecutor | None = None
 
     def is_reconnect_allowed(self) -> bool:
         return self._reconnect_allowed
@@ -230,7 +228,52 @@ class CloudProtocol(TcpProtocol):
             else:
                 logger.debug("Packet exceed the max size and is ignored")
         else:
-            pass
+            with self._chunking_lock:
+                if self._chunk is None:
+                    self._reset_chunk()
+
+                if packet.packet_type == PacketType.LOG_HEADER:
+                    logger.debug("Chunking is enabled, but log header packet must be sent separately")
+
+                    super().write_packet(packet)
+                else:
+                    try:
+                        self._chunk.compile_packet(packet)
+
+                        if self._chunk.can_fit_formatted_packet():
+                            logger.debug("Adding packet #%d to the chunk",
+                                         self._packet_count)
+
+                            self._chunk.chunk_formatted_packet()
+                        else:
+                            logger.debug("Bundle is full, packet #%d won't fit, compiling the chunk and writing it",
+                                         self._packet_count)
+
+                            if self._chunk.packet_count > 0:
+                                super().write_packet(self._chunk)
+                            else:
+                                logger.debug("Do not flush chunk when packet does not fit, the chunk is empty")
+
+                            self._reset_chunk()
+                            self._chunk.compile_packet(packet)
+
+                            if self._chunk.can_fit_formatted_packet():
+                                logger.debug("Adding packet #%d to the chunk",
+                                             self._packet_count)
+
+                                self._chunk.chunk_formatted_packet()
+                            else:
+                                logger.debug("Packet #%d won't fit even in an empty chunk, writing it raw",
+                                             self._packet_count)
+
+                                if self._validate_packet_size(packet):
+                                    super().write_packet(packet)
+                                else:
+                                    logger.debug("Packet exceeds the max size and is ignored")
+                    except Exception as e:
+                        logger.warning("Exception while handling chunk: %s - %s", type(e), str(e))
+
+                        raise RuntimeError(e)
 
         if self._validate_packet_size(packet):
             self._virtual_file_size += packet.size
@@ -238,9 +281,20 @@ class CloudProtocol(TcpProtocol):
         self._packet_count += 1
 
     def connect(self) -> None:
+        if self._chunking_enabled:
+            self._chunk_flush_executor = ScheduledExecutor(lambda: self._flush_chunk_by_age(False), 100)
+            self._chunk_flush_executor.start()
         super().connect()
 
     def disconnect(self) -> None:
+        self._flush_chunk_by_age(True)
+
+        if self._chunk_flush_executor is not None:
+            try:
+                self._chunk_flush_executor.stop(1000)
+            except InterruptedError as e:
+                raise RuntimeError(e)
+
         super().disconnect()
 
     def _internal_validate_write_packet_answer(self, server_answer: bytes) -> None:
@@ -298,6 +352,26 @@ class CloudProtocol(TcpProtocol):
             raise CloudProtocolErrorReconnectForbidden(exception_msg)
         else:
             raise TypeError("Unknown protocol exception type prefix")
+
+    def _flush_chunk_by_age(self, force_flush: bool) -> None:
+        with self._chunking_lock:
+            if self._chunking_enabled and self._chunk is not None:
+                time_to_flush = self._chunk.milliseconds_since_the_first_packet() > self._chunk_max_age
+                if self._chunk.packet_count > 0:
+                    if time_to_flush or force_flush:
+                        if time_to_flush:
+                            logger.debug("More than %dms passed since the chunk was started, time to flush it",
+                                         self._chunk_max_age)
+                        else:
+                            logger.debug("Forced chunk flush")
+
+                        # noinspection PyBroadException
+                        try:
+                            super().write_packet(self._chunk)
+                        except Exception:
+                            logger.debug("Exception caught")
+
+                        self._reset_chunk()
 
     # noinspection PyUnusedLocal
     @staticmethod
