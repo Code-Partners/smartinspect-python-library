@@ -2,9 +2,9 @@ import io
 import logging
 import time
 
-from formatters import BinaryFormatter
 from packets.packet import Packet
 from packets.packet_type import PacketType
+from formatters import BinaryFormatter
 
 logger = logging.getLogger(__name__)
 
