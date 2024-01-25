@@ -1,18 +1,17 @@
 import logging
 import math
 import struct
-from io import BytesIO
 from enum import Enum
+from io import BytesIO
 
+from common.color.rgbacolor import RGBAColor
 from formatters.formatter import Formatter
+from packets.control_command import ControlCommand
+from packets.log_entry import LogEntry
 from packets.packet import Packet
 from packets.packet_type import PacketType
 from packets.process_flow import ProcessFlow
 from packets.watch import Watch
-from packets.control_command import ControlCommand
-from packets.log_entry import LogEntry
-from common.color.rgbacolor import RGBAColor
-from protocols.cloud.chunk import Chunk
 
 
 class BinaryFormatter(Formatter):
@@ -119,7 +118,7 @@ class BinaryFormatter(Formatter):
         self.__write_data(host_name)
 
     def __compile_packet_chunk(self) -> None:
-        chunk: Chunk = self.__packet
+        chunk = self.__packet
         self.__write_short(chunk.header_size)
         self.__write_short(chunk.chunk_format)
         self.__write_4bytes_int(chunk.packet_count)
