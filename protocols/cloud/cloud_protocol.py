@@ -326,7 +326,7 @@ class CloudProtocol(TcpProtocol):
 
     def _internal_reconnect(self) -> bool:
         if self._reconnect_allowed:
-            logger.debug("trying to reconnect")
+            logger.debug("Trying to reconnect")
             return super()._internal_reconnect()
         else:
             logger.debug("Reconnect forbidden")
