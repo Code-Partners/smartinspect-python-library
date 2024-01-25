@@ -10,10 +10,10 @@ from connections.builders import ConnectionsBuilder
 from packets.log_header import LogHeader
 from packets.packet import Packet
 from packets.packet_type import PacketType
-from protocols.cloud.chunk import Chunk
 from protocols.cloud.exceptions.scheduled_executor import ScheduledExecutor
 from protocols.tcp_protocol import TcpProtocol
 from protocols.cloud.exceptions import *
+from protocols.cloud.chunk import Chunk
 
 logger = logging.getLogger(__name__)
 
