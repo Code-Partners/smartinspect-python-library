@@ -13,6 +13,8 @@ from packets.packet_type import PacketType
 from packets.process_flow import ProcessFlow
 from packets.watch import Watch
 
+logger = logging.getLogger(__name__)
+
 
 class BinaryFormatter(Formatter):
     __MICROSECONDS_PER_DAY = 86400000000
@@ -204,11 +206,11 @@ class BinaryFormatter(Formatter):
         self.__write_4bytes_int(signed_int)
 
     def write(self, stream):
-        logging.debug("Writing packet to output stream.")
+        logger.debug("Writing packet to output stream.")
         self.__write_short(self.__packet.packet_type.value, stream=stream)
         self.__write_4bytes_int(self.__size, stream=stream)
-        logging.debug(f"stream = {self.__stream.getvalue()}")
-        logging.debug(f"stream_size is = {len(self.__stream.getvalue())}")
+        logger.debug(f"stream = {self.__stream.getvalue()}")
+        logger.debug(f"stream_size is = {len(self.__stream.getvalue())}")
         stream.write(self.__stream.getvalue())
 
     def __write_double(self, value: float) -> None:
