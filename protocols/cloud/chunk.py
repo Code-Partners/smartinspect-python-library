@@ -39,7 +39,7 @@ class Chunk(Packet):
 
     def can_fit_formatted_packet(self) -> bool:
         logger.debug(
-            "Check if packet of size %d can fit into the chunk, remaining bytes - %",
+            "Check if packet of size %d can fit into the chunk, remaining bytes - %d",
             self._last_compiled_packet_size,
             self._chunk_max_size - self.size)
 
