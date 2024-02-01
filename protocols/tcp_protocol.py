@@ -1,4 +1,5 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
+import logging
 import socket
 
 from common.exceptions import SmartInspectError
@@ -6,6 +7,8 @@ from connections.builders import ConnectionsBuilder
 from formatters.binary_formatter import BinaryFormatter
 from packets.packet import Packet
 from protocols.protocol import Protocol
+
+logger = logging.getLogger(__name__)
 
 
 class TcpProtocol(Protocol):

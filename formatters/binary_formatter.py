@@ -1,17 +1,19 @@
 import logging
 import math
 import struct
-from io import BytesIO
 from enum import Enum
+from io import BytesIO
 
+from common.color.rgbacolor import RGBAColor
 from formatters.formatter import Formatter
+from packets.control_command import ControlCommand
+from packets.log_entry import LogEntry
 from packets.packet import Packet
 from packets.packet_type import PacketType
 from packets.process_flow import ProcessFlow
 from packets.watch import Watch
-from packets.control_command import ControlCommand
-from packets.log_entry import LogEntry
-from common.color.rgbacolor import RGBAColor
+
+logger = logging.getLogger(__name__)
 
 
 class BinaryFormatter(Formatter):
@@ -24,6 +26,7 @@ class BinaryFormatter(Formatter):
         PacketType.WATCH: "__compile_watch",
         PacketType.CONTROL_COMMAND: "__compile_control_command",
         PacketType.PROCESS_FLOW: "__compile_process_flow",
+        PacketType.CHUNK: "__compile_packet_chunk",
     }
 
     def __init__(self):
@@ -73,6 +76,33 @@ class BinaryFormatter(Formatter):
         self.__write_data(hostname)
         self.__write_data(log_entry.data)
 
+    def __compile_log_header(self) -> None:
+        log_header = self.__packet
+        content: bytes = log_header.content.encode('utf-8')
+        self.__write_length(content)
+        self.__write_data(content)
+
+    def __compile_watch(self) -> None:
+        watch: Watch = self.__packet
+
+        name = self.__encode_string(watch.name)
+        value = self.__encode_string(watch.value)
+
+        self.__write_length(name)
+        self.__write_length(value)
+        self.__write_enum(watch.watch_type)
+        self.__write_timestamp(watch.timestamp)
+
+        self.__write_data(name)
+        self.__write_data(value)
+
+    def __compile_control_command(self) -> None:
+        control_command: ControlCommand = self.__packet
+
+        self.__write_enum(control_command.control_command_type)
+        self.__write_length(control_command.data)
+        self.__write_data(control_command.data)
+
     def __compile_process_flow(self) -> None:
         process_flow: ProcessFlow = self.__packet
 
@@ -89,19 +119,14 @@ class BinaryFormatter(Formatter):
         self.__write_data(title)
         self.__write_data(host_name)
 
-    def __compile_watch(self) -> None:
-        watch: Watch = self.__packet
+    def __compile_packet_chunk(self) -> None:
+        chunk = self.__packet
+        self.__write_short(chunk.header_size)
+        self.__write_short(chunk.chunk_format)
+        self.__write_4bytes_int(chunk.packet_count)
+        self.__write_4bytes_int(chunk.stream.getbuffer().nbytes)
 
-        name = self.__encode_string(watch.name)
-        value = self.__encode_string(watch.value)
-
-        self.__write_length(name)
-        self.__write_length(value)
-        self.__write_enum(watch.watch_type)
-        self.__write_timestamp(watch.timestamp)
-
-        self.__write_data(name)
-        self.__write_data(value)
+        self.__stream.write(chunk.stream.getvalue())
 
     @staticmethod
     def __encode_string(value: str) -> bytearray:
@@ -154,19 +179,6 @@ class BinaryFormatter(Formatter):
         timestamp += (value % self.__MICROSECONDS_PER_DAY) / self.__MICROSECONDS_PER_DAY
         self.__write_double(timestamp)
 
-    def __compile_log_header(self) -> None:
-        log_header = self.__packet
-        content: bytes = log_header.content.encode('utf-8')
-        self.__write_length(content)
-        self.__write_data(content)
-
-    def __compile_control_command(self) -> None:
-        control_command: ControlCommand = self.__packet
-
-        self.__write_enum(control_command.control_command_type)
-        self.__write_length(control_command.data)
-        self.__write_data(control_command.data)
-
     def __write_length(self, content: bytes) -> None:
         if bytes and isinstance(content, bytes):
             self.__write_4bytes_int(len(content))
@@ -194,11 +206,11 @@ class BinaryFormatter(Formatter):
         self.__write_4bytes_int(signed_int)
 
     def write(self, stream):
-        logging.debug("Writing packet to output stream.")
+        logger.debug("Writing packet to output stream.")
         self.__write_short(self.__packet.packet_type.value, stream=stream)
         self.__write_4bytes_int(self.__size, stream=stream)
-        logging.debug(f"stream = {self.__stream.getvalue()}")
-        logging.debug(f"stream_size is = {len(self.__stream.getvalue())}")
+        logger.debug(f"stream = {self.__stream.getvalue()}")
+        logger.debug(f"stream_size is = {len(self.__stream.getvalue())}")
         stream.write(self.__stream.getvalue())
 
     def __write_double(self, value: float) -> None:
