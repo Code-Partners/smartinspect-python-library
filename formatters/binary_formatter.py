@@ -126,7 +126,7 @@ class BinaryFormatter(Formatter):
         self.__write_4bytes_int(chunk.packet_count)
         self.__write_4bytes_int(chunk.stream.getbuffer().nbytes)
 
-        self.__stream.write(chunk.stream)
+        self.__stream.write(chunk.stream.getvalue())
 
     @staticmethod
     def __encode_string(value: str) -> bytearray:
