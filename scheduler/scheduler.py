@@ -9,6 +9,8 @@ from scheduler.scheduler_action import SchedulerAction
 from scheduler.scheduler_command import SchedulerCommand
 from scheduler.scheduler_queue import SchedulerQueue, SchedulerQueueEnd
 
+logger = logging.getLogger(__name__)
+
 
 class SchedulerThread(threading.Thread):
     def __init__(self, scheduler) -> None:
@@ -149,6 +151,7 @@ class Scheduler:
             self.__thread = SchedulerThread(self)
             self.__thread.start()
             self.__started = True
+            logger.debug(f"SchedulerQueue Scheduler started in thread: {self.__thread.name}")
 
     def stop(self) -> None:
         with self.condition:
