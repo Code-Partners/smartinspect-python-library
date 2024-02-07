@@ -31,8 +31,8 @@ class SchedulerThread(threading.Thread):
             if not self.run_commands(count):
                 break
 
-            from protocols.tcp_protocol import TcpProtocol
-            if isinstance(self.parent.protocol, TcpProtocol):
+            from protocols.cloud.cloud_protocol import CloudProtocol
+            if isinstance(self.parent.protocol, CloudProtocol):
 
                 if self.consecutive_packet_write_fail_count > 0:
                     try:
@@ -81,15 +81,14 @@ class SchedulerThread(threading.Thread):
     def __write_packet_action(self, command):
         packet = command.state
         protocol = self.parent.protocol
-        
-        protocol._impl_write_packet(packet)
-        from protocols.tcp_protocol import TcpProtocol
-        if isinstance(protocol, TcpProtocol) and protocol.failed:
-            # commented out, as this attribute is feature of CloudProtocol
 
-            # if not protocol.is_reconnect_allowed():
-            #     logging.debug("Reconnect is disabled, no need to requeue packet we failed to send")
-            #     return
+        protocol._impl_write_packet(packet)
+        from protocols.cloud.cloud_protocol import CloudProtocol
+        if isinstance(protocol, CloudProtocol) and protocol.failed:
+
+            if not protocol.is_reconnect_allowed():
+                logging.debug("Reconnect is disabled, no need to requeue packet we failed to send")
+                return
 
             self.consecutive_packet_write_fail_count += 1
             logging.debug("Sending packet failed, scheduling again to the head of the queue, "
@@ -107,7 +106,7 @@ class SchedulerThread(threading.Thread):
 
 class Scheduler:
     __BUFFER_SIZE = 0x10
-    __TCP_PROTOCOL_BUFFER_SIZE = 0x1
+    __CLOUD_PROTOCOL_BUFFER_SIZE = 0x1
 
     def __init__(self, protocol):
         super().__init__()
@@ -115,12 +114,12 @@ class Scheduler:
         self.__condition = threading.Condition()
         self.__queue = SchedulerQueue()
 
-        # if protocol is TcpProtocol - respective buffer size is set
-        from protocols.tcp_protocol import TcpProtocol
+        # if protocol is CloudProtocol - respective buffer size is set
+        from protocols.cloud.cloud_protocol import CloudProtocol
         self.__buffer: List[Optional[SchedulerCommand]] = [
             [None] * self.__BUFFER_SIZE,
-            [None] * self.__TCP_PROTOCOL_BUFFER_SIZE,
-        ][isinstance(self.__protocol, TcpProtocol)]
+            [None] * self.__CLOUD_PROTOCOL_BUFFER_SIZE,
+        ][isinstance(self.__protocol, CloudProtocol)]
 
         self.__started: bool = False
         self.__stopped: bool = False
