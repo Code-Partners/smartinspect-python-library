@@ -3,6 +3,7 @@ import collections
 import logging
 import threading
 import uuid
+from datetime import datetime
 
 from common.file_rotate import FileRotate
 from common.file_rotater import FileRotater
@@ -220,7 +221,7 @@ class CloudProtocol(TcpProtocol):
             logger.debug("Connection is closed and reconnect is forbidden, skip packet processing")
             return
 
-        # self._maybe_rotate_virtual_file_id(packet)
+        self._maybe_rotate_virtual_file_id(packet)
 
         if not self._chunking_enabled:
             if self._validate_packet_size(packet):
@@ -280,7 +281,47 @@ class CloudProtocol(TcpProtocol):
 
         self._packet_count += 1
 
+    def _maybe_rotate_virtual_file_id(self, packet: Packet) -> None:
+        packet_size = packet.size
+        logger.debug("Check if packet of size %d can fit into virtual file, remaining space - %d",
+                     packet_size, self._virtual_file_max_size - self._virtual_file_size - packet_size)
+
+        if self._virtual_file_size + packet_size > self._virtual_file_max_size:
+            logger.debug("Rotating virtual file by max size - %d",
+                         self._virtual_file_max_size)
+
+            self._do_rotate_virtual_file_id()
+        elif self._rotate != FileRotate.NO_ROTATE:
+            try:
+                if self._rotater.update(datetime.now()):
+                    logger.debug("Rotating virtual file by datetime")
+
+                    self._do_rotate_virtual_file_id()
+            except Exception as e:
+                raise RuntimeError(e)
+
+    def _do_rotate_virtual_file_id(self) -> None:
+        if self._chunking_enabled and self._chunk is not None:
+            with self._chunking_lock:
+                if self._chunk.packet_count > 0:
+                    logger.debug("Flushing chunk before rotating virtual file id")
+
+                    try:
+                        super().write_packet(self._chunk)
+                    except Exception as e:
+                        logger.debug("Exception caught {} - {}".format(type(e), str(e)))
+
+                    self._reset_chunk()
+
+        self._virtual_file_id = uuid.uuid4()
+        self._virtual_file_size = 0
+
+        log_header = self._compose_log_header_packet()
+        super().write_packet(log_header)
+
     def connect(self) -> None:
+        self._rotater.initialize(datetime.now())
+
         if self._chunking_enabled:
             self._chunk_flush_executor = ScheduledExecutor(lambda: self._flush_chunk_by_age(False), 100)
             self._chunk_flush_executor.start()
