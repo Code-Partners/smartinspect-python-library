@@ -123,7 +123,7 @@ class CloudProtocol(TcpProtocol):
     def _load_chunking_options(self) -> None:
         self._chunking_enabled = self._get_boolean_option("chunking.enabled", True)
 
-        self._chunk_max_size = self._get_size_option("chunking.maxsize", self._DEFAULT_CHUNK_MAX_SIZE)
+        self._chunk_max_size = self._get_size_option("chunking.maxsize", int(self._DEFAULT_CHUNK_MAX_SIZE / 1024))
         self._chunk_max_size = max(self._chunk_max_size, self._MIN_ALLOWED_CHUNK_MAX_SIZE)
         self._chunk_max_size = min(self._chunk_max_size, self._MAX_ALLOWED_CHUNK_MAX_SIZE)
 
@@ -131,7 +131,8 @@ class CloudProtocol(TcpProtocol):
         self._chunk_max_age = max(self._chunk_max_age, self._MIN_ALLOWED_CHUNK_MAX_AGE)
 
     def _load_virtual_file_rotation_options(self) -> None:
-        self._virtual_file_max_size = self._get_size_option("maxsize", self._DEFAULT_VIRTUAL_FILE_MAX_SIZE)
+        self._virtual_file_max_size = self._get_size_option("maxsize",
+                                                            int(self._DEFAULT_VIRTUAL_FILE_MAX_SIZE / 1024))
         self._virtual_file_max_size = max(self._virtual_file_max_size, self._MIN_ALLOWED_VIRTUAL_FILE_MAX_SIZE)
         self._virtual_file_max_size = min(self._virtual_file_max_size, self._MAX_ALLOWED_VIRTUAL_FILE_MAX_SIZE)
 
