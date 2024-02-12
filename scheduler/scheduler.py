@@ -9,6 +9,8 @@ from scheduler.scheduler_action import SchedulerAction
 from scheduler.scheduler_command import SchedulerCommand
 from scheduler.scheduler_queue import SchedulerQueue, SchedulerQueueEnd
 
+logger = logging.getLogger(__name__)
+
 
 class SchedulerThread(threading.Thread):
     def __init__(self, scheduler) -> None:
@@ -63,7 +65,8 @@ class SchedulerThread(threading.Thread):
         # noinspection PyBroadException
         try:
             if action == SchedulerAction.CONNECT:
-                protocol._impl_connect()
+                connect_log_header = command.state
+                protocol._impl_connect(connect_log_header)
             elif action == SchedulerAction.WRITE_PACKET:
                 self.__write_packet_action(command)
             elif action == SchedulerAction.DISCONNECT:
@@ -79,15 +82,16 @@ class SchedulerThread(threading.Thread):
     def __write_packet_action(self, command):
         packet = command.state
         protocol = self.parent.protocol
-        
+
         protocol._impl_write_packet(packet)
         from protocols.tcp_protocol import TcpProtocol
         if isinstance(protocol, TcpProtocol) and protocol.failed:
-            # commented out, as this attribute is feature of CloudProtocol
 
-            # if not protocol.is_reconnect_allowed():
-            #     logging.debug("Reconnect is disabled, no need to requeue packet we failed to send")
-            #     return
+            from protocols.cloud.cloud_protocol import CloudProtocol
+            if isinstance(protocol, CloudProtocol) and protocol.failed:
+                if not protocol.is_reconnect_allowed():
+                    logging.debug("Reconnect is disabled, no need to requeue packet we failed to send")
+                    return
 
             self.consecutive_packet_write_fail_count += 1
             logging.debug("Sending packet failed, scheduling again to the head of the queue, "
@@ -149,6 +153,7 @@ class Scheduler:
             self.__thread = SchedulerThread(self)
             self.__thread.start()
             self.__started = True
+            logger.debug(f"SchedulerQueue Scheduler started in thread: {self.__thread.name}")
 
     def stop(self) -> None:
         with self.condition:

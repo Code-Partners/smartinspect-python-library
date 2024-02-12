@@ -2,6 +2,8 @@
 import logging
 import threading
 import time
+import typing
+from typing import Optional
 
 from common.events.error_event import ErrorEvent
 from common.exceptions import ProtocolError, SmartInspectError
@@ -18,6 +20,7 @@ from connections.options_parser_listener import OptionsParserListener
 from packets.log_header import LogHeader
 from packets.packet import Packet
 from packets.packet_queue import PacketQueue
+from packets.packet_type import PacketType
 from scheduler.scheduler import Scheduler
 from scheduler.scheduler_action import SchedulerAction
 from scheduler.scheduler_command import SchedulerCommand
@@ -44,6 +47,7 @@ class Protocol:
         self.__initialized = False
         self.__failed = False
         self.__backlog_enabled = False
+        self._reconnect_log_header = None
 
     def __create_options(self, options: str) -> None:
         try:
@@ -141,14 +145,23 @@ class Protocol:
 
         return log_header
 
-    def _internal_write_log_header(self) -> None:
-        log_header = self._compose_log_header_packet()
-        self._internal_write_packet(log_header)
+    # def _internal_write_log_header(self, connect_log_header: typing.Optional[LogHeader] = None) -> None:
+    #     if connect_log_header is None and self._reconnect_log_header is None:
+    #         log_header = self._compose_log_header_packet()
+    #     elif connect_log_header:
+    #         log_header = connect_log_header
+    #
+    #     self._internal_write_packet(log_header)
+
+    def _internal_write_connect_log_header(self, connect_log_header: typing.Optional[LogHeader] = None) -> None:
+        if connect_log_header is None:
+            connect_log_header = self._compose_log_header_packet()
+        self._internal_write_packet(connect_log_header)
 
     def _internal_write_packet(self, packet: Packet):
         pass
 
-    def _internal_connect(self):
+    def _internal_connect(self, connect_log_header: Optional[LogHeader] = None):
         pass
 
     @property
@@ -196,15 +209,17 @@ class Protocol:
             else:
                 self._impl_disconnect()
 
-    def _impl_connect(self):
+    def _impl_connect(self, connect_log_header: Optional[LogHeader] = None):
         if self.__keep_open and not self._connected:
             try:
                 try:
-                    self._internal_connect()
+                    self._internal_connect(connect_log_header)
+                    self._reconnect_log_header = connect_log_header
                     self._connected = True
                     self.__failed = False
                     logger.debug(f"{self.__class__.__name__} connected succesfully")
                 except Exception as exception:
+                    self._reconnect_log_header = connect_log_header
                     self._reset()
                     raise exception
             except Exception as exception:
@@ -309,6 +324,9 @@ class Protocol:
     def __schedule_connect(self) -> None:
         command = SchedulerCommand()
         command.action = SchedulerAction.CONNECT
+
+        log_header = self._compose_log_header_packet()
+        command.state = log_header
         self.__scheduler.schedule(command, SchedulerQueueEnd.TAIL)
 
     def get_caption(self) -> str:
@@ -369,7 +387,7 @@ class Protocol:
                 self.__listeners.remove(listener)
 
     def _internal_reconnect(self) -> bool:
-        self._internal_connect()
+        self._internal_connect(self._reconnect_log_header)
         return True
 
     def _internal_disconnect(self) -> None:
@@ -384,7 +402,9 @@ class Protocol:
     def __forward_packet(self, packet: Packet, disconnect: bool) -> None:
         if not self._connected:
             if not self.__keep_open:
-                self._internal_connect()
+                self._internal_connect(self._reconnect_log_header)
+                if packet.packet_type == PacketType.LOG_HEADER:
+                    self._reconnect_log_header = packet
                 self._connected = True
                 self.__failed = False
             else:
@@ -401,7 +421,7 @@ class Protocol:
                 self._connected = False
                 self._internal_disconnect()
 
-    def __do_reconnect(self) -> None:
+    def __do_reconnect(self, connect_log_header: typing.Optional[LogHeader] = None) -> None:
         if self.__reconnect_interval > 0:
             tick_count = time.time() * 1000
             if tick_count - self.__reconnect_tick_count < self.__reconnect_interval:
@@ -411,7 +431,8 @@ class Protocol:
         try:
             if self._internal_reconnect():
                 self._connected = True
-        except Exception:
+                self._reconnect_log_header = connect_log_header
+        except Exception as e:
             pass
             # Reconnect exceptions are not reported,
             # but we need to record that the last connection attempt

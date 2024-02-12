@@ -1,10 +1,12 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
 import logging
 import socket
+import typing
 
 from common.exceptions import SmartInspectError
 from connections.builders import ConnectionsBuilder
 from formatters.binary_formatter import BinaryFormatter
+from packets.log_header import LogHeader
 from packets.packet import Packet
 from protocols.protocol import Protocol
 
@@ -61,7 +63,7 @@ class TcpProtocol(Protocol):
         self.__stream.write(self.__CLIENT_BANNER)
         self.__stream.flush()
 
-    def _internal_connect(self):
+    def _internal_connect(self, connect_log_header: typing.Optional[LogHeader] = None):
         try:
             self.__socket = self._internal_initialize_socket()
         except Exception as e:
@@ -71,7 +73,7 @@ class TcpProtocol(Protocol):
 
         self.__stream = self.__socket.makefile("rwb", self.__BUFFER_SIZE)
         self._do_handshake()
-        self._internal_write_log_header()
+        self._internal_write_connect_log_header(connect_log_header)
 
     def _internal_initialize_socket(self) -> socket.socket:
         socket_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

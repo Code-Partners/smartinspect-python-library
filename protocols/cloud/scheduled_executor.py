@@ -1,12 +1,16 @@
+import logging
 import threading
 import time
 import typing
+
+logger = logging.getLogger(__name__)
 
 
 class ScheduledExecutor:
     """ ScheduledExecutor performs a task (until stopped) in a separate thread with a delay in ms between executions.
     Delay precision is based on Python's time.sleep() function.
     """
+
     def __init__(self, task: typing.Callable, delay_ms: int):
         """
 
@@ -28,6 +32,7 @@ class ScheduledExecutor:
     def start(self):
         """Method starts ScheduledExecutor."""
         self._thread.start()
+        logger.debug(f"CloudProtocol ScheduledExecutor started in thread: {self._thread.name}")
 
     def stop(self, timeout_ms: (float, None) = None) -> None:
         """Method stops ScheduledExecutor, providing a timeout for internal thread termination.
