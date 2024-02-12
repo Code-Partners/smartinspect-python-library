@@ -1,6 +1,6 @@
-import re
 import collections
 import logging
+import re
 import threading
 import uuid
 from datetime import datetime
@@ -11,10 +11,10 @@ from connections.builders import ConnectionsBuilder
 from packets.log_header import LogHeader
 from packets.packet import Packet
 from packets.packet_type import PacketType
+from protocols.cloud.chunk import Chunk
+from protocols.cloud.exceptions import *
 from protocols.cloud.scheduled_executor import ScheduledExecutor
 from protocols.tcp_protocol import TcpProtocol
-from protocols.cloud.exceptions import *
-from protocols.cloud.chunk import Chunk
 
 logger = logging.getLogger(__name__)
 
@@ -318,6 +318,7 @@ class CloudProtocol(TcpProtocol):
         self._virtual_file_size = 0
 
         log_header = self._compose_log_header_packet()
+        self._reconnect_log_header = log_header
         super().write_packet(log_header)
 
     def connect(self) -> None:
