@@ -65,10 +65,11 @@ class SchedulerThread(threading.Thread):
         # noinspection PyBroadException
         try:
             if action == SchedulerAction.CONNECT:
-                connect_log_header = command.state
+                connect_log_header: LogHeader = command.state
                 logger.debug(
-                    "Received CONNECT command with log header id {}. Using it to connect".format(
-                        id(connect_log_header)))
+                    "Received CONNECT command with log header vf_id {}. Using it to connect".format(
+                        connect_log_header.values.get("virtualfileid")))
+
                 protocol._impl_connect(connect_log_header)
             elif action == SchedulerAction.WRITE_PACKET:
                 self.__write_packet_action(command)

@@ -157,7 +157,7 @@ class Protocol:
         if connect_log_header is None:
             logger.debug("Connection log header is None, composing a new one")
             connect_log_header = self._compose_log_header_packet()
-        logger.debug("Writing log header with id {}".format(id(connect_log_header)))
+        logger.debug("Writing log header with vf_id {}".format(connect_log_header.values.get("virtualfileid")))
         self._internal_write_packet(connect_log_header)
 
     def _internal_write_packet(self, packet: Packet):
@@ -217,9 +217,10 @@ class Protocol:
                 try:
                     self._internal_connect(connect_log_header)
                     logger.debug(f"{self.__class__.__name__} connected succesfully.")
+
                     logger.debug(
-                        "Storing successful log header with id {} as reconnect log header.".format(
-                            id(connect_log_header))
+                        "Storing successful log header with vf_id {} as reconnect log header.".format(
+                            None if connect_log_header is None else connect_log_header.values.get("virtualfileid"))
                     )
                     self._reconnect_log_header = connect_log_header
                     self._connected = True
@@ -228,8 +229,8 @@ class Protocol:
                 except Exception as exception:
                     logger.debug(f"{self.__class__.__name__} failed to connect.")
                     logger.debug(
-                        "Storing log header with id {} used at connection as reconnect log header.".format(
-                            id(connect_log_header))
+                        "Storing log header with vf_id {} used at connection as reconnect log header.".format(
+                            None if connect_log_header is None else connect_log_header.values.get("virtualfileid"))
                     )
                     self._reconnect_log_header = connect_log_header
                     self._reset()
@@ -338,8 +339,8 @@ class Protocol:
         command.action = SchedulerAction.CONNECT
         log_header = self._compose_log_header_packet()
         logger.debug(
-            "Scheduling connection. Log header with id {} composed, scheduling into SchedulerQueue".format(
-                id(log_header)))
+            "Scheduling connection. with vf_id {} composed, scheduling into SchedulerQueue".format(
+                log_header.values["virtualfileid"]))
         command.state = log_header
         self.__scheduler.schedule(command, SchedulerQueueEnd.TAIL)
 
@@ -402,7 +403,8 @@ class Protocol:
 
     def _internal_reconnect(self) -> bool:
         logger.debug(
-            "Using current reconnect log header with id {} during reconnect".format(id(self._reconnect_log_header)))
+            "Using current reconnect log header with vf_id {} during reconnect".format(
+                None if self._reconnect_log_header is None else self._reconnect_log_header.values.get("virtualfileid")))
         self._internal_connect(self._reconnect_log_header)
         return True
 
@@ -415,16 +417,17 @@ class Protocol:
             self.__forward_packet(packet, False)
             packet = self.__queue.pop()
 
-    def __forward_packet(self, packet: Packet, disconnect: bool) -> None:
+    def __forward_packet(self, packet: [Packet, LogHeader], disconnect: bool) -> None:
         if not self._connected:
             if not self.__keep_open:
                 self._internal_connect(self._reconnect_log_header)
                 if packet.packet_type == PacketType.LOG_HEADER:
                     self._reconnect_log_header = packet
                     logger.debug(
-                        "Updating reconnect log header - logheader packet with id {} was forwarded.".format(
-                            id(packet))
+                        "Updating reconnect log header - logheader packet with vf_id {} was forwarded.".format(
+                            packet.values.get("virtualfileid"))
                     )
+
                 self._connected = True
                 self.__failed = False
             else:
@@ -452,11 +455,11 @@ class Protocol:
             if self._internal_reconnect():
                 self._connected = True
                 logger.debug(
-                    "Reconnect successful - storing log header with id {} as current reconnect log header".format(
-                        connect_log_header)
+                    "Reconnect successful - storing log header with vf_id {} as current reconnect log header".format(
+                        None if connect_log_header is None else connect_log_header.values.get("virtualfileid"))
                 )
                 self._reconnect_log_header = connect_log_header
-        except Exception as e:
+        except Exception:
             pass
             # Reconnect exceptions are not reported,
             # but we need to record that the last connection attempt

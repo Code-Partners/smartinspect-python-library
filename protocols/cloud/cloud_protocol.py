@@ -321,7 +321,8 @@ class CloudProtocol(TcpProtocol):
         log_header = self._compose_log_header_packet()
         logger.debug(
             "New log header id {} NOT stored as protocol's reconnect log header and is written (into the queue)".format(
-                id(log_header)))
+                log_header.values.get("virtualfileid")))
+
         # self._reconnect_log_header = log_header
         super().write_packet(log_header)
 

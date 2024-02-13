@@ -1,8 +1,9 @@
 from typing import Optional, Union
 
 from common.protocol_command import ProtocolCommand
-from scheduler.scheduler_action import SchedulerAction
+from packets.log_header import LogHeader
 from packets.packet import Packet
+from scheduler.scheduler_action import SchedulerAction
 
 
 class SchedulerCommand:
@@ -20,7 +21,7 @@ class SchedulerCommand:
             self.__action = action
 
     @property
-    def state(self) -> Union[ProtocolCommand, Packet, object]:
+    def state(self) -> Union[ProtocolCommand, Packet, LogHeader, object]:
         return self.__state
 
     @state.setter
