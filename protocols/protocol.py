@@ -155,7 +155,9 @@ class Protocol:
 
     def _internal_write_connect_log_header(self, connect_log_header: typing.Optional[LogHeader] = None) -> None:
         if connect_log_header is None:
+            logger.debug("Connection log header is None, composing a new one")
             connect_log_header = self._compose_log_header_packet()
+        logger.debug("Writing log header with id {}".format(id(connect_log_header)))
         self._internal_write_packet(connect_log_header)
 
     def _internal_write_packet(self, packet: Packet):
@@ -214,11 +216,21 @@ class Protocol:
             try:
                 try:
                     self._internal_connect(connect_log_header)
+                    logger.debug(f"{self.__class__.__name__} connected succesfully.")
+                    logger.debug(
+                        "Storing successful log header with id {} as reconnect log header.".format(
+                            id(connect_log_header))
+                    )
                     self._reconnect_log_header = connect_log_header
                     self._connected = True
                     self.__failed = False
-                    logger.debug(f"{self.__class__.__name__} connected succesfully")
+
                 except Exception as exception:
+                    logger.debug(f"{self.__class__.__name__} failed to connect.")
+                    logger.debug(
+                        "Storing log header with id {} used at connection as reconnect log header.".format(
+                            id(connect_log_header))
+                    )
                     self._reconnect_log_header = connect_log_header
                     self._reset()
                     raise exception
@@ -324,8 +336,10 @@ class Protocol:
     def __schedule_connect(self) -> None:
         command = SchedulerCommand()
         command.action = SchedulerAction.CONNECT
-
         log_header = self._compose_log_header_packet()
+        logger.debug(
+            "Scheduling connection. Log header with id {} composed, scheduling into SchedulerQueue".format(
+                id(log_header)))
         command.state = log_header
         self.__scheduler.schedule(command, SchedulerQueueEnd.TAIL)
 
@@ -387,6 +401,8 @@ class Protocol:
                 self.__listeners.remove(listener)
 
     def _internal_reconnect(self) -> bool:
+        logger.debug(
+            "Using current reconnect log header with id {} during reconnect".format(id(self._reconnect_log_header)))
         self._internal_connect(self._reconnect_log_header)
         return True
 
@@ -405,6 +421,10 @@ class Protocol:
                 self._internal_connect(self._reconnect_log_header)
                 if packet.packet_type == PacketType.LOG_HEADER:
                     self._reconnect_log_header = packet
+                    logger.debug(
+                        "Updating reconnect log header - logheader packet with id {} was forwarded.".format(
+                            id(packet))
+                    )
                 self._connected = True
                 self.__failed = False
             else:
@@ -431,6 +451,10 @@ class Protocol:
         try:
             if self._internal_reconnect():
                 self._connected = True
+                logger.debug(
+                    "Reconnect successful - storing log header with id {} as current reconnect log header".format(
+                        connect_log_header)
+                )
                 self._reconnect_log_header = connect_log_header
         except Exception as e:
             pass
