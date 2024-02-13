@@ -319,7 +319,10 @@ class CloudProtocol(TcpProtocol):
 
         logger.debug("Composing new log header at virtual file rotation")
         log_header = self._compose_log_header_packet()
-        self._reconnect_log_header = log_header
+        logger.debug(
+            "New log header id {} NOT stored as protocol's reconnect log header and is written (into the queue)".format(
+                id(log_header)))
+        # self._reconnect_log_header = log_header
         super().write_packet(log_header)
 
     def connect(self) -> None:
