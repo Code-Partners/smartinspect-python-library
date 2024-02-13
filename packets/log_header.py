@@ -47,6 +47,10 @@ class LogHeader(Packet):
     def packet_type(self) -> PacketType:
         return PacketType.LOG_HEADER
 
+    @property
+    def values(self):
+        return self._values
+
     def add_value(self, key: str, value: str) -> None:
         if not isinstance(key, str):
             raise TypeError("key must be an str")
