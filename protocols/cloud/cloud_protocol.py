@@ -317,6 +317,7 @@ class CloudProtocol(TcpProtocol):
         self._virtual_file_id = uuid.uuid4()
         self._virtual_file_size = 0
 
+        logger.debug("Composing new log header at virtual file rotation")
         log_header = self._compose_log_header_packet()
         self._reconnect_log_header = log_header
         super().write_packet(log_header)
