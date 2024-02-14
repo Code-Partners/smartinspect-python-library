@@ -143,6 +143,7 @@ class Protocol:
 
     def _internal_write_log_header(self) -> None:
         log_header = self._compose_log_header_packet()
+        logger.debug("Writing LogHeader with values %s", log_header.content)
         self._internal_write_packet(log_header)
 
     def _internal_write_packet(self, packet: Packet):
