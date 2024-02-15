@@ -5,6 +5,8 @@ from typing import Optional
 from scheduler.scheduler_action import SchedulerAction
 from scheduler.scheduler_command import SchedulerCommand
 
+logger = logging.getLogger(__name__)
+
 
 class SchedulerQueueEnd(Enum):
     HEAD = 0
@@ -35,7 +37,7 @@ class SchedulerQueue:
             else:
                 self._insert_to_queue_head(queue_item)
 
-            logging.debug(f"Item added queue size = {self.__size} bytes")
+            logger.debug(f"Item added queue size = {self.__size} bytes")
 
     def _add_to_queue_tail(self, item: SchedulerQueueItem) -> None:
         if self.__tail is None:
