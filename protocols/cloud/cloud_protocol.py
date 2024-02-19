@@ -7,6 +7,7 @@ import socket
 import ssl
 import threading
 import time
+import typing
 import uuid
 from datetime import datetime
 
@@ -62,15 +63,15 @@ class CloudProtocol(TcpProtocol):
         self._chunk_max_size: int = self._DEFAULT_CHUNK_MAX_SIZE
         self._chunk_max_age: int = self._DEFAULT_CHUNK_MAX_AGE  # milliseconds
         self._virtual_file_max_size: int = self._DEFAULT_VIRTUAL_FILE_MAX_SIZE
-        self._chunk: Chunk | None = None
+        self._chunk: typing.Union[Chunk, None] = None
         self._chunking_lock = threading.Lock()
-        self._rotater: FileRotater | None = None
-        self._rotate: FileRotate | None = None
+        self._rotater: typing.Union[FileRotater, None] = None
+        self._rotate: typing.Union[FileRotate, None] = None
         self._tls_enabled: bool = False
         self._tls_certificate_location: str = ""
         self._tls_certificate_filepath: str = ""
         self._tls_certificate_password: str = ""
-        self._chunk_flush_executor: ScheduledExecutor | None = None
+        self._chunk_flush_executor: typing.Union[ScheduledExecutor, None] = None
 
     def is_reconnect_allowed(self) -> bool:
         return self._reconnect_allowed
@@ -398,7 +399,6 @@ class CloudProtocol(TcpProtocol):
                 cert_path = None
             except OSError:
                 cert_path = None
-
             logger.debug("Certificate path is: {}".format(cert_path))
 
             if cert_path is None:

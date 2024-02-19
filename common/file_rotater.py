@@ -1,3 +1,4 @@
+import typing
 from datetime import datetime, timezone, timedelta
 
 from common.file_rotate import FileRotate
@@ -9,7 +10,7 @@ class FileRotater:
     _TIMEZONE = timezone.utc
 
     def __init__(self):
-        self._calendar: datetime | None = None
+        self._calendar: typing.Union[datetime, None] = None
         self._mode: FileRotate = FileRotate.NO_ROTATE
         self._time_value: int = 0
 
