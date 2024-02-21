@@ -386,7 +386,7 @@ class CloudProtocol(TcpProtocol):
                 # and add filepath to it
                 if pkg_path is not None:
                     resource_dir = os.path.dirname(pkg_path)
-                    cert_path = resource_dir + "\\" + self._tls_certificate_filepath
+                    cert_path = os.path.join(resource_dir, self._tls_certificate_filepath)
             else:
                 # otherwise we are looking for the cert by its path
                 cert_path = self._tls_certificate_filepath
