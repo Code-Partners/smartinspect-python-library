@@ -1,7 +1,13 @@
-import re
 import collections
+import importlib.util
 import logging
+import os
+import re
+import socket
+import ssl
 import threading
+import time
+import typing
 import uuid
 from datetime import datetime
 
@@ -11,10 +17,10 @@ from connections.builders import ConnectionsBuilder
 from packets.log_header import LogHeader
 from packets.packet import Packet
 from packets.packet_type import PacketType
+from protocols.cloud.chunk import Chunk
+from protocols.cloud.exceptions import *
 from protocols.cloud.scheduled_executor import ScheduledExecutor
 from protocols.tcp_protocol import TcpProtocol
-from protocols.cloud.exceptions import *
-from protocols.cloud.chunk import Chunk
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +48,7 @@ class CloudProtocol(TcpProtocol):
     _MAX_ALLOWED_CUSTOM_LABEL_COMPONENT_LENGTH: int = 100
 
     _DEFAULT_TLS_CERTIFICATE_LOCATION: str = "resource"
-    _DEFAULT_TLS_CERTIFICATE_FILEPATH: str = "client.trust"
-    _DEFAULT_TLS_CERTIFICATE_PASSWORD: str = "xyh8PCNcLDVx4ZHm"
+    _DEFAULT_TLS_CERTIFICATE_FILEPATH: str = "client.pem"
 
     def __init__(self) -> None:
         super().__init__()
@@ -57,15 +62,14 @@ class CloudProtocol(TcpProtocol):
         self._chunk_max_size: int = self._DEFAULT_CHUNK_MAX_SIZE
         self._chunk_max_age: int = self._DEFAULT_CHUNK_MAX_AGE  # milliseconds
         self._virtual_file_max_size: int = self._DEFAULT_VIRTUAL_FILE_MAX_SIZE
-        self._chunk: Chunk | None = None
+        self._chunk: typing.Union[Chunk, None] = None
         self._chunking_lock = threading.Lock()
-        self._rotater: FileRotater | None = None
-        self._rotate: FileRotate | None = None
+        self._rotater: typing.Union[FileRotater, None] = None
+        self._rotate: typing.Union[FileRotate, None] = None
         self._tls_enabled: bool = False
         self._tls_certificate_location: str = ""
         self._tls_certificate_filepath: str = ""
-        self._tls_certificate_password: str = ""
-        self._chunk_flush_executor: ScheduledExecutor | None = None
+        self._chunk_flush_executor: typing.Union[ScheduledExecutor, None] = None
 
     def is_reconnect_allowed(self) -> bool:
         return self._reconnect_allowed
@@ -89,7 +93,8 @@ class CloudProtocol(TcpProtocol):
                                          "tls.enabled",
                                          "tls.certificate.location",
                                          "tls.certificate.filepath",
-                                         "tls.certificate.password"))
+                                         )
+                         )
                     or super()._is_valid_option(option_name))
         return is_valid
 
@@ -150,9 +155,6 @@ class CloudProtocol(TcpProtocol):
         self._tls_certificate_filepath = self._get_string_option(
             "tls.certificate.filepath", self._DEFAULT_TLS_CERTIFICATE_FILEPATH)
 
-        self._tls_certificate_password = self._get_string_option(
-            "tls.certificate.password", self._DEFAULT_TLS_CERTIFICATE_PASSWORD)
-
     def _build_options(self, builder: ConnectionsBuilder) -> None:
         super()._build_options(builder)
         builder.add_option("writekey", self._write_key)
@@ -168,7 +170,6 @@ class CloudProtocol(TcpProtocol):
         builder.add_option("tls.enabled", self._tls_enabled)
         builder.add_option("tls.certificate.location", self._tls_certificate_location)
         builder.add_option("tls.certificate.filepath", self._tls_certificate_filepath)
-        builder.add_option("tls.certificate.password", self._tls_certificate_password)
 
     def _compose_log_header_packet(self) -> LogHeader:
         log_header = super()._compose_log_header_packet()
@@ -365,6 +366,64 @@ class CloudProtocol(TcpProtocol):
 
         else:
             super()._internal_validate_write_packet_answer(server_answer)
+
+    def _internal_initialize_socket(self):
+        if self._tls_enabled:
+            location = self._tls_certificate_location
+
+            cert_path = None
+
+            # if location is marked as 'resource', then we search for the cert
+            # in 'resources' package
+            if location == "resource":
+                pkg_path = importlib.util.find_spec("resources").origin
+                # if there is a 'resources' package, we resolve its absolute path
+                # and add filepath to it
+                if pkg_path is not None:
+                    resource_dir = os.path.dirname(pkg_path)
+                    cert_path = os.path.join(resource_dir, self._tls_certificate_filepath)
+            else:
+                # otherwise we are looking for the cert by its path
+                cert_path = self._tls_certificate_filepath
+
+            # we check if a file is available by cert_path
+            try:
+                with open(cert_path):
+                    ...
+            except FileNotFoundError:
+                cert_path = None
+            except OSError:
+                cert_path = None
+            logger.debug("Certificate path is: {}".format(cert_path))
+
+            if cert_path is None:
+                logger.debug("SSL certificate resource loading failed")
+                raise Exception("SSL certificate resource loading failed")
+
+            timestamp = time.perf_counter()
+
+            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+            context.load_verify_locations(cert_path)
+            context.verify_mode = ssl.CERT_REQUIRED
+
+            socket_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            ssl_sock = context.wrap_socket(socket_)
+
+            elapsed_ms = round((time.perf_counter() - timestamp) * 1000, 2)
+            logger.debug("SSL Socket created in {} ms".format(elapsed_ms))
+
+            try:
+                ssl_sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                ssl_sock.settimeout(self._timeout)
+            except Exception:
+                logger.debug("SSL socket creation failed")
+                raise Exception("SSL socket creation failed")
+            logger.debug("Returning SSL Socket {}".format(ssl_sock))
+            ssl_sock.connect((self._hostname, self._port))
+
+            return ssl_sock
+        else:
+            return super()._internal_initialize_socket()
 
     def _internal_reconnect(self) -> bool:
         if self._reconnect_allowed:

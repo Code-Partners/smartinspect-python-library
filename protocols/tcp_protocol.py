@@ -65,9 +65,9 @@ class TcpProtocol(Protocol):
         try:
             self.__socket = self._internal_initialize_socket()
         except Exception as e:
-            raise SmartInspectError(f"There was a connection error. \n"
-                                    f"Check if SI Console is running on {self._hostname}:{self._port} \n"
-                                    f"Your system returned: {type(e)} - {str(e)}")
+            raise SmartInspectError(f"\nThere was a connection error. \n"
+                                    f"Check if SmartInspect Console/Cloud is running on {self._hostname}:{self._port}\n"
+                                    f"Your system returned: {type(e).__name__} - {str(e)}")
 
         self.__stream = self.__socket.makefile("rwb", self.__BUFFER_SIZE)
         self._do_handshake()
