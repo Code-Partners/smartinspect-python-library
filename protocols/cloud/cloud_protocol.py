@@ -49,7 +49,6 @@ class CloudProtocol(TcpProtocol):
 
     _DEFAULT_TLS_CERTIFICATE_LOCATION: str = "resource"
     _DEFAULT_TLS_CERTIFICATE_FILEPATH: str = "client.pem"
-    _DEFAULT_TLS_CERTIFICATE_PASSWORD: str = "xyh8PCNcLDVx4ZHm"
 
     def __init__(self) -> None:
         super().__init__()
@@ -70,7 +69,6 @@ class CloudProtocol(TcpProtocol):
         self._tls_enabled: bool = False
         self._tls_certificate_location: str = ""
         self._tls_certificate_filepath: str = ""
-        self._tls_certificate_password: str = ""
         self._chunk_flush_executor: typing.Union[ScheduledExecutor, None] = None
 
     def is_reconnect_allowed(self) -> bool:
@@ -95,7 +93,8 @@ class CloudProtocol(TcpProtocol):
                                          "tls.enabled",
                                          "tls.certificate.location",
                                          "tls.certificate.filepath",
-                                         "tls.certificate.password"))
+                                         )
+                         )
                     or super()._is_valid_option(option_name))
         return is_valid
 
@@ -156,9 +155,6 @@ class CloudProtocol(TcpProtocol):
         self._tls_certificate_filepath = self._get_string_option(
             "tls.certificate.filepath", self._DEFAULT_TLS_CERTIFICATE_FILEPATH)
 
-        self._tls_certificate_password = self._get_string_option(
-            "tls.certificate.password", self._DEFAULT_TLS_CERTIFICATE_PASSWORD)
-
     def _build_options(self, builder: ConnectionsBuilder) -> None:
         super()._build_options(builder)
         builder.add_option("writekey", self._write_key)
@@ -174,7 +170,6 @@ class CloudProtocol(TcpProtocol):
         builder.add_option("tls.enabled", self._tls_enabled)
         builder.add_option("tls.certificate.location", self._tls_certificate_location)
         builder.add_option("tls.certificate.filepath", self._tls_certificate_filepath)
-        builder.add_option("tls.certificate.password", self._tls_certificate_password)
 
     def _compose_log_header_packet(self) -> LogHeader:
         log_header = super()._compose_log_header_packet()
