@@ -5,8 +5,7 @@ import time
 import typing
 from datetime import datetime, timezone
 
-# from Crypto.Hash import MD5
-# from Crypto.Cipher import AES
+from cryptography.hazmat.primitives import hashes
 
 from common.exceptions import ProtocolError
 from common.file_helper import FileHelper
@@ -15,20 +14,14 @@ from common.file_rotater import FileRotater
 from connections.builders import ConnectionsBuilder
 from formatters import BinaryFormatter
 from packets.packet import Packet
+from protocols.file_protocol.ciphered_io import CipheredIO
+from protocols.file_protocol.si_cipher import SICipher
 from protocols.protocol import Protocol
 
 logger = logging.getLogger(__name__)
 
 
-def add_padding(text, block_size=16):
-    padding = block_size - len(text) % block_size
-    return text + b'\x00' * padding
-
-
 class FileProtocol(Protocol):
-    # _HASH: str = "MD5"
-    # _CIPHER_ALGO: str = "AES"
-    # _CIPHER_TRANS: str = "AES/CBC/PKCS5Padding"
     _KEY_SIZE: int = 16
     _BUFFER_SIZE: int = 0x2000
     _SILE: bytes = b"SILE"
@@ -47,7 +40,6 @@ class FileProtocol(Protocol):
         self._rotate: FileRotate = FileRotate.NO_ROTATE
         self._max_parts: int = 0
         self._key: typing.Optional[bytes] = None
-        # self.__cipher: typing.Optional[AES] = None
 
     def _get_name(self) -> str:
         return "file"
@@ -179,9 +171,10 @@ class FileProtocol(Protocol):
 
     def _get_i_vector(self) -> bytes:
         timestamp = int(time.time() * 1000)
-        return self._long_to_bytes(timestamp)
-
-        # return MD5.new(timestamp_bytes).digest()
+        timestamp_bytes = self._long_to_bytes(timestamp)
+        digest = hashes.Hash(hashes.MD5())
+        digest.update(timestamp_bytes)
+        return digest.finalize()
 
     def _get_cipher(self, stream: typing.BinaryIO) -> typing.BinaryIO:
         if not self._encrypt:
@@ -192,16 +185,13 @@ class FileProtocol(Protocol):
         stream.write(iv)
         stream.flush()
 
-        # self.__cipher = AES.new(self._key, AES.MODE_CBC, iv=iv)
-        return stream
+        cipher = SICipher(self._key, iv)
+        ciphered_stream = CipheredIO(stream, cipher)
+        return ciphered_stream
 
     def _write_header(self, stream: typing.BinaryIO, size: int) -> int:
         if size == 0:
-            if self._encrypt:
-                ...
-                # stream.write(self.__cipher.encrypt(add_padding(self._SILF)))
-            else:
-                stream.write(self._SILF)
+            stream.write(self._SILF)
             stream.flush()
             return len(self._SILF)
         else:
@@ -233,11 +223,8 @@ class FileProtocol(Protocol):
                     return
 
                 self._file_size += packet_size
-        if self._encrypt:
-            logger.debug("writing encrypted")
-            formatter.write(self._stream)
-        else:
-            formatter.write(self._stream)
+
+        formatter.write(self._stream)
 
         if self._io_buffer > 0:
             self._io_buffer_counter += packet_size
