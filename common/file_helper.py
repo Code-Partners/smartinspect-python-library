@@ -22,7 +22,6 @@ class FileHelper:
             raise TypeError("path must be an str")
 
         date = cls._try_get_file_date(basename, path)
-
         if date is None:
             raise SmartInspectError("Invalid filename")
 
@@ -31,7 +30,6 @@ class FileHelper:
     @classmethod
     def _try_get_file_date(cls, basename: str, path: str) -> typing.Optional[datetime.datetime]:
         filename = FilePath.get_filename(path)
-
         basename = FilePath.change_extension(FilePath.get_filename(basename), "")
 
         idx = filename.find(basename)
@@ -55,14 +53,14 @@ class FileHelper:
             if not symbol.isdigit() and symbol != cls._DATETIME_SEPARATOR[0]:
                 return None
 
-        values = filedate.strip(cls._DATETIME_SEPARATOR)
+        values = filedate.split(cls._DATETIME_SEPARATOR)
 
         if len(values) != cls._DATETIME_TOKENS:
             return None
 
         # year, month, day, hour, minutes and seconds are cast into ints and then
         # unpacked as arguments to create a datetime object
-        return datetime.datetime(*[int(val) for val in values])
+        return datetime.datetime(*[int(val) for val in values], tzinfo=datetime.timezone.utc)
 
     @classmethod
     def _is_valid_file(cls, basename: str, path: str) -> bool:
@@ -86,7 +84,6 @@ class FileHelper:
     @classmethod
     def _find_filename(cls, basename: str) -> typing.Optional[str]:
         files = cls._get_files(basename)
-
         if files is None or len(files) == 0:
             return None
 
