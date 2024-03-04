@@ -2,7 +2,7 @@ import threading
 from typing import Type
 
 from protocols.cloud.cloud_protocol import CloudProtocol
-from protocols.file_protocol import FileProtocol
+from protocols.file_protocol.file_protocol import FileProtocol
 from protocols.protocol import Protocol
 from common.exceptions import SmartInspectError
 from protocols.tcp_protocol import TcpProtocol
