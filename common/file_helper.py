@@ -123,14 +123,12 @@ class FileHelper:
         file_extension = FilePath.get_extension(filename)
         file_prefix = FilePath.change_extension(filename, "")
 
-        available_files = Path(directory).glob(file_extension)
-        filtered_files = filter(
-            lambda file: (file.name.startswith(file_prefix)
-                          and cls._is_valid_file(basename, file.name)),
-            available_files
-        )
+        available_files = [file.name for file in Path(directory).glob("*{}".format(file_extension))]
 
-        files = [file.name for file in filtered_files]
+        filtered_files = filter(
+            lambda x: (x.startswith(file_prefix) and cls._is_valid_file(basename, x)), available_files)
+
+        files = list(filtered_files)
 
         if len(files) == 0:
             return files
