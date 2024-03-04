@@ -41,7 +41,8 @@ class FileProtocol(Protocol):
         self._max_parts: int = 0
         self._key: typing.Optional[bytes] = None
 
-    def _get_name(self) -> str:
+    @staticmethod
+    def _get_name() -> str:
         return "file"
 
     def _get_formatter(self) -> BinaryFormatter:

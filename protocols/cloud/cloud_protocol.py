@@ -78,7 +78,8 @@ class CloudProtocol(TcpProtocol):
         logger.debug("Resetting chunk")
         self._chunk = Chunk(self._chunk_max_size)
 
-    def _get_name(self) -> str:
+    @staticmethod
+    def _get_name() -> str:
         return "cloud"
 
     def _is_valid_option(self, option_name: str) -> bool:
