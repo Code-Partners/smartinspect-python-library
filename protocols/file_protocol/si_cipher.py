@@ -3,6 +3,7 @@ from cryptography.hazmat.primitives import padding
 
 
 class SICipher:
+
     def __init__(self, key: bytes, iv: bytes) -> None:
         self._validate_arg(key, "key")
         self._validate_arg(iv, "iv")
@@ -11,13 +12,13 @@ class SICipher:
         self._padder = padding.PKCS7(128).padder()
         self._encryptor = self._cipher.encryptor()
 
-    def update(self, data: bytes):
+    def update(self, data: bytes) -> bytes:
         if not isinstance(data, bytes):
             raise TypeError("data must be bytes")
 
         return self._encryptor.update(self._padder.update(data))
 
-    def finalize(self):
+    def finalize(self) -> bytes:
         return self._encryptor.update(self._padder.finalize()) + self._encryptor.finalize()
 
     @staticmethod
