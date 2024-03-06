@@ -6,6 +6,7 @@ from protocols.file_protocol.file_protocol import FileProtocol
 from protocols.protocol import Protocol
 from common.exceptions import SmartInspectError
 from protocols.tcp_protocol import TcpProtocol
+from protocols.text_protocol import TextProtocol
 
 
 class ProtocolFactory:
@@ -14,6 +15,7 @@ class ProtocolFactory:
         "tcp": TcpProtocol,
         "cloud": CloudProtocol,
         "file": FileProtocol,
+        "text": TextProtocol,
     }
     __PROTOCOL_NOT_FOUND = "The requested protocol is unknown"
     __lock = threading.Lock()
