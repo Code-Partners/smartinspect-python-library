@@ -8,8 +8,9 @@ class Token(ABC):
     _options: str
     _width: int
 
+    @staticmethod
     @abstractmethod
-    def expand(self, log_entry: LogEntry) -> str:
+    def expand(log_entry: LogEntry) -> str:
         ...
 
     @property
@@ -31,6 +32,10 @@ class Token(ABC):
         if not isinstance(options, str):
             raise TypeError("options must be an str")
         self._options = options
+
+    @property
+    def indent(self) -> bool:
+        return False
 
     @property
     def width(self) -> int:
