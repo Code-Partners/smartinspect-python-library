@@ -1,3 +1,4 @@
+import logging
 import typing
 
 from common.pattern_parser import PatternParser
@@ -5,6 +6,8 @@ from formatters.formatter import Formatter
 from packets.log_entry import LogEntry
 from packets.packet import Packet
 from packets.packet_type import PacketType
+
+logger = logging.getLogger(__name__)
 
 
 class TextFormatter(Formatter):
@@ -25,6 +28,7 @@ class TextFormatter(Formatter):
 
     def write(self, stream) -> None:
         if self._line is not None:
+            logger.debug("Writing line: %s" % self._line)
             stream.write(self._line)
 
     @property
