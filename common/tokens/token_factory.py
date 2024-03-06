@@ -24,6 +24,7 @@ class TokenFactory:
         token = LiteralToken()
         token.options = ""
         token.value = value
+        token.width = 0
         return token
 
     @classmethod
@@ -75,7 +76,7 @@ class TokenFactory:
         except Exception:
             return cls._create_literal(original)
 
-        return Token()
+        return token
 
     @staticmethod
     def _parse_width(value: str) -> int:
