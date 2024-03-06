@@ -8,7 +8,7 @@ from protocols.file_protocol.file_protocol import FileProtocol
 class TextProtocol(FileProtocol):
     _HEADER: bytes = bytes((0xEF, 0xBB, 0xBF))
     _DEFAULT_INDENT: bool = False
-    _DEFAULT_PATTERN: str = "[{timestamp}] {level}: {title}"
+    _DEFAULT_PATTERN: str = "[%timestamp%] %level%: %title%"
 
     def __init__(self) -> None:
         super().__init__()
