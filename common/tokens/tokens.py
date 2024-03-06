@@ -1,8 +1,11 @@
+import logging
 from datetime import datetime
 
 from common.tokens.token_abc import Token
 from packets.log_entry.log_entry import LogEntry
 from session.session import Session
+
+logger = logging.getLogger(__name__)
 
 
 class AppNameToken(Token):
@@ -52,8 +55,10 @@ class TimestampToken(Token):
         options = self.options
         if options is not None and len(options) > 0:
             fmt = options
+            logger.debug("Timestamp format is set by options string:  %s " % fmt)
             return timestamp.strftime(fmt)
 
+        logger.debug("Timestamp format is default: %s " % self._FORMAT)
         return timestamp.strftime(self._FORMAT)
 
 
