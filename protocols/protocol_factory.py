@@ -2,6 +2,7 @@ import threading
 from typing import Type
 
 from protocols.cloud.cloud_protocol import CloudProtocol
+from protocols.file_protocol.file_protocol import FileProtocol
 from protocols.protocol import Protocol
 from common.exceptions import SmartInspectError
 from protocols.tcp_protocol import TcpProtocol
@@ -12,6 +13,7 @@ class ProtocolFactory:
     __lookup = {
         "tcp": TcpProtocol,
         "cloud": CloudProtocol,
+        "file": FileProtocol,
     }
     __PROTOCOL_NOT_FOUND = "The requested protocol is unknown"
     __lock = threading.Lock()

@@ -115,7 +115,7 @@ class Protocol:
                                         ))
         return is_valid
 
-    def _build_options(self, builder: ConnectionsBuilder):
+    def _build_options(self, builder: ConnectionsBuilder) -> None:
         # asynchronous options
         builder.add_option("async.enabled", self.__async_enabled)
         builder.add_option("async.clearondisconnect", self.__async_clear_on_disconnect)
