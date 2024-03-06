@@ -1,3 +1,4 @@
+import logging
 import typing
 
 from typing import List
@@ -5,6 +6,8 @@ from typing import List
 from common.tokens.token_abc import Token
 from common.tokens.token_factory import TokenFactory
 from packets.log_entry.log_entry import LogEntry, LogEntryType
+
+logger = logging.getLogger(__name__)
 
 
 class PatternParser:
@@ -28,6 +31,7 @@ class PatternParser:
         if log_entry.log_entry_type == LogEntryType.LEAVE_METHOD:
             if self._indent_level > 0:
                 self._indent_level -= 1
+                logger.debug("Decreased indent level when leaving method, new indent level is %d" % self._indent_level)
 
         for token in self._tokens:
             token: Token
@@ -35,25 +39,26 @@ class PatternParser:
                 for i in range(self._indent_level):
                     self._buffer.append(self._SPACES)
 
-                expanded = token.expand(log_entry)
-                width = token.width
+            expanded = token.expand(log_entry)
+            width = token.width
 
-                if width < 0:
-                    # left-aligned
-                    self._buffer.append(expanded)
-                    pad = -width - len(expanded)
-                    for i in range(pad):
-                        self._buffer.append(" ")
-                elif width > 0:
-                    pad = width - len(expanded)
-                    for i in range(pad):
-                        self._buffer.append(" ")
-                    # right-aligned
-                    self._buffer.append(expanded)
-                else:
-                    self._buffer.append(expanded)
+            if width < 0:
+                # left-aligned
+                self._buffer.append(expanded)
+                pad = -width - len(expanded)
+                for i in range(pad):
+                    self._buffer.append(" ")
+            elif width > 0:
+                pad = width - len(expanded)
+                for i in range(pad):
+                    self._buffer.append(" ")
+                # right-aligned
+                self._buffer.append(expanded)
+            else:
+                self._buffer.append(expanded)
         if log_entry.log_entry_type == LogEntryType.ENTER_METHOD:
             self._indent_level += 1
+            logger.debug("Added indent level when entering method, new indent level is %d" % self._indent_level)
 
         return "".join(self._buffer)
 
