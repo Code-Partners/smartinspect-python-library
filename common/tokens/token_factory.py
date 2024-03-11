@@ -59,8 +59,8 @@ class TokenFactory:
         # extract the token width: /%token, width/%
         if idx > -1:
             idx += 1
-            width = value[idx: -1]
-            value = value[: idx - 1] + value[length - 1:]
+            width = value[idx: -2]
+            value = value[: idx - 1] + value[length - 2:]
 
         value = value.lower()
         impl = cls.tokens.get(value)
