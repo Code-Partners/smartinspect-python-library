@@ -68,14 +68,14 @@ class PatternParser:
             is_variable = False
             pos: int = self._position
 
-            if self._pattern[pos] == "%":
+            if self._pattern[pos: pos + 2] == "/%":
                 is_variable = True
-                pos += 1
+                pos += 2
 
-            while pos < length:
-                if self._pattern[pos] == "%":
+            while pos + 1 < length:
+                if self._pattern[pos: pos + 2] == "/%":
                     if is_variable:
-                        pos += 1
+                        pos += 2
                     break
                 pos += 1
 
