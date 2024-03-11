@@ -9,3 +9,7 @@ class Level(Enum):
     ERROR = 4
     FATAL = 5
     CONTROL = 6
+
+    def __str__(self):
+        return "%s" % self._name_
+
