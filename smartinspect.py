@@ -68,9 +68,9 @@ class SmartInspect:
         if isinstance(resolution, ClockResolution):
             self.__resolution = resolution
 
-    @property
-    def version(self) -> str:
-        return self.__VERSION
+    @classmethod
+    def get_version(cls) -> str:
+        return cls.__VERSION
 
     @property
     def hostname(self) -> str:
