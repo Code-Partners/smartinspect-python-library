@@ -266,8 +266,18 @@ class Protocol:
                 if self.__backlog_enabled:
                     if (level.value >= self.__backlog_flushon.value and
                             level != Level.CONTROL):
+
+                        logger.debug("Packet level {} >= backlog flushon level {}. Flushing queue.".format(
+                            level,
+                            self.__backlog_flushon))
+
                         self.__flush_queue()
                     else:
+                        logger.debug("Packet level {} < backlog flushon level {}. Pushing packet {} to queue.".format(
+                            level,
+                            self.__backlog_flushon,
+                            id(packet)))
+
                         self.__queue.push(packet)
                         skip = True
 
@@ -385,10 +395,13 @@ class Protocol:
     def __forward_packet(self, packet: Packet, disconnect: bool) -> None:
         if not self._connected:
             if not self.__keep_open:
+                logger.debug("Protocol is not connected. Keep open is {}. Connecting.".format(self.__keep_open))
+
                 self._internal_connect()
                 self._connected = True
                 self.__failed = False
             else:
+                logger.debug("Protocol is not connected. Keep open is {}. Reconnecting.".format(self.__keep_open))
                 self.__do_reconnect()
 
         if self._connected:
