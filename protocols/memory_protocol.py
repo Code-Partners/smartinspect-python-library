@@ -2,7 +2,7 @@ import io
 import typing
 
 from common.protocol_command import ProtocolCommand
-from connections.builders import ConnectionsBuilder
+from connections.connections_builder import ConnectionsBuilder
 from formatters import BinaryFormatter
 from formatters.text_formatter import TextFormatter
 from packets.packet import Packet

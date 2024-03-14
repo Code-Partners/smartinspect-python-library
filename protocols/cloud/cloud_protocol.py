@@ -13,7 +13,7 @@ from datetime import datetime
 
 from common.file_rotate import FileRotate
 from common.file_rotater import FileRotater
-from connections.builders import ConnectionsBuilder
+from connections.connections_builder import ConnectionsBuilder
 from packets.log_header import LogHeader
 from packets.packet import Packet
 from packets.packet_type import PacketType

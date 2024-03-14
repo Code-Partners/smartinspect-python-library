@@ -1,6 +1,6 @@
 import typing
 
-from connections.builders import ConnectionsBuilder
+from connections.connections_builder import ConnectionsBuilder
 from formatters.text_formatter import TextFormatter
 from protocols.file_protocol.file_protocol import FileProtocol
 
