@@ -1,5 +1,9 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
+import logging
+
 from packets.packet import Packet
+
+logger = logging.getLogger(__name__)
 
 
 class PacketQueueItem:
@@ -32,6 +36,7 @@ class PacketQueue:
 
         self.__count += 1
         self.__size += packet.size + self.__OVERHEAD
+        logger.debug("Added packet {} to PacketQueue. Queue size is: {}".format(id(packet), self.__size))
         self.__resize()
 
     def pop(self) -> (Packet, None):
@@ -50,6 +55,7 @@ class PacketQueue:
 
         self.__count -= 1
         self.__size -= packet.size + self.__OVERHEAD
+        logging.debug("Popped packet %d" % id(packet))
         return packet
 
     def clear(self) -> None:
@@ -58,6 +64,7 @@ class PacketQueue:
 
     def __resize(self) -> None:
         while self.__backlog < self.__size:
+            logger.debug("Queue size exceeds limit set by backlog.queue option (%d). Popping packet." % self.__backlog)
             if self.pop() is None:
                 self.__size = 0
                 break
