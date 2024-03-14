@@ -4,17 +4,17 @@ from .token_abc import Token
 
 class TokenFactory:
     tokens = {
-        "/%appname/%": AppNameToken,
-        "/%session/%": SessionToken,
-        "/%hostname/%": HostNameToken,
-        "/%title/%": TitleToken,
-        "/%timestamp/%": TimestampToken,
-        "/%level/%": LevelToken,
-        "/%color/%": ColorToken,
-        "/%logentrytype/%": LogEntryTypeToken,
-        "/%viewerid/%": ViewerIdToken,
-        "/%thread/%": ThreadIdToken,
-        "/%process/%": ProcessIdToken,
+        "$appname$": AppNameToken,
+        "$session$": SessionToken,
+        "$hostname$": HostNameToken,
+        "$title$": TitleToken,
+        "$timestamp$": TimestampToken,
+        "$level$": LevelToken,
+        "$color$": ColorToken,
+        "$logentrytype$": LogEntryTypeToken,
+        "$viewerid$": ViewerIdToken,
+        "$thread$": ThreadIdToken,
+        "$process$": ProcessIdToken,
     }
 
     @staticmethod
@@ -37,30 +37,29 @@ class TokenFactory:
         if length <= 2:
             return cls._create_literal(value)
 
-        if value[:2] != "/%" or value[-2:] != "/%":
+        if value[0] != "$" or value[-1] != "$":
             return cls._create_literal(value)
 
         original = value
         options = ""
 
-        # extract the token options: /%token{options}/%
-        if value[-3] == "}":
+        # extract the token options: $token{options}$
+        if value[-2] == "}":
             idx = value.find("{")
 
             if idx > -1:
                 idx += 1
-                options = value[idx: -3]
-                value = value[:idx - 1] + value[-2:]
-                length = len(value)
+                options = value[idx: -2]
+                value = value[:idx - 1] + value[-1]
 
         width = ""
         idx = value.find(",")
 
-        # extract the token width: /%token, width/%
+        # extract the token width: $token, width$
         if idx > -1:
             idx += 1
-            width = value[idx: -2]
-            value = value[: idx - 1] + value[length - 2:]
+            width = value[idx: -1]
+            value = value[: idx - 1] + value[-1]
 
         value = value.lower()
         impl = cls.tokens.get(value)
