@@ -1,4 +1,5 @@
 import io
+import platform
 import typing
 
 from common.exceptions import SmartInspectError
@@ -53,6 +54,9 @@ class PipeProtocol(Protocol):
         self._pipe_name = self._get_string_option("pipename", "smartinspect")
 
     def _internal_connect(self) -> None:
+        if platform.system() != "Windows":
+            raise SmartInspectError("Pipe Protocol is only supported on Windows")
+
         filename = self._PIPE_NAME_PREFIX + self._pipe_name
         try:
             self._stream = open(filename, "w+b", buffering=self._BUFFER_SIZE)
