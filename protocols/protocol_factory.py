@@ -4,6 +4,7 @@ from typing import Type
 from protocols.cloud.cloud_protocol import CloudProtocol
 from protocols.file_protocol.file_protocol import FileProtocol
 from protocols.memory_protocol import MemoryProtocol
+from protocols.pipe_protocol.pipe_protocol import PipeProtocol
 from protocols.protocol import Protocol
 from common.exceptions import SmartInspectError
 from protocols.tcp_protocol import TcpProtocol
@@ -18,6 +19,7 @@ class ProtocolFactory:
         "file": FileProtocol,
         "text": TextProtocol,
         "mem": MemoryProtocol,
+        "pipe": PipeProtocol,
     }
     __PROTOCOL_NOT_FOUND = "The requested protocol is unknown"
     __lock = threading.Lock()

@@ -12,13 +12,12 @@ logger = logging.getLogger(__name__)
 
 
 class TcpProtocol(Protocol):
-    __BUFFER_SIZE = 0x2000
-    __CLIENT_BANNER = bytearray(f"SmartInspect Python Library v\n", encoding="UTF-8")
-    # __CLIENT_BANNER = bytearray(f"SmartInspect Python Library v{SmartInspect.get_version()}\n", encoding="UTF-8")
-    __ANSWER_BUFFER_SIZE = 0x2000
-    _hostname = "127.0.0.1"
-    _timeout = 30000
-    _port = 4228
+    __BUFFER_SIZE: int = 0x2000
+    __CLIENT_BANNER_TEMPLATE: str = "SmartInspect Python Library v{}\n"
+    __ANSWER_BUFFER_SIZE: int = 0x2000
+    _hostname: str = "127.0.0.1"
+    _timeout: int = 30000
+    _port: int = 4228
 
     def __init__(self):
         super().__init__()
@@ -59,7 +58,9 @@ class TcpProtocol(Protocol):
                                     "Connection has been closed unexpectedly")
 
     def _send_client_banner(self) -> None:
-        self.__stream.write(self.__CLIENT_BANNER)
+        from smartinspect import SmartInspect
+        si_version = SmartInspect.get_version()
+        self.__stream.write(self.__CLIENT_BANNER_TEMPLATE.format(si_version).encode("UTF-8"))
         self.__stream.flush()
 
     def _internal_connect(self):
