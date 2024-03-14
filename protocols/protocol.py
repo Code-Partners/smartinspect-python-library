@@ -60,7 +60,8 @@ class Protocol:
             self.__remove_options()
             raise e
 
-    def _get_name(self) -> str:
+    @staticmethod
+    def _get_name() -> str:
         pass
 
     def _load_options(self) -> None:

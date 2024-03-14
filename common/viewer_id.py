@@ -23,3 +23,6 @@ class ViewerId(Enum):
     JPEG = 401
     ICON = 402
     METAFILE = 403
+
+    def __str__(self):
+        return "%s" % self._name_

@@ -28,3 +28,6 @@ class LogEntryType(Enum):
     MEMORYSTATISTIC = 207
     DATABASERESULT = 208
     DATABASE_STRUCTURE = 209
+
+    def __str__(self):
+        return "%s" % self._name_
