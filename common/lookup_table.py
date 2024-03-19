@@ -105,8 +105,9 @@ class LookupTable:
     def get_count(self):
         return len(self.__items)
 
-    def __is_valid_integer(self, value: str) -> bool:
-        if self.__value_is_valid(value):
+    @classmethod
+    def __is_valid_integer(cls, value: str) -> bool:
+        if cls.__value_is_valid(value):
             try:
                 int(value)
                 return True
@@ -145,30 +146,31 @@ class LookupTable:
 
         return result
 
-    def size_to_int(self, value: str, default_value: int) -> int:
+    @classmethod
+    def size_to_int(cls, value: str, default_value: int) -> int:
         if not isinstance(value, str):
             raise TypeError("Value must be a string")
         if not isinstance(default_value, int):
             raise TypeError("Default value must be an int")
 
         result = default_value
-        factor = self.__KB_FACTOR
+        factor = cls.__KB_FACTOR
         value = value.strip()
 
         if len(value) >= 2:
             unit = value[-2:].lower()
 
-            if self.__is_valid_size_unit(unit):
+            if cls.__is_valid_size_unit(unit):
                 value = value[:-2].strip()
 
                 if unit == "kb":
-                    factor = self.__KB_FACTOR
+                    factor = cls.__KB_FACTOR
                 elif unit == "mb":
-                    factor = self.__MB_FACTOR
+                    factor = cls.__MB_FACTOR
                 elif unit == "gb":
-                    factor = self.__GB_FACTOR
+                    factor = cls.__GB_FACTOR
 
-        if self.__is_valid_integer(value):
+        if cls.__is_valid_integer(value):
             try:
                 result = factor * int(value)
             except ValueError:
