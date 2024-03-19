@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
@@ -6,6 +7,8 @@ if TYPE_CHECKING:
 from connections.builders.file_protocol_connection_string_builder import FileProtocolConnectionStringBuilder
 
 Self = TypeVar("Self", bound="TextProtocolConnectionStringBuilder")
+
+logger = logging.getLogger(__name__)
 
 
 class TextProtocolConnectionStringBuilder(FileProtocolConnectionStringBuilder):
@@ -18,4 +21,18 @@ class TextProtocolConnectionStringBuilder(FileProtocolConnectionStringBuilder):
 
     def set_indent(self, indent: bool) -> Self:
         self._parent.cb.add_option("indent", indent)
+        return self
+
+    def set_encrypt(self, encrypt: bool) -> Self:
+        logger.warning(
+            "Warning: 'encrypt' option not available in TextProtocol, continuing without encryption.\n"
+            "To use encryption, you can choose FileProtocol")
+
+        return self
+
+    def set_key(self, key: str) -> Self:
+        logger.warning(
+            "Warning: 'key' option not available in TextProtocol, continuing without encryption.\n"
+            "To use encryption, you can choose FileProtocol")
+
         return self
