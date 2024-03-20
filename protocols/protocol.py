@@ -11,7 +11,7 @@ from common.listener.protocol_listener import ProtocolListener
 from common.locked_set import LockedSet
 from common.lookup_table import LookupTable
 from common.protocol_command import ProtocolCommand
-from connections.builders import ConnectionsBuilder
+from connections.connections_builder import ConnectionsBuilder
 from connections.options_parser import OptionsParser
 from connections.options_parser_event import OptionsParserEvent
 from connections.options_parser_listener import OptionsParserListener

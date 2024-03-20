@@ -7,3 +7,6 @@ class FileRotate(Enum):
     DAILY = 2
     WEEKLY = 3
     MONTHLY = 4
+
+    def __str__(self):
+        return "%s" % self._name_

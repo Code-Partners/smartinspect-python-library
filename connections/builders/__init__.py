@@ -1,1 +1,1 @@
-from connections.builders.connections_builder import ConnectionsBuilder
+from connections.builders.connection_string_builder import ConnectionStringBuilder

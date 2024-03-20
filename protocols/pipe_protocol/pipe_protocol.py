@@ -3,7 +3,7 @@ import platform
 import typing
 
 from common.exceptions import SmartInspectError
-from connections.builders import ConnectionsBuilder
+from connections.connections_builder import ConnectionsBuilder
 from formatters import BinaryFormatter
 from packets.packet import Packet
 from protocols.protocol import Protocol

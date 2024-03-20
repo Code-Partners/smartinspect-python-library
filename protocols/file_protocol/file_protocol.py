@@ -11,7 +11,7 @@ from common.exceptions import ProtocolError
 from common.file_helper import FileHelper
 from common.file_rotate import FileRotate
 from common.file_rotater import FileRotater
-from connections.builders import ConnectionsBuilder
+from connections.connections_builder import ConnectionsBuilder
 from formatters import BinaryFormatter
 from packets.packet import Packet
 from protocols.file_protocol.ciphered_io import CipheredIO
