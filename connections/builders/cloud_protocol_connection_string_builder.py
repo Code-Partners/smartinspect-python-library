@@ -19,9 +19,9 @@ class CloudProtocolConnectionStringBuilder(TcpProtocolConnectionStringBuilder):
     def __init__(self, parent: "ConnectionStringBuilder"):
         super().__init__(parent)
 
-    def and_(self) -> "ConnectionStringBuilder":
+    def end_protocol(self) -> "ConnectionStringBuilder":
         self._parent.cb.add_option("customlabels", CloudProtocol.compose_custom_labels_string(self._custom_labels))
-        return super().and_()
+        return super().end_protocol()
 
     def set_write_key(self, write_key: str) -> Self:
         self._parent.cb.add_option("writekey", write_key)

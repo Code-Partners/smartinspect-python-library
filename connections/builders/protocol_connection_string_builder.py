@@ -13,7 +13,7 @@ class ProtocolConnectionStringBuilder:
     def __init__(self, parent: "ConnectionStringBuilder"):
         self._parent = parent
 
-    def and_(self) -> "ConnectionStringBuilder":
+    def end_protocol(self) -> "ConnectionStringBuilder":
         self._parent.cb.end_protocol()
         return self._parent
 
