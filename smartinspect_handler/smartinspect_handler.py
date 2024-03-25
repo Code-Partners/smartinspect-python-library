@@ -29,7 +29,7 @@ class SmartInspectHandler(logging.Handler):
         self._enable_si()
         return self._si
 
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord) -> None:
         """
         Emit a record.
 
@@ -65,7 +65,7 @@ class SmartInspectHandler(logging.Handler):
 
         self._si_session = self._si.add_session("Session", True)
 
-    def _do_emit(self, record) -> None:
+    def _do_emit(self, record: logging.LogRecord) -> None:
         """
         Emit logging Records to SmartInspect destination protocol according to logging Level.
         """
@@ -87,5 +87,5 @@ class SmartInspectHandler(logging.Handler):
         except Exception:
             self.handleError(record)
 
-    def dispose(self):
+    def dispose(self) -> None:
         self._si.dispose()
