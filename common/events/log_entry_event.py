@@ -2,6 +2,16 @@ from packets.log_entry import LogEntry
 
 
 class LogEntryEvent:
+    """
+    This class is used by the SmartInspectListener.on_log_entry event of
+    the SmartInspect class.
+
+    It has only one public class member named log_entry. This member
+    is a property, which just returns the packet sent.
+
+    .. note::
+        This class is fully threadsafe.
+        """
 
     def __init__(self, source: object, log_entry: LogEntry):
         """Initializes a LogEntryEvent instance.
@@ -13,6 +23,11 @@ class LogEntryEvent:
 
     @property
     def log_entry(self) -> LogEntry:
+        """
+        Returns the LogEntry packet, which has just been sent.
+
+        :return: The LogEntry packet, which has just been sent.
+        """
         return self.__log_entry
 
     def __set_source(self, source: object):
