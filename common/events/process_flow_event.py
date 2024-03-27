@@ -22,7 +22,7 @@ class ProcessFlowEvent:
         self.__watch: ProcessFlow = process_flow
 
     @property
-    def watch(self) -> ProcessFlow:
+    def process_flow(self) -> ProcessFlow:
         """
         Returns the ProcessFlow packet, which has just been sent.
         :return: The ProcessFlow packet, which has just been sent.
