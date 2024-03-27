@@ -19,7 +19,7 @@ class ControlCommandEvent:
         self.__control_command: ControlCommand = control_command
 
     @property
-    def log_entry(self) -> ControlCommand:
+    def control_command(self) -> ControlCommand:
         """
         This read-only property returns the ControlCommand packet,
         which has just been sent.
