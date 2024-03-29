@@ -26,6 +26,15 @@ logger = logging.getLogger(__name__)
 
 
 class CloudProtocol(TcpProtocol):
+    """
+    Used for sending packets to the SmartInspect Cloud.
+    This class is used for sending packets to the Cloud. Cloud protocol
+    implementation is an extension of the TCP protocol.
+    It is used when the 'cloud' protocol is specified in
+    the SmartInspect connections string. Please
+    see the is_valid_option() method for a list of available Protocol
+    options.
+    """
     # Default Cloud region to connect to.
     _DEFAULT_REGION: str = "eu-central-1"
 
@@ -80,9 +89,50 @@ class CloudProtocol(TcpProtocol):
 
     @staticmethod
     def _get_name() -> str:
+        """
+        Overridden. Returns 'cloud'.
+        :return: 'cloud'
+        """
         return "cloud"
 
     def _is_valid_option(self, option_name: str) -> bool:
+        """
+        Overrides parent method. Validates if a protocol option is supported.
+        The following table lists all valid options, their default values
+        and descriptions for the TCP protocol.
+
+        ============== =============== =================================================================================
+        Valid Options  Default Value   Description
+        ============== =============== =================================================================================
+        writekey       none            Write key of your SmartInspect Cloud license.
+        customlabels   none            Up to 5 labels. See example below.
+        region         eu-central-1    SiCloud region.
+        maxsize        '1 MB'          Specifies the maximum size of a log file in kilobytes. When this size is reached,
+                                       the current log file is closed and a new file is opened. It is possible to
+                                       specify size units like this: "1 MB". Supported units are "KB", "MB" and "GB".
+                                       Min value - "1 MB", max value - "50 MB".
+        rotate         none            Specifies the rotate mode for log files. Please see below for a list of
+                                       available values. A value of "none" disables this feature.
+        ============== =============== =================================================================================
+
+        For further options which affect the behavior of this protocol,
+        please have a look at the documentation of
+        Protocol.is_valid_option and TcpProtocol.is_valid_option methods of the parent classes.
+
+        Example::
+
+            SmartInspect.set_connections(
+                CloudConnectionStringBuilder().add_cloud_protocol()
+                    .set_region("eu-central-1")
+                    .set_write_key("INSERT_YOUR_WRITE_KEY_HERE")
+                    .add_custom_label("User", "Bob")
+                    .add_custom_label("Version", "0.0.1")
+                    .end_protocol().build()
+                )
+
+        :param option_name: The option name to validate.
+        :return: True if the option is supported and False otherwise.
+        """
         is_valid = (bool(option_name in ("writekey",
                                          "customlabels",
                                          "region",
@@ -100,6 +150,13 @@ class CloudProtocol(TcpProtocol):
         return is_valid
 
     def _load_options(self) -> None:
+        """
+        Overridden. Loads and inspects Cloud specific options.
+
+        This method loads all relevant options and ensures their
+        correctness. See is_valid_option() for a list of options which
+        are recognized by the Cloud protocol.
+        """
         super()._load_options()
         self._write_key = self._get_string_option("writekey", "")
 
@@ -116,14 +173,28 @@ class CloudProtocol(TcpProtocol):
 
     @staticmethod
     def _get_reconnect_default_value() -> bool:
+        """
+        Defines the default value for `reconnect` option as True.
+        :return: True
+        """
         return True
 
     @staticmethod
     def _get_async_enabled_default_value() -> bool:
+        """
+        Defines the default value for `async_enabled` option as True.
+        :returns: True
+        """
         return True
 
     @staticmethod
     def _get_async_queue_default_value() -> int:
+        """
+        Defines the default value for `async.queue` option as 20 megabytes.
+        Double the size of the max packet size supported by the cloud. We want async queue to fit the largest packet,
+        as have some spare space.
+        :return: 20480
+        """
         return 20 * 1024
 
     def _load_chunking_options(self) -> None:
@@ -157,6 +228,11 @@ class CloudProtocol(TcpProtocol):
             "tls.certificate.filepath", self._DEFAULT_TLS_CERTIFICATE_FILEPATH)
 
     def _build_options(self, builder: ConnectionsBuilder) -> None:
+        """
+        Overridden. Fills a ConnectionsBuilder instance with the
+        options currently used by this Cloud protocol.
+        :param builder: ConnectionsBuilder object to fill with the current options of this protocol.
+        """
         super()._build_options(builder)
         builder.add_option("writekey", self._write_key)
         builder.add_option("customlabels", self.compose_custom_labels_string(self._custom_labels))
@@ -173,6 +249,11 @@ class CloudProtocol(TcpProtocol):
         builder.add_option("tls.certificate.filepath", self._tls_certificate_filepath)
 
     def _compose_log_header_packet(self) -> LogHeader:
+        """
+        Overrides TCP header packet composition, adds cloud-specific fields,
+        such as writekey, virtualfileid, customlabels.
+        :return: LogHeader packet
+        """
         log_header = super()._compose_log_header_packet()
         log_header.add_value("writekey", self._write_key)
         log_header.add_value("virtualfileid", str(self._virtual_file_id))
@@ -213,6 +294,11 @@ class CloudProtocol(TcpProtocol):
         return "".join(result)
 
     def _do_handshake(self) -> None:
+        """
+        Overrides TCP protocol handshake by reversing the order,
+        for compatibility with TLS.
+
+        """
         self._send_client_banner()
         self._read_server_banner()
 
@@ -479,12 +565,10 @@ class CloudProtocol(TcpProtocol):
     @staticmethod
     def _validate_packet_size(packet: Packet) -> bool:
         """
-         Validates size of an individual packet. After partitioning was implemented, the upper limit of the packet size
-         is no longer set as a hard limit in the clients, but in case it'll be done in the future, this method
-         is left here undeleted.
-
-         :param packet: The packet to validate
-
-         :return: `True` if packet size <= max allowed size
+        Validate size of an individual packet. After partitioning was implemented, the upper limit of the packet size
+        is no longer set as a hard limit in the clients, but in case it'll be done in the future, this method is left
+        here undeleted.
+        :param packet: Packet
+        :return: True if packet size <= max allowed size
         """
         return True
