@@ -891,7 +891,7 @@ class Session:
             if not isinstance(html, str):
                 raise TypeError("stream must be a BytesIO")
 
-            self.log_custom_text(title, html, LogEntryType.WEBCONTENT, ViewerId.WEB, level=level)
+            self.log_custom_text(title, html, LogEntryType.WEB_CONTENT, ViewerId.WEB, level=level)
         except Exception as e:
             return self.__process_internal_error(e)
 
@@ -903,7 +903,7 @@ class Session:
             if not isinstance(title, str):
                 raise TypeError("title must be a string")
 
-            self.log_custom_file(filename, LogEntryType.WEBCONTENT, ViewerId.WEB, title=title, level=level)
+            self.log_custom_file(filename, LogEntryType.WEB_CONTENT, ViewerId.WEB, title=title, level=level)
         except Exception as e:
             return self.__process_internal_error(e)
 
@@ -915,7 +915,7 @@ class Session:
             if not isinstance(stream, io.BytesIO):
                 raise TypeError("stream must be a BytesIO")
 
-            self.log_custom_stream(title, stream, LogEntryType.WEBCONTENT, ViewerId.WEB, level=level)
+            self.log_custom_stream(title, stream, LogEntryType.WEB_CONTENT, ViewerId.WEB, level=level)
         except Exception as e:
             return self.__process_internal_error(e)
 
