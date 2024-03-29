@@ -3,7 +3,8 @@ from enum import Enum
 
 class ControlCommandType(Enum):
     """
-    Represents the type of ControlCommand packet. The type of      Control Command influences the way the Console interprets the packet.
+    Represents the type of ControlCommand packet. The type of Control Command influences
+    the way the Console interprets the packet.
     For example, if a Control Command packet has a type of
     ControlCommandType.ClearAll, the entire Console is reset when
     this packet arrives. Also have a look at the corresponding
