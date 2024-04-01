@@ -26,7 +26,7 @@ class MemoryProtocol(Protocol):
 
     def __init__(self):
         """
-        Creates and initializes a MemoryProtocol instance. For a list
+        Initializes a MemoryProtocol instance. For a list
         of available memory protocol options, please refer to the
         _is_valid_option() method.
         """
@@ -41,8 +41,8 @@ class MemoryProtocol(Protocol):
 
     def _internal_connect(self) -> None:
         """
-        Overridden. Creates and initializes the packet queue.
-        This method creates and initializes a new packet queue with
+        Overridden. Initializes the packet queue.
+        This method initializes a new packet queue with
         a maximum size as specified by the initialize method. For
         other valid options which might affect the behavior of this
         method and protocol, please see the _is_valid_option() method.

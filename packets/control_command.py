@@ -18,7 +18,7 @@ class ControlCommand(Packet):
 
     def __init__(self, command_type: ControlCommandType):
         """
-        Creates and initializes a ControlCommand instance with a custom control command type.
+        Initializes a ControlCommand instance with a custom control command type.
         :param command_type: The type of the new Control Command describes the way the
               Console interprets this packet. Please see the ControlCommandType
               enum for more information.

@@ -16,7 +16,7 @@ class SmartInspectError(Exception):
 
     def __init__(self, message):
         """
-        Creates and initializes a SmartInspectError exception
+        Initializes a SmartInspectError exception
         instance with a custom error message.
 
         :param message: The error message which describes this exception.
@@ -50,7 +50,7 @@ class InvalidConnectionsError(Exception):
 
     def __init__(self, message):
         """
-        Creates and initializes a InvalidConnectionsError exception
+        Initializes a InvalidConnectionsError exception
         instance with a custom error message.
         :param message: The error message which describes this exception.
         """
@@ -94,7 +94,7 @@ class ProtocolError(Exception):
 
     def __init__(self, message):
         """
-        Creates and initializes a ProtocolError instance.
+        Initializes a ProtocolError instance.
         """
         super().__init__(message)
         self.__protocol_name: str = ""
@@ -174,7 +174,7 @@ class LoadConnectionsError(SmartInspectError):
 
     def __init__(self, filename: str, exception: str):
         """
-        Creates and initializes a LoadConnectionsError instance with a custom error message.
+        Initializes a LoadConnectionsError instance with a custom error message.
         Lets you specify the name of the file which caused this exception.
 
         :param filename: The name of the file which caused this exception.
@@ -245,7 +245,7 @@ class LoadConfigurationError(SmartInspectError):
 
     def __init__(self, filename: str, exception: str):
         """
-        Creates and initializes a LoadConfigurationError
+        Initializes a LoadConfigurationError
         instance with a custom error message. Allows you to specify the name
         of the file which caused this exception.
 

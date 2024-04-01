@@ -23,7 +23,7 @@ class TextFormatter(Formatter):
 
     def __init__(self):
         """
-        Creates and initializes a TextFormatter instance.
+        Initializes a TextFormatter instance.
         """
         self._line: typing.Optional[bytes, bytearray] = None
         self._parser: PatternParser = PatternParser()

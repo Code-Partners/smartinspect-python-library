@@ -20,6 +20,6 @@ class BinaryViewerContext(BinaryContext):
     """
     def __init__(self):
         """
-        Creates and initializes a BinaryViewerContext instance.
+        Initializes a BinaryViewerContext instance.
         """
         super().__init__(ViewerId.BINARY)

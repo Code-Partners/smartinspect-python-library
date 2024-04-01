@@ -30,7 +30,7 @@ class PipeProtocol(Protocol):
 
     def __init__(self):
         """
-        A method that creates and initializes a PipeProtocol instance. For a list
+        A method that initializes a PipeProtocol instance. For a list
         of available pipe protocol options, please refer to the
         _is_valid_option() method.
         """

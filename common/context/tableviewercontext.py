@@ -22,7 +22,7 @@ class TableViewerContext(ListViewerContext):
 
     def __init__(self) -> None:
         """
-        Creates and initializes a TableViewerContext instance.
+        Initializes a TableViewerContext instance.
         """
         super().__init__(ViewerId.TABLE)
         self.__line_start: bool = True

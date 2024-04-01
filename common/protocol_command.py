@@ -14,7 +14,7 @@ class ProtocolCommand:
 
     def __init__(self, action: int, state: object):
         """
-        Creates and initializes a new ProtocolCommand instance.
+        Initializes a new ProtocolCommand instance.
         :param action: The custom protocol action to execute.
         :param state: Optional object which provides additional information about the custom protocol action.
         """

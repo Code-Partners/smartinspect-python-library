@@ -19,7 +19,7 @@ class ValueListViewerContext(ListViewerContext):
 
     def __init__(self, viewer_id: ViewerId = ViewerId.VALUE_LIST):
         """
-        Overloaded. Creates and initializes a ValueListViewerContext
+        Overloaded. Initializes a ValueListViewerContext
         instance using a ViewerId.
         :param viewer_id: The viewer ID to use.
         .. note::

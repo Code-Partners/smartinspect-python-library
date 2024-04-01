@@ -21,7 +21,7 @@ class Watch(Packet):
 
     def __init__(self, watch_type: WatchType):
         """
-        Creates and initializes a Watch instance with a
+        Initializes a Watch instance with a
         custom watch type.
         :param watch_type: The type of the new Watch describes the variable type (str,
                 int and so on). Please see the WatchType enum for more information.

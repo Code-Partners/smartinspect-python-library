@@ -20,7 +20,8 @@ class ViewerContext:
     """
 
     def __init__(self, viewer: ViewerId):
-        """Creates and initializes a ViewerContext instance.
+        """
+        Initializes a ViewerContext instance.
         :param viewer: The ViewerId to use.
         """
         self.__viewer_id = viewer

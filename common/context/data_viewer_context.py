@@ -20,5 +20,7 @@ class DataViewerContext(TextContext):
     """
 
     def __init__(self):
-        """Creates and initializes a DataViewerContext instance."""
+        """
+        Initializes a DataViewerContext instance.
+        """
         super().__init__(ViewerId.DATA)

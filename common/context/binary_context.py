@@ -16,7 +16,7 @@ class BinaryContext(ViewerContext):
 
     def __init__(self, viewer_id: ViewerId):
         """
-        Creates and initializes a BinaryContext instance.
+        Initializes a BinaryContext instance.
 
         :param viewer_id: The viewer ID to use.
         """

@@ -39,7 +39,7 @@ class FileProtocol(Protocol):
 
     def __init__(self):
         """
-        Creates and initializes a FileProtocol instance. For a list
+        Initializes a FileProtocol instance. For a list
         of available file protocol options, please refer to the
         is_valid_option() method.
         """

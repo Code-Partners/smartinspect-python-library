@@ -45,7 +45,7 @@ class BinaryFormatter(Formatter):
 
     def __init__(self):
         """
-        Creates and initializes a BinaryFormatter instance.
+        Initializes a BinaryFormatter instance.
         """
         super().__init__()
         self.__buffer = bytearray()

@@ -19,7 +19,7 @@ class ListViewerContext(TextContext):
 
     def __init__(self, viewer_id: ViewerId = ViewerId.LIST) -> None:
         """
-        Overloaded. Creates and initializes a ListViewerContext instance using a viewer ID.
+        Initializes a ListViewerContext instance using a viewer ID.
 
         This constructor is intended for derived classes, such as the ValueListViewerContext class,
         which extend the capabilities of this class and use a different viewer ID.

@@ -35,7 +35,7 @@ class Packet(ABC):
 
     def __init__(self):
         """
-        Creates and initializes a Packet instance with a default log
+        Initializes a Packet instance with a default log
         level of Level.Message.
         """
         self.__condition: (threading.Condition, None) = None

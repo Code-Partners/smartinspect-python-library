@@ -23,7 +23,7 @@ class InspectorViewerContext(ValueListViewerContext):
 
     def __init__(self):
         """
-        Creates and initializes an InspectorViewerContext instance.
+        Initializes an InspectorViewerContext instance.
         """
         super().__init__(ViewerId.INSPECTOR)
 

@@ -33,7 +33,7 @@ class LogEntry(Packet):
 
     def __init__(self, log_entry_type: LogEntryType, viewer_id: ViewerId):
         """
-        Overloaded. Creates and initializes a LogEntry instance with a custom log entry type and custom viewer ID.
+        Overloaded. Initializes a LogEntry instance with a custom log entry type and custom viewer ID.
         .. note::
             Please see the LogEntryType enum for more information on LogEntryType.
             Please see ViewerId for more information on ViewerId.

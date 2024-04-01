@@ -16,7 +16,7 @@ class TextContext(ViewerContext):
 
     def __init__(self, viewer_id: ViewerId):
         """
-        Creates and initializes a TextContent instance.
+        Initializes a TextContent instance.
         :param viewer_id: The ViewerID to use.
         """
         super().__init__(viewer_id)

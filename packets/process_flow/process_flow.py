@@ -24,7 +24,7 @@ class ProcessFlow(Packet):
 
     def __init__(self, process_flow_type: ProcessFlowType):
         """
-        Creates and initializes a ProcessFlow instance with
+        Initializes a ProcessFlow instance with
         a custom process flow type. Please see the ProcessFlowType enum for more information.
         :param process_flow_type: The ProcessFlowType describes the way the Console interprets this packet.
         """

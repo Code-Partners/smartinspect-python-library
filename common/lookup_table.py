@@ -30,7 +30,7 @@ class LookupTable:
 
     def __init__(self):
         """
-        Creates and initializes a LookupTable instance.
+        Initializes a LookupTable instance.
         """
         self.__items = dict()
 

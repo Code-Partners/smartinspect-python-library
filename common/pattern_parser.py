@@ -25,7 +25,7 @@ class PatternParser:
 
     def __init__(self) -> None:
         """
-        Creates and initializes a PatternParser instance.
+        Initializes a PatternParser instance.
         """
         self._tokens: List[Token] = list()
         self._buffer: list = []
