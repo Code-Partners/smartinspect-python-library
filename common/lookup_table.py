@@ -110,7 +110,7 @@ class LookupTable:
         Returns a value of an element converted to an integer for a
         given key.
         .. note::
-            This method returns the defaultValue argument if either the
+            This method returns the default_value argument if either the
             supplied key is unknown or the found value is not a valid
             integer. Only non-negative integer values are recognized as
             valid.
@@ -118,7 +118,7 @@ class LookupTable:
         :param default_value: The value to return if the given key is unknown.
         :return: Either the value converted to an integer for the given key if
             an element with the given key exists and the found value is a
-            valid integer or defaultValue otherwise.
+            valid integer or default_value otherwise.
         """
         result = default_value
         value = self.get_string_value(key, "")
