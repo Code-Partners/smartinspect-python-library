@@ -13,6 +13,12 @@ logger = logging.getLogger(__name__)
 
 
 class SchedulerThread(threading.Thread):
+    """
+    The SchedulerThread class represents the internal thread used in Scheduler.
+    For more information please refer to Scheduler documentation.
+    .. note::
+        SchedulerThread is not designed to be used separately from the Scheduler.
+    """
     def __init__(self, scheduler) -> None:
         super().__init__()
         self.__parent: Scheduler = scheduler
@@ -20,9 +26,19 @@ class SchedulerThread(threading.Thread):
 
     @property
     def parent(self):
+        """
+        This property is used to invoke the parent Scheduler methods and fields.
+            .. note::
+        SchedulerThread is not designed to be used separately from the Scheduler.
+        """
         return self.__parent
 
     def run(self) -> None:
+        """
+        This method is used to dequeue and then run commands queued in the Scheduler.
+            .. note::
+        SchedulerThread is not designed to be used separately from the Scheduler.
+        """
         while True:
             count: int = self.parent.dequeue()
             if count == 0:
@@ -43,6 +59,11 @@ class SchedulerThread(threading.Thread):
                         raise RuntimeError(e)
 
     def run_commands(self, count: int) -> bool:
+        """
+        This method run commands queued in the Scheduler.
+            .. note::
+        SchedulerThread is not designed to be used separately from the Scheduler.
+        """
         for i in range(count):
             stopped = self.parent.stopped
             command = self.parent.buffer[i]
@@ -107,10 +128,30 @@ class SchedulerThread(threading.Thread):
 
 
 class Scheduler:
+    """
+    Responsible for scheduling protocol operations and executing
+    them asynchronously in a different thread of control.
+    This class is used by  asynchronous protocol mode to asynchronously execute protocol
+    operations. New commands can be scheduled for execution with
+    the schedule() method. The Scheduler can be started and stopped
+    with the start() and stop() methods. The Scheduler uses a size
+    limited queue to buffer scheduler commands. The maximum size of
+    this queue can be set with the threshold property. To influence
+    the behavior of the Scheduler if new commands are enqueued and
+    the queue is currently considered full, you can specify the
+    throttle mode.
+    .. note::
+        This class is guaranteed to be thread-safe.
+    """
     __BUFFER_SIZE = 0x10
     __TCP_PROTOCOL_BUFFER_SIZE = 0x1
 
     def __init__(self, protocol):
+        """
+        Initializes a new Scheduler instance.
+        :param protocol: The protocol on which to execute the actual operations like
+            connect(), disconnect(), write() or dispatch().
+        """
         super().__init__()
         self.__protocol = protocol
         self.__condition = threading.Condition()
@@ -146,6 +187,15 @@ class Scheduler:
         return self.__buffer
 
     def start(self) -> None:
+        """
+        Starts this scheduler and the internal scheduler thread.
+        This method must be called before scheduling new commands
+        with the schedule() method. Call stop() to stop the internal
+        thread when the scheduler is no longer needed. Note that
+        this method starts the internal scheduler thread only once.
+        This means that subsequent calls to this method have no
+        effect.
+        """
         with self.condition:
             if self.__started:
                 return
@@ -155,6 +205,16 @@ class Scheduler:
             logger.debug(f"SchedulerQueue Scheduler started in thread: {self.__thread.name}")
 
     def stop(self) -> None:
+        """
+        Stops this scheduler and the internal scheduler thread.
+
+        This is the matching method for start(). After calling this
+        method, new commands will no longer be accepted by schedule()
+        and are ignored. This method blocks until the internal
+        thread has processed the current content of the queue.
+        Call clear() before calling stop() to exit the internal thread
+        as soon as possible.
+        """
         with self.condition:
             if not self.__started:
                 return
@@ -168,25 +228,65 @@ class Scheduler:
 
     @property
     def threshold(self) -> int:
+        """
+        Returns the maximum size of the scheduler command queue.
+        .. note::
+           To influence the behavior of the scheduler if new commands
+           are enqueued and the queue is currently considered full,
+           you can specify the throttle mode.
+        """
         return self.__threshold
 
     @threshold.setter
     def threshold(self, threshold: int) -> None:
+        """
+        Specifies the maximum size of the scheduler command queue.
+        To influence the behavior of the scheduler if new commands
+        are enqueued and the queue is currently considered full,
+        you can specify the Throttle mode.
+        """
         if not isinstance(threshold, int):
             raise TypeError("threshold must be int")
         self.__threshold = threshold
 
     @property
     def throttle(self) -> bool:
+        """
+        Returns if the scheduler should automatically throttle
+        threads that enqueue new scheduler commands.
+        If this property is True and the queue is considered full
+        when enqueuing new commands, the enqueuing thread is
+        automatically throttled until there is room in the queue
+        for the new command. In non-throttle mode, the thread is
+        not blocked but older commands are removed from the queue.
+        """
         return self.__throttle
 
     @throttle.setter
     def throttle(self, throttle: bool) -> None:
+        """
+        Specifies if the scheduler should automatically throttle
+        threads that enqueue new scheduler commands.
+        If this property is True and the queue is considered full
+        when enqueuing new commands, the enqueuing thread is
+        automatically throttled until there is room in the queue
+        for the new command. In non-throttle mode, the thread is
+        not blocked but older commands are removed from the queue.
+        """
         if not isinstance(throttle, bool):
             raise TypeError("throttle must be bool")
         self.__throttle = throttle
 
     def schedule(self, command: SchedulerCommand, insert_to: SchedulerQueueEnd) -> bool:
+        """Schedules a new command for asynchronous execution.
+        This method adds the passed command to the internal queue of scheduler commands.
+        The command is eventually executed by the internal scheduler thread.
+        This method can block the caller if the scheduler operates in throttle mode and
+        the internal queue is currently considered full (see threshold).
+        :param command: The command to schedule.
+        :param insert_to: End of a queue to insert a command to.
+        :return: True if the command could be scheduled for asynchronous execution and False otherwise.
+        """
         if not isinstance(command, SchedulerCommand):
             raise TypeError("command must be a SchedulerCommand")
         if not isinstance(insert_to, SchedulerQueueEnd):
@@ -244,6 +344,13 @@ class Scheduler:
         return count
 
     def clear(self) -> None:
+        """
+        Removes all scheduler commands from this scheduler.
+        This method clears the current queue of scheduler commands.
+        If the stop() method is called after calling clear and no new commands are stored between
+        these two calls, the internal scheduler thread will exit as soon as possible
+        (after the current command, if any, has been processed).
+        """
         with self.condition:
             self.__queue.clear()
             self.condition.notify()
