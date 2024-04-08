@@ -10,9 +10,9 @@ class SessionDefaults:
         self.__level: Level = Level.DEBUG
 
     def assign(self, session: Session) -> None:
-        self.__active = session.active
-        self.__color = session.color
-        self.__level = session.level
+        session.active = self.__active
+        session.color = self.__color
+        session.level = self.__level
 
     def is_active(self) -> bool:
         return self.__active
