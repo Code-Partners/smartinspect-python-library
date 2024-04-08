@@ -20,17 +20,13 @@ class Color(Enum):
     # additional colors can be added, syntax is <<colorname>> = RGBAColor(r, g, b)
 
     def get_red(self):
-        return self.value.red
+        return self.value.get_red()
 
     def get_green(self):
-        return self.value.green
+        return self.value.get_green()
 
     def get_blue(self):
-        return self.value.blue
+        return self.value.get_blue()
 
     def get_alpha(self):
-        return self.value.alpha
-
-
-
-
+        return self.value.get_alpha()
