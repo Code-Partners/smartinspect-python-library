@@ -43,9 +43,7 @@ class ConfigurationTimer:
         result = None
         try:
             file = os.path.abspath(filename)
-            print(file)
             last_update = os.path.getmtime(file)
-            print(last_update)
             if last_update != 0:
                 result = datetime.datetime.fromtimestamp(last_update)
         except OSError:
