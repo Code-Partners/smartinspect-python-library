@@ -7,10 +7,38 @@ from smartinspect import SmartInspect
 
 # noinspection PyBroadException
 class SmartInspectHandler(logging.Handler):
+    """
+    A custom logging Handler which is designed to be used with Python logging module,
+    This handler sends log messages to SmartInspect defined destination.
+
+    Usage example:
+    -------
+    |  # create a logging logger
+    |  logger = logging.getLogger(__name__)
+
+    |  # create a connection string using ConnectionStringBuilder
+    |  conn_string = ConnectionStringBuilder().add_tcp_protocol().set_host("127.0.0.1").set_port(4228).set_timeout(
+        30000).set_async_enabled(True).end_protocol().build()
+
+    |  # create a SmartInspectHandler instance, set format and attach handler to the logger
+    |  handler = SmartInspectHandler("Client app", conn_string)
+    |  handler.setFormatter(logging.Formatter("%(threadName)s, %(asctime)s: %(module)s @ %(funcName)s: %(message)s"))
+    |  logger.addHandler(handler)
+    |  logger.setLevel(logging.DEBUG)
+
+    |  # log as you usually log with logging logger
+    |  logger.info("Message")
+    |  # explicitly dispose of handler when finished working in async mode
+    |  handler.dispose()
+
+    """
 
     def __init__(self, app_name: str, conn_string: str):
         """
-        Initialize the handler.
+        Initializes an instance of SmartinspectHandler.
+
+        :param app_name: The name of the application
+        :param conn_string: A SmartInspect connection string.
         """
 
         logging.Handler.__init__(self)
@@ -22,9 +50,36 @@ class SmartInspectHandler(logging.Handler):
 
     def get_si(self) -> SmartInspect:
         """
-        Get underlying SmartInspect instance.
-
+        This method gets underlying SmartInspect instance.
         This will enable SmartInspect if it has not been enabled yet.
+        By using the underlying SmartInspect instance you can use both logging logger and SI directly.
+
+        Usage example:
+        -------
+
+            |  # create a logging logger
+            |  logger = logging.getLogger(__name__)
+
+            |  # create a connection string using ConnectionStringBuilder
+            |  conn_string = ConnectionStringBuilder().add_tcp_protocol().set_host("127.0.0.1").set_port(4228).set_timeout(
+                30000).set_async_enabled(False).end_protocol().build()
+
+            |  # create a SmartInspectHandler instance, set format and attach handler to the logger
+            |  handler = SmartInspectHandler("Client app", conn_string)
+            |  handler.setFormatter(logging.Formatter("%(threadName)s, %(asctime)s: %(module)s @ %(funcName)s: %(message)s"))
+            |  logger.addHandler(handler)
+            |  logger.setLevel(logging.DEBUG)
+
+            |  # log from si
+            |  si = handler.get_si()
+            |  session = si.add_session("Session", True)
+            |  session.log_message("Logging from SI")
+
+            |  # log from logging logger
+            |  logger.info("Hello from logging")
+
+            |  # and again from si
+            |  session.log_message("Another message from SI")
         """
         self._enable_si()
         return self._si
@@ -47,8 +102,8 @@ class SmartInspectHandler(logging.Handler):
 
     def _enable_si(self) -> None:
         """
-                Enable SmartInspect instance using connection string and app_name provided
-                during SmartInspect Handler initialization.
+        Enable SmartInspect instance using connection string and app_name provided
+        during SmartInspect Handler initialization.
         """
         if not self._si or not self._si.is_enabled:
             try:
@@ -88,4 +143,30 @@ class SmartInspectHandler(logging.Handler):
             self.handleError(record)
 
     def dispose(self) -> None:
+        """
+        Disposes of the underlying SmartInspect instance.
+        When running in asynchronous mode, SmartInspect starts additional threads to make async mode work.
+        .dispose() method needs to be explicitly called to release all the resources associated with SmartInspect
+        when logging is finished.
+
+        Usage example:
+        -------
+        |  # create a logging logger
+        |  logger = logging.getLogger(__name__)
+
+        |  # create a connection string using ConnectionStringBuilder
+        |  conn_string = ConnectionStringBuilder().add_tcp_protocol().set_host("127.0.0.1").set_port(4228).set_timeout(
+            30000).set_async_enabled(True).end_protocol().build()
+
+        |  # create a SmartInspectHandler instance, set format and attach handler to the logger
+        |  handler = SmartInspectHandler("Client app", conn_string)
+        |  handler.setFormatter(logging.Formatter("%(threadName)s, %(asctime)s: %(module)s @ %(funcName)s: %(message)s"))
+        |  logger.addHandler(handler)
+        |  logger.setLevel(logging.DEBUG)
+
+        |  # log as you usually log with logging logger
+        |  logger.info("Message")
+        |  # explicitly dispose of handler when finished working in async mode
+        |  handler.dispose()
+        """
         self._si.dispose()
