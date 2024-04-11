@@ -48,6 +48,8 @@ class ConfigurationTimer:
             raise TypeError("filename must be an str")
         if not isinstance(period, int):
             raise TypeError("period must be an int")
+        if period <= 0:
+            raise ValueError("period must be a positive integer")
 
         self._filename: str = filename
         self._si: SmartInspect = smartinspect
