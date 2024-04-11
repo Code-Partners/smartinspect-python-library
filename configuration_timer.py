@@ -17,7 +17,31 @@ class RepetitiveTimer(threading.Timer):
 
 
 class ConfigurationTimer:
+    """
+    A configurable timer for monitoring and reloading SmartInspect configuration files on changes.
+    Use this class to monitor and automatically reload SmartInspect configuration files.
+    This timer periodically checks if the related configuration file has changed (by comparing
+    the last write time) and automatically tries to reload the configuration properties.
+    You can pass the SmartInspect object to configure, the name of the configuration file
+    to monitor and the interval in which this timer should check for changes.
+    For information about SmartInspect configuration files, please refer to the
+    documentation of the SmartInspect.load_configuration() method.
+    This class is fully thread-safe.
+    """
+
     def __init__(self, smartinspect: SmartInspect, filename: str, period: int):
+        """
+        Initializes a new ConfigurationTimer object.
+
+        :param smartinspect: The SmartInspect instance to configure.
+        :param filename: The name of the configuration file to monitor.
+        :param period: The seconds interval in which this timer should check for changes.
+
+        :raises TypeError: If the smartinspect is not SmartInspect type
+        :raises TypeError: If the filename is not str type
+        :raises TypeError: If the period is not int type
+        :raises ValueError: If the period is not a positive integer
+        """
         if not isinstance(smartinspect, SmartInspect):
             raise TypeError("smartinspect must be a SmartInspect type")
         if not isinstance(filename, str):
@@ -52,6 +76,11 @@ class ConfigurationTimer:
         return result
 
     def dispose(self):
+        """
+        Releases all resources of this ConfigurationTimer object
+        and stops monitoring the SmartInspect configuration file for
+        changes.
+        """
         if self._timer:
             self._timer.cancel()
             self._timer = None
