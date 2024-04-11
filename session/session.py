@@ -168,7 +168,7 @@ class Session:
         if self.is_on_level(level):
             self.__send_log_entry(level, None, LogEntryType.RESET_CALLSTACK, ViewerId.NO_VIEWER)
 
-    def enter_method(self, method_name: str, *args, **kwargs) -> None:
+    def enter_method(self, method_name: str = "", *args, **kwargs) -> None:
         level = self.__get_level(**kwargs)
 
         if self.is_on_level(level):
@@ -176,17 +176,67 @@ class Session:
             try:
                 if not isinstance(method_name, str):
                     raise TypeError('Method name must be a string')
-                method_name = method_name.format(*args, **kwargs)
+                if method_name:
+                    method_name = method_name.format(*args, **kwargs)
 
-                instance = kwargs.get("instance")
-                if instance is not None:
-                    class_name = instance.__class__.__name__
-                    method_name = f"{class_name}.{method_name}"
+                    instance = kwargs.get("instance")
+                    if instance is not None:
+                        class_name = instance.__class__.__name__
+                        method_name = f"{class_name}.{method_name}"
+                else:
+                    method_name = self._get_method_name()
             except Exception as e:
                 return self.__process_internal_error(e)
 
             self.__send_log_entry(level, method_name, LogEntryType.ENTER_METHOD, ViewerId.TITLE)
             self.__send_process_flow(level, method_name, ProcessFlowType.ENTER_METHOD)
+
+    def enter_method(self, method_name: str = "", *args, **kwargs) -> None:
+        level = self.__get_level(**kwargs)
+
+        if self.is_on_level(level):
+
+            try:
+                if not isinstance(method_name, str):
+                    raise TypeError('Method name must be a string')
+                if method_name:
+                    method_name = method_name.format(*args, **kwargs)
+
+                    instance = kwargs.get("instance")
+                    if instance is not None:
+                        class_name = instance.__class__.__name__
+                        method_name = f"{class_name}.{method_name}"
+                else:
+                    method_name = self._get_method_name()
+            except Exception as e:
+                return self.__process_internal_error(e)
+
+            self.__send_log_entry(level, method_name, LogEntryType.ENTER_METHOD, ViewerId.TITLE)
+            self.__send_process_flow(level, method_name, ProcessFlowType.ENTER_METHOD)
+
+    # noinspection PyBroadException
+    @staticmethod
+    def _get_method_name() -> str:
+        method_name = "<Unknown>"
+
+        try:
+            stack_frame = inspect.stack(0)[1]
+            if stack_frame is None:
+                return method_name
+
+            # extract the parts of the stack frame.
+            filepath, line, func_name = stack_frame[1:4]
+            method_name = func_name.strip()
+            module_name = os.path.basename(filepath)
+
+            # add source position to method name.
+            if module_name is not None:
+                method_name += " ({0}, line {1})".format(module_name, line)
+
+            return method_name
+
+        except Exception:
+            return method_name
 
     def __process_internal_error(self, e: Exception) -> None:
         tb = e.__traceback__
@@ -205,18 +255,21 @@ class Session:
 
         return level
 
-    def leave_method(self, method_name: str, *args, **kwargs) -> None:
+    def leave_method(self, method_name: str = "", *args, **kwargs) -> None:
         level = self.__get_level(**kwargs)
         if self.is_on_level(level):
 
             try:
                 if not isinstance(method_name, str):
                     raise TypeError('Method name must be a string')
-                method_name = method_name.format(*args, **kwargs)
-                instance = kwargs.get("instance")
-                if instance is not None:
-                    class_name = instance.__class__.__name__
-                    method_name = f"{class_name}.{method_name}"
+                if method_name:
+                    method_name = method_name.format(*args, **kwargs)
+                    instance = kwargs.get("instance")
+                    if instance is not None:
+                        class_name = instance.__class__.__name__
+                        method_name = f"{class_name}.{method_name}"
+                else:
+                    method_name = self._get_method_name()
             except Exception as e:
                 return self.__process_internal_error(e)
 
