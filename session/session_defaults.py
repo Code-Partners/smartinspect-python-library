@@ -1,4 +1,5 @@
 from common.color.color import Color
+from common.color.rgbacolor import RGBAColor
 from session.session import Session
 from common.level import Level
 
@@ -10,9 +11,9 @@ class SessionDefaults:
         self.__level: Level = Level.DEBUG
 
     def assign(self, session: Session) -> None:
-        self.__active = session.active
-        self.__color = session.color
-        self.__level = session.level
+        session.active = self.__active
+        session.color = self.__color
+        session.level = self.__level
 
     def is_active(self) -> bool:
         return self.__active
@@ -25,9 +26,9 @@ class SessionDefaults:
     def get_color(self) -> Color:
         return self.__color
 
-    def set_color(self, color: Color) -> None:
-        if not isinstance(color, Color):
-            raise TypeError("Color must be a Color")
+    def set_color(self, color: (Color, RGBAColor)) -> None:
+        if not isinstance(color, Color) and not isinstance(color, RGBAColor):
+            raise TypeError("Color must be a Color or RGBAColor")
         self.__color = color
 
     def get_level(self) -> Level:

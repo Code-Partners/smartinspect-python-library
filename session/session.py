@@ -9,6 +9,7 @@ import traceback
 from typing import Optional, Union
 
 from common.color.color import Color
+from common.color.rgbacolor import RGBAColor
 from common.context.binary_context import BinaryContext
 from common.context.binary_viewer_context import BinaryViewerContext
 from common.context.data_viewer_context import DataViewerContext
@@ -79,8 +80,8 @@ class Session:
         return self.__color
 
     @color.setter
-    def color(self, color: Color) -> None:
-        if isinstance(color, Color):
+    def color(self, color: (Color, RGBAColor)) -> None:
+        if isinstance(color, Color) or isinstance(color, RGBAColor):
             self.__color = color
 
     @property

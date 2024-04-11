@@ -289,8 +289,8 @@ class SmartInspect:
         if config.contains("level"):
             self.__level = config.read_level("level", self.__level)
 
-        if config.contains("default_level"):
-            self.__default_level = config.read_level("default_level", self.__default_level)
+        if config.contains("defaultlevel"):
+            self.__default_level = config.read_level("defaultlevel", self.__default_level)
 
     def __find_protocol(self, caption: str):
         for protocol in self.__protocols:

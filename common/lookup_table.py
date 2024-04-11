@@ -1,6 +1,8 @@
 # Copyright (C) Code Partners Pty. Ltd. All rights reserved. #
+import typing
 from typing import Optional
 
+from common.color.rgbacolor import RGBAColor
 from common.file_rotate import FileRotate
 from common.level import Level
 from common.color.color import Color
@@ -15,6 +17,22 @@ class LookupTable:
     __KB_FACTOR = 1024
     __MB_FACTOR = __KB_FACTOR * 1024
     __GB_FACTOR = __MB_FACTOR * 1024
+    __HEX_ID = (
+        "0x",  # C#, Java and Python
+        "&H",  # Visual Basic .NET
+        "$",  # Object Pascal
+    )
+    __HEX_TBL = (
+        0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+        0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+        0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+        0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+        0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+        0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+        0x7f, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x7f
+    )
 
     def __init__(self):
         """Instantiates a new LookupTable instance"""
@@ -115,18 +133,32 @@ class LookupTable:
                 pass
         return False
 
-    def get_color_value(self, key: str, default_value: Color) -> Color:
-        if not isinstance(default_value, Color):
-            raise TypeError("default_value must be a Color")
+    def get_color_value(self, key: str, default_value: (Color, RGBAColor)) -> (RGBAColor, Color):
+        if not (isinstance(default_value, Color) or isinstance(default_value, RGBAColor)):
+            raise TypeError("default_value must be a Color or RGBAColor")
 
         value = self.get_string_value(key, "")
 
         if not value:
             return default_value
+        else:
+            b = self.__convert_hex_value(value.strip())
+            if len(b) == 3:
+                return RGBAColor(0xff & b[0],
+                                 0xff & b[1],
+                                 0xff & b[2])
+            elif len(b) == 4:
+                return RGBAColor(0xff & b[0],
+                                 0xff & b[0],
+                                 0xff & b[0],
+                                 0xff & b[0])
 
-    @staticmethod
-    def __convert_hex_value(value: str):
-        ...
+    def __convert_hex_value(self, value: str) -> typing.Optional[bytearray]:
+        for prefix in self.__HEX_ID:
+            if value.startswith(prefix):
+                value = value[len(prefix):]
+                return self.__convert_hex_string(value)
+        return None
 
     def get_boolean_value(self, key: str, default_value: bool) -> bool:
         value = self.get_string_value(key, "")
@@ -262,3 +294,20 @@ class LookupTable:
             return value.encode('utf-8')
         except UnicodeEncodeError:
             return None
+
+    def __convert_hex_string(self, value: str) -> typing.Optional[bytes]:
+        value = value.upper()
+        if len(value) % 2 != 0:  # Check if length is odd
+            value += "0"  # Append a '0' nibble
+
+        b = None
+        if self.__is_valid_hex(value):
+            b = bytes.fromhex(value)
+        return b
+
+    def __is_valid_hex(self, value: str) -> bool:
+        for char in value:
+            code_point = ord(char)
+            if code_point >= len(self.__HEX_TBL) or self.__HEX_TBL[code_point] > 0x0f:
+                return False
+        return True
