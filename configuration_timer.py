@@ -7,10 +7,20 @@ from smartinspect import SmartInspect
 
 
 class RepetitiveTimer(threading.Timer):
+    """
+    This class is used internally in SmartInspect ConfigurationTimer and is not intended to be used otherwise.
+    It overrides the basic threading.Timer behaviour to run a task in a separate thread repeatedly until
+    stopped by Timer.cancel() method.
+    """
+
     def __init__(self, interval, function):
         super().__init__(interval, function)
 
     def run(self):
+        """
+        Overriden from threading.Timer (which only runs a task once) to run the task repeatedly with
+        given intervals until stopped with .cancel() method
+        """
         while not self.finished.is_set():
             self.finished.wait(self.interval)
             self.function(*self.args, **self.kwargs)
