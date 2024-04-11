@@ -3,7 +3,6 @@ import threading
 import typing
 
 from common.clock import Clock
-from common.clock_resolution import ClockResolution
 from common.events.connections_parser_event import ConnectionsParserEvent
 from common.events.control_command_event import ControlCommandEvent
 from common.events.error_event import ErrorEvent
@@ -51,7 +50,6 @@ class SmartInspect:
         self.__hostname = self.__obtain_hostname()
         self.__listeners = LockedSet()
         self.__sessions = SessionManager()
-        self.__resolution = ClockResolution.STANDARD
         self.__variables = ProtocolVariables()
 
         self.__is_multithreaded = False
@@ -60,13 +58,6 @@ class SmartInspect:
     @staticmethod
     def now() -> int:
         return Clock.now()
-
-    def get_resolution(self) -> ClockResolution:
-        return self.__resolution
-
-    def set_resolution(self, resolution: ClockResolution) -> None:
-        if isinstance(resolution, ClockResolution):
-            self.__resolution = resolution
 
     @classmethod
     def get_version(cls) -> str:
