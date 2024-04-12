@@ -9,6 +9,7 @@ import traceback
 from typing import Optional, Union
 
 from common.color.color import Color
+from common.color.rgbacolor import RGBAColor
 from common.context.binary_context import BinaryContext
 from common.context.binary_viewer_context import BinaryViewerContext
 from common.context.data_viewer_context import DataViewerContext
@@ -147,13 +148,13 @@ class Session:
         return self.__color
 
     @color.setter
-    def color(self, color: Color) -> None:
+    def color(self, color: (Color, RGBAColor)) -> None:
         """
         Sets the background color in the SmartInspect Console of this session.
         The session color helps you to identify Log Entries from different sessions
         in the SmartInspect Console by changing the background color.
         """
-        if isinstance(color, Color):
+        if isinstance(color, Color) or isinstance(color, RGBAColor):
             self.__color = color
 
     @property

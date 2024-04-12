@@ -4,20 +4,16 @@ class RGBAColor:
         value = (a & 255) << 24 | (r & 255) << 16 | (g & 255) << 8 | (b & 255) << 0
         self.__value = value
 
-    @property
-    def red(self):
+    def get_red(self):
         return self.__value >> 16 & 255
 
-    @property
-    def green(self):
+    def get_green(self):
         return self.__value >> 8 & 255
 
-    @property
-    def blue(self):
+    def get_blue(self):
         return self.__value >> 0 & 255
 
-    @property
-    def alpha(self):
+    def get_alpha(self):
         return self.__value >> 24 & 255
 
     @staticmethod

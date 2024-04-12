@@ -64,4 +64,4 @@ class Chunk(Packet):
 
     @staticmethod
     def _get_nano_time() -> int:
-        return int(time.perf_counter() * 1e9)
+        return int(time.perf_counter_ns())

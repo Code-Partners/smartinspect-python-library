@@ -3,7 +3,6 @@ import threading
 import typing
 
 from common.clock import Clock
-from common.clock_resolution import ClockResolution
 from common.events.connections_parser_event import ConnectionsParserEvent
 from common.events.control_command_event import ControlCommandEvent
 from common.events.error_event import ErrorEvent
@@ -89,7 +88,6 @@ class SmartInspect:
         self.__hostname = self.__obtain_hostname()
         self.__listeners = LockedSet()
         self.__sessions = SessionManager()
-        self.__resolution = ClockResolution.STANDARD
         self.__variables = ProtocolVariables()
 
         self.__is_multithreaded = False
@@ -106,34 +104,6 @@ class SmartInspect:
         :return: The current local date and time in microseconds since January 1, 1970
         """
         return Clock.now()
-
-    def get_resolution(self) -> ClockResolution:
-        """
-        Returns the timestamp resolution mode for this SmartInspect object.
-        For more information please refer to the set_resolution() method documentation.
-        """
-        return self.__resolution
-
-    def set_resolution(self, resolution: ClockResolution) -> None:
-        """
-        Specifies the timestamp resolution mode for this SmartInspect object.
-
-        By changing this property, you can specify if this object should try
-        to use high-resolution timestamps for LogEntry, Watch and ProcessFlow
-        packets. High-resolution timestamps provide a microsecond resolution.
-        Conversely, standard timestamps have a maximum resolution of 10-55
-        milliseconds.
-
-        Additionally, **high-resolution timestamps are not intended to be used
-        on production systems**. It is recommended to use them only during
-        development and debugging. High-resolution timestamps can introduce
-        several problems that are acceptable on development machines but
-        normally not tolerable on production systems.
-        Due to the mentioned problems, this property defaults to using
-        the standard timestamp resolution.
-        """
-        if isinstance(resolution, ClockResolution):
-            self.__resolution = resolution
 
     @classmethod
     def get_version(cls) -> str:
@@ -615,8 +585,8 @@ class SmartInspect:
         if config.contains("level"):
             self.__level = config.read_level("level", self.__level)
 
-        if config.contains("default_level"):
-            self.__default_level = config.read_level("default_level", self.__default_level)
+        if config.contains("defaultlevel"):
+            self.__default_level = config.read_level("defaultlevel", self.__default_level)
 
     def __find_protocol(self, caption: str):
         for protocol in self.__protocols:

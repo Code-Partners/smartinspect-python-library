@@ -435,7 +435,7 @@ class Protocol:
         try:
             self._internal_disconnect()
         finally:
-            self.__reconnect_tick_count = time.time() * 1000
+            self.__reconnect_tick_count = time.time_ns() / 1e6
 
     def _impl_disconnect(self):
         if self._connected:
@@ -735,7 +735,7 @@ class Protocol:
 
     def __do_reconnect(self) -> None:
         if self.__reconnect_interval > 0:
-            tick_count = time.time() * 1000
+            tick_count = time.time_ns() / 1e6
             if tick_count - self.__reconnect_tick_count < self.__reconnect_interval:
                 return
 
