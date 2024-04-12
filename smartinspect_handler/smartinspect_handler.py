@@ -61,12 +61,12 @@ class SmartInspectHandler(logging.Handler):
             |  logger = logging.getLogger(__name__)
 
             |  # create a connection string using ConnectionStringBuilder
-            |  conn_string = ConnectionStringBuilder().add_tcp_protocol().set_host("127.0.0.1").set_port(4228).set_timeout(
-                30000).set_async_enabled(False).end_protocol().build()
+            |  conn_string = ConnectionStringBuilder().add_tcp_protocol().set_host("127.0.0.1").set_port(4228).
+                set_timeout(30000).set_async_enabled(False).end_protocol().build()
 
             |  # create a SmartInspectHandler instance, set format and attach handler to the logger
             |  handler = SmartInspectHandler("Client app", conn_string)
-            |  handler.setFormatter(logging.Formatter("%(threadName)s, %(asctime)s: %(module)s @ %(funcName)s: %(message)s"))
+            |  handler.setFormatter(logging.Formatter("%(asctime)s: %(module)s @ %(funcName)s: %(message)s"))
             |  logger.addHandler(handler)
             |  logger.setLevel(logging.DEBUG)
 
@@ -116,9 +116,10 @@ class SmartInspectHandler(logging.Handler):
     def _create_si_session(self) -> None:
         """
         Create SmartInspect Session used to dispatch logging Records.
+        A Session is only created if it does not exist already.
         """
-
-        self._si_session = self._si.add_session("Session", True)
+        if not self._si_session:
+            self._si_session = self._si.add_session("Session", True)
 
     def _do_emit(self, record: logging.LogRecord) -> None:
         """
@@ -160,7 +161,7 @@ class SmartInspectHandler(logging.Handler):
 
         |  # create a SmartInspectHandler instance, set format and attach handler to the logger
         |  handler = SmartInspectHandler("Client app", conn_string)
-        |  handler.setFormatter(logging.Formatter("%(threadName)s, %(asctime)s: %(module)s @ %(funcName)s: %(message)s"))
+        |  handler.setFormatter(logging.Formatter("%(asctime)s: %(module)s @ %(funcName)s: %(message)s"))
         |  logger.addHandler(handler)
         |  logger.setLevel(logging.DEBUG)
 
@@ -169,4 +170,5 @@ class SmartInspectHandler(logging.Handler):
         |  # explicitly dispose of handler when finished working in async mode
         |  handler.dispose()
         """
-        self._si.dispose()
+        if self._si:
+            self._si.dispose()
