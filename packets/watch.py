@@ -133,10 +133,7 @@ class Watch(Packet):
         """
         Represents the timestamp of this Watch object.
         This property returns the creation time of this Watch
-        object. If specified, the SmartInspect Python library tries
-        to use high-resolution timestamps. Please see the
-        SmartInspect.set_resolution() method for more information
-        on timestamps.
+        object.
         """
         return self.__timestamp
 
@@ -145,10 +142,7 @@ class Watch(Packet):
         """
         Sets the timestamp of this Watch object.
         This property returns the creation time of this Watch
-        object. If specified, the SmartInspect Python library tries
-        to use high-resolution timestamps. Please see the
-        SmartInspect.set_resolution() method for more information
-        on timestamps.
+        object.
         """
         if not isinstance(timestamp, int):
             raise TypeError("timestamp must be an integer")

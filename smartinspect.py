@@ -96,11 +96,7 @@ class SmartInspect:
     @staticmethod
     def now() -> int:
         """
-        Returns the current date and time, optionally with a high resolution.
-        If the resolution property specifies using a high resolution for timestamps,
-        this method tries to return a timestamp with a microsecond resolution.
-        If high-resolution support is not available, this method simply returns the local date and time
-        with the help of the time.time() function and the default time zone.
+        Returns the current date and time.
         :return: The current local date and time in microseconds since January 1, 1970
         """
         return Clock.now()

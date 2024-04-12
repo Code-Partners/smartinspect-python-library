@@ -141,10 +141,7 @@ class ProcessFlow(Packet):
         """
         Represents the timestamp of this ProcessFlow object.
         This property returns the creation time of this ProcessFlow
-        object. If specified, the SmartInspect Python library tries to
-        use high-resolution timestamps. Please see the
-        SmartInspect.set_resolution() method for more information
-        on timestamps.
+        object.
         """
         return self.__timestamp
 
@@ -153,10 +150,7 @@ class ProcessFlow(Packet):
         """
         Sets the timestamp of this ProcessFlow object.
         This property returns the creation time of this ProcessFlow
-        object. If specified, the SmartInspect Python library tries to
-        use high-resolution timestamps. Please see the
-        SmartInspect.set_resolution() method for more information
-        on timestamps.
+        object.
         """
         if isinstance(timestamp, int):
             self.__timestamp = timestamp
