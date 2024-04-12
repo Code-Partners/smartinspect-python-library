@@ -3,6 +3,16 @@ from .token_abc import Token
 
 
 class TokenFactory:
+    """
+    Creates instances of Token subclasses.
+
+    This class has only one public method called get_token(), which
+    is capable of creating Token objects depending on the given
+    argument.
+
+    .. note::
+       This class is not guaranteed to be threadsafe.
+    """
     tokens = {
         "$appname$": AppNameToken,
         "$session$": SessionToken,
@@ -29,6 +39,17 @@ class TokenFactory:
 
     @classmethod
     def get_token(cls, value: str) -> Token:
+        """Creates instance of Token subclasses.
+
+        :param value: The original string representation of the token.
+        :return: An appropriate Token object for the given string representation of a token.
+
+        This method analyses and parses the supplied representation of a token and creates
+        an appropriate Token object. For example, if the value argument is set to "$session$",
+        a Token object is created and returned which is responsible for expanding the $session$
+        variable. For a list of available tokens and a detailed description, please have a look
+        at the PatternParser class, especially the PatternParser pattern property.
+        """
         if not isinstance(value, str):
             raise TypeError("value must be an str")
 

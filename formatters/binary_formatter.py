@@ -17,6 +17,20 @@ logger = logging.getLogger(__name__)
 
 
 class BinaryFormatter(Formatter):
+    """
+    Responsible for formatting and writing a packet in the standard
+    SmartInspect binary format.
+
+    .. note::
+       This class formats and writes a packet in the standard binary
+       format which can be read by the SmartInspect Console. The
+       Compile method preprocesses a packet and computes the required
+       size of the packet. The Write method writes the preprocessed
+       packet to the supplied stream.
+
+    .. note::
+       This class is not guaranteed to be threadsafe.
+    """
     __MICROSECONDS_PER_DAY = 86400000000
     __DAY_OFFSET = 25569
     __MAX_STREAM_CAPACITY = 1 * 1024 * 1024
@@ -30,17 +44,27 @@ class BinaryFormatter(Formatter):
     }
 
     def __init__(self):
+        """
+        Initializes a BinaryFormatter instance.
+        """
         super().__init__()
         self.__buffer = bytearray()
         self.__stream: BytesIO = BytesIO()
         self.__size: int = 0
         self.__packet: (Packet, None) = None
 
-    # There is no evident benefit in resetting position in BytesIO buffer over creating a new one
     def __reset_stream(self):
         self.__stream = BytesIO()
 
     def compile(self, packet: Packet) -> int:
+        """
+        Overridden. Preprocesses (or compiles) a packet and returns the required size for the compiled result.
+        .. note:: This method preprocesses the supplied packet and computes the required binary format size.
+           To write this compiled packet, call the write() method.
+
+        :param packet: The packet to compile.
+        :return: The size for the compiled result.
+        """
         self.__reset_stream()
         self.__packet = packet
         packet_type = packet.packet_type
@@ -206,6 +230,12 @@ class BinaryFormatter(Formatter):
         self.__write_4bytes_int(signed_int)
 
     def write(self, stream):
+        """
+        Overridden. Writes a previously compiled packet to the supplied stream.
+        This method writes the previously compiled packet (see compile()) to the supplied stream object. If the return
+        value of the compile() method was 0, nothing is written.
+        :param stream: The stream to write the packet to.
+        """
         logger.debug("Writing packet to output stream.")
         self.__write_short(self.__packet.packet_type.value, stream=stream)
         self.__write_4bytes_int(self.__size, stream=stream)
