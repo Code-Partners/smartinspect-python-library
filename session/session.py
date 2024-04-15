@@ -191,36 +191,13 @@ class Session:
             self.__send_log_entry(level, method_name, LogEntryType.ENTER_METHOD, ViewerId.TITLE)
             self.__send_process_flow(level, method_name, ProcessFlowType.ENTER_METHOD)
 
-    def enter_method(self, method_name: str = "", *args, **kwargs) -> None:
-        level = self.__get_level(**kwargs)
-
-        if self.is_on_level(level):
-
-            try:
-                if not isinstance(method_name, str):
-                    raise TypeError('Method name must be a string')
-                if method_name:
-                    method_name = method_name.format(*args, **kwargs)
-
-                    instance = kwargs.get("instance")
-                    if instance is not None:
-                        class_name = instance.__class__.__name__
-                        method_name = f"{class_name}.{method_name}"
-                else:
-                    method_name = self._get_method_name()
-            except Exception as e:
-                return self.__process_internal_error(e)
-
-            self.__send_log_entry(level, method_name, LogEntryType.ENTER_METHOD, ViewerId.TITLE)
-            self.__send_process_flow(level, method_name, ProcessFlowType.ENTER_METHOD)
-
     # noinspection PyBroadException
     @staticmethod
     def _get_method_name() -> str:
         method_name = "<Unknown>"
 
         try:
-            stack_frame = inspect.stack(0)[1]
+            stack_frame = inspect.stack()[2]
             if stack_frame is None:
                 return method_name
 
