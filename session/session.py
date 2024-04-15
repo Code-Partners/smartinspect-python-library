@@ -315,12 +315,16 @@ class Session:
         if self.is_on_level(level):
             self.__send_log_entry(level, None, LogEntryType.RESET_CALLSTACK, ViewerId.NO_VIEWER)
 
-    def enter_method(self, method_name: str, *args, **kwargs) -> None:
+    def enter_method(self, method_name: str = "", *args, **kwargs) -> None:
         """
         This method used to enter a method using default level or custom log level (if provided via kwargs).
-        The resulting method name consists of the method_name string  formatted using
-        optional args and kwargs. The EnterMethod method notifies the Console
-        that a new method has been entered. The Console includes the method in the
+        If a method name string is provided via method_name argument, the resulting method name consists
+        of the method_name string formatted using optional args and kwargs.
+        If the default value is used (empty string) for the method name, SmartInspect will try
+        to get the calling method name out of the stack together with the module name and line of code where
+        this method is located.
+        The enter_method() method notifies the Console that a new method has been entered.
+        The Console includes the method in the
         method hierarchy. If this method is used consequently, a full call stack
         is visible in the console which helps in locating bugs in the source code.
         Please see the leave_method() method as the counter piece to enter_method().
@@ -343,17 +347,44 @@ class Session:
             try:
                 if not isinstance(method_name, str):
                     raise TypeError('Method name must be a string')
-                method_name = method_name.format(*args, **kwargs)
+                if method_name:
+                    method_name = method_name.format(*args, **kwargs)
 
-                instance = kwargs.get("instance")
-                if instance is not None:
-                    class_name = instance.__class__.__name__
-                    method_name = f"{class_name}.{method_name}"
+                    instance = kwargs.get("instance")
+                    if instance is not None:
+                        class_name = instance.__class__.__name__
+                        method_name = f"{class_name}.{method_name}"
+                else:
+                    method_name = self._get_method_name()
             except Exception as e:
                 return self.__process_internal_error(e)
 
             self.__send_log_entry(level, method_name, LogEntryType.ENTER_METHOD, ViewerId.TITLE)
             self.__send_process_flow(level, method_name, ProcessFlowType.ENTER_METHOD)
+
+    # noinspection PyBroadException
+    @staticmethod
+    def _get_method_name() -> str:
+        method_name = "<Unknown>"
+
+        try:
+            stack_frame = inspect.stack()[2]
+            if stack_frame is None:
+                return method_name
+
+            # extract the parts of the stack frame.
+            filepath, line, func_name = stack_frame[1:4]
+            method_name = func_name.strip()
+            module_name = os.path.basename(filepath)
+
+            # add source position to method name.
+            if module_name is not None:
+                method_name += " ({0}, line {1})".format(module_name, line)
+
+            return method_name
+
+        except Exception:
+            return method_name
 
     def __process_internal_error(self, e: Exception) -> None:
         tb = e.__traceback__
@@ -372,11 +403,15 @@ class Session:
 
         return level
 
-    def leave_method(self, method_name: str, *args, **kwargs) -> None:
+    def leave_method(self, method_name: str = "", *args, **kwargs) -> None:
         """
         Leaves a method by using default level or custom log level (if provided via kwargs).
-        The resulting method name consists of the method_name string  formatted using
-        optional args and kwargs. The leave_method() method notifies the Console that a method
+        If a method name string is provided via method_name argument, the resulting method name consists
+        of the method_name string formatted using optional args and kwargs.
+        If the default value is used (empty string) for the method name, SmartInspect will try
+        to get the calling method name out of the stack together with the module name and line of code where
+        this method is located.
+        The leave_method() method notifies the Console that a method
         has been left. The Console closes the current method in the method hierarchy. If this method is used
         consequently, a full call stack is visible in the Console which helps locate bugs in the source code.
         Please see the enter_method() method as the counter piece to leave_method().
@@ -397,11 +432,14 @@ class Session:
             try:
                 if not isinstance(method_name, str):
                     raise TypeError('Method name must be a string')
-                method_name = method_name.format(*args, **kwargs)
-                instance = kwargs.get("instance")
-                if instance is not None:
-                    class_name = instance.__class__.__name__
-                    method_name = f"{class_name}.{method_name}"
+                if method_name:
+                    method_name = method_name.format(*args, **kwargs)
+                    instance = kwargs.get("instance")
+                    if instance is not None:
+                        class_name = instance.__class__.__name__
+                        method_name = f"{class_name}.{method_name}"
+                else:
+                    method_name = self._get_method_name()
             except Exception as e:
                 return self.__process_internal_error(e)
 
