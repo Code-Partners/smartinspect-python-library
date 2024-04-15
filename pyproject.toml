@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "smartinspect"
+version = "4.0.0"
+authors = [
+    { name = "Sergey Udachin", email = "sergey.udachin@code-partners.com" },
+]
+maintainers = [
+    { name = "Sergey Zhukov", email = "sergey@code-partners.com" },
+]
+description = "Client library to integrate SmartInspect logging into Python applications."
+license = { text = "MIT License" }
+readme = "README.rst"
+requires-python = ">=3.7"
+dependencies = ["cryptography>=42.0.5"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Topic :: System :: Logging",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+keywords = [
+    "smartinspect",
+    "logging",
+]
+
+[project.urls]
+Homepage = "https://code-partners.com/offerings/smartinspect/"
+Issues = "https://github.com/Code-Partners/smartinspect-python-library/issues"
