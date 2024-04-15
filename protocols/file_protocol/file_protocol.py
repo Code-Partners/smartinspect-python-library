@@ -22,12 +22,27 @@ logger = logging.getLogger(__name__)
 
 
 class FileProtocol(Protocol):
+    """The standard SmartInspect protocol for writing log packets to a log file.
+    FileProtocol is the base class for all protocol classes which deal with log files.
+    By default, it uses the binary log file format which is compatible to the Console.
+    Derived classes can change this behavior. For example, for a simple protocol which
+    is capable of creating plain text files, see the TextProtocol class.
+    The file protocol supports a variety of options, such as log rotation (by size and date),
+    encryption and I/O buffers. For a complete list of available protocol options, please
+    have a look at the .is_valid_option() method.
+    The public members of this class are threadsafe.
+    """
     _KEY_SIZE: int = 16
     _BUFFER_SIZE: int = 0x2000
     _SILE: bytes = b"SILE"
     _SILF: bytes = b"SILF"
 
     def __init__(self):
+        """
+        Initializes a FileProtocol instance. For a list
+        of available file protocol options, please refer to the
+        is_valid_option() method.
+        """
         super().__init__()
         self._stream: typing.Optional[typing.BinaryIO] = None
         self._rotater: FileRotater = FileRotater()
@@ -43,9 +58,21 @@ class FileProtocol(Protocol):
 
     @staticmethod
     def _get_name() -> str:
+        """
+        Overridden.Returns "file".
+        Derived classes can change this behavior by overriding this method.
+        :return "file"
+        """
         return "file"
 
     def _get_formatter(self) -> BinaryFormatter:
+        """
+        Returns the formatter for this log file protocol.
+        Notes:
+            The standard implementation of this method returns an instance
+            of the BinaryFormatter class. Derived classes can change this
+            behavior by overriding this method.
+        """
         if self._formatter is None:
             self._formatter = BinaryFormatter()
 
@@ -53,13 +80,77 @@ class FileProtocol(Protocol):
 
     @staticmethod
     def _get_default_filename() -> str:
+        """
+        Returns the default filename for this log file protocol.
+        .. note::
+           The standard implementation of this method returns the string "log.sil".
+           Derived classes can change this behavior by overriding this method.
+        :return: The default filename for this log file protocol.
+        """
         return "log.sil"
 
     @staticmethod
     def _get_stream(stream: typing.BinaryIO) -> typing.BinaryIO:
+        """
+        Intended to provide a wrapper stream for the underlying file stream.
+        This method can be used by custom protocol implementers to wrap
+        the underlying file stream into a filter stream.
+        By default, this method simply returns the passed stream argument.
+        :param stream: The underlying file stream.
+        :return: The wrapper stream.
+        """
         return stream
 
     def _is_valid_option(self, option_name: str) -> bool:
+        """
+        Overridden. Validates if a protocol option is supported.
+        The following table lists all valid options, their default
+        values and descriptions for the file protocol.
+
+        ===============  ==========  ===================================================================================
+        Valid Options    Default     Description
+        ===============  ==========  ===================================================================================
+        append           False       Specifies if new packets should be appended to the destination file instead of
+                                     overwriting the file first.
+        buffer           0           Specifies the I/O buffer size in kilobytes. It is possible to specify size units
+                                     like this: "1 MB". Supported units are "KB",
+                                     "MB" and "GB". A value of 0 disables this feature. Enabling the I/O buffering
+                                     greatly improves the logging performance but has
+                                     the disadvantage that log packets are temporarily stored in memory and are not
+                                     immediately written to disk.
+        encrypt          False       Specifies if the resulting log file should be encrypted. Note
+                                     that the 'append' option cannot be used with encryption enabled.
+                                     If encryption is enabled the 'append' option has no effect.
+        filename         [varies]    Specifies the filename of the log.
+        key              [empty]     Specifies the secret encryption key as string if the 'encrypt' option is enabled.
+        maxparts         [varies]    Specifies the maximum amount of log files at any given time when log rotating is
+                                     enabled or the maxsize option is set. Specify
+                                     0 for no limit. See below for information on the default value for this option.
+        maxsize          0           Specifies the maximum size of a log file in kilobytes. When this size is reached,
+                                     the current log file is closed and a new file is opened. The maximum amount of
+                                     log files can be set with the maxparts option.
+                                     It is possible to specify size units
+                                     like this: "1 MB". Supported units are "KB", "MB" and "GB". A value of 0 disables
+                                     this feature.
+        rotate           none        Specifies the rotate mode for log files. Please see below for a list of available
+                                     values. A value of "none" disables this feature. The maximum amount of
+                                     log files can be set with the maxparts option.
+        ===============  ==========  ===================================================================================
+
+        The reset of the docstring contains useful contextual information on how to use File Protocol.
+
+        Examples:
+        -------
+            - connection_string = "file()"
+            - connection_string = "file(filename='log.sil', append=True)"
+            - connection_string = "file(filename='log.sil')"
+            - connection_string = "file(maxsize='16MB', maxparts=5)"
+            - connection_string = "file(rotate=weekly)" 
+            - connection_string = "file(encrypt=True, key='sixteen_byte_key')"
+
+        :param option_name: The option name to validate.
+        :return: True if the option is supported and False otherwise.
+        """
         is_valid = bool(option_name in ("append",
                                         "buffer",
                                         "encrypt",
@@ -73,6 +164,12 @@ class FileProtocol(Protocol):
         return is_valid
 
     def _build_options(self, builder: ConnectionsBuilder) -> None:
+        """
+        Overridden. Fills a ConnectionsBuilder instance with the
+        options currently used by this file protocol.
+        :param builder: The ConnectionsBuilder object to fill with the current options
+           of this protocol.
+        """
         super()._build_options(builder)
         builder.add_option("append", self._append)
         builder.add_option("buffer", int(self._io_buffer / 1024))
@@ -82,6 +179,12 @@ class FileProtocol(Protocol):
         builder.add_option("rotate", self._rotate)
 
     def _load_options(self) -> None:
+        """
+        Overridden. Loads and inspects file specific options.
+        This method loads all relevant options and ensures their correctness.
+        See ._is_valid_option() for a list of options which are recognized by the file protocol.
+        """
+
         super()._load_options()
         self._filename = self._get_string_option("filename", self._get_default_filename())
         self._append = self._get_boolean_option("append", False)
@@ -104,6 +207,13 @@ class FileProtocol(Protocol):
         self._rotater.mode = self._rotate
 
     def _internal_connect(self) -> None:
+        """
+        Overridden. Opens the destination file.
+        This method tries to open the destination file, which can be specified
+        by passing the 'filename' option to the initialize method. For other valid
+        options which might affect the behavior of this method, please see the
+        is_valid_option method.
+        """
         self._internal_do_connect(self._append)
 
     @staticmethod
@@ -191,6 +301,16 @@ class FileProtocol(Protocol):
         return ciphered_stream
 
     def _write_header(self, stream: typing.BinaryIO, size: int) -> int:
+        """Intended to write the header of a log file.
+        This default implementation of this method writes the standard
+        binary protocol header to the supplied stream instance.
+        Derived classes may change this behavior by overriding this
+        method.
+        :param stream: The stream to which the header should be written to.
+        :param size: Specifies the current size of the supplied stream.
+        :return: The new size of the stream after writing the header. If no
+            header is written, the supplied size argument is returned.
+        """
         if size == 0:
             stream.write(self._SILF)
             stream.flush()
@@ -199,6 +319,12 @@ class FileProtocol(Protocol):
             return size
 
     def _write_footer(self, stream: typing.BinaryIO) -> None:
+        """
+        Intended to write the footer of a log file.
+        :param stream: The stream to which the footer should be written to.
+        The implementation of this method does nothing. Derived class may change this
+        behavior by overriding this method.
+        """
         pass
 
     def _do_rotate(self) -> None:
@@ -206,6 +332,16 @@ class FileProtocol(Protocol):
         self._internal_do_connect(append=False)
 
     def _internal_write_packet(self, packet: Packet) -> None:
+        """
+        Overridden. Writes a packet to the destination file.
+        If the "maxsize" option is set and the supplied packet would
+        exceed the maximum size of the destination file, then the
+        current log file is closed and a new file is opened.
+        Additionally, if the "rotate" option is active, the log file
+        is rotated if necessary. Please see the documentation of the
+        is_valid_option method for more information.
+        :param packet: The packet to write.
+        """
         formatter = self._get_formatter()
         packet_size = formatter.compile(packet)
 
@@ -238,6 +374,9 @@ class FileProtocol(Protocol):
             self._stream.flush()
 
     def _internal_disconnect(self) -> None:
+        """
+        Overridden. Closes the destination file.
+        """
         if self._stream is not None:
             try:
                 self._write_footer(self._stream)

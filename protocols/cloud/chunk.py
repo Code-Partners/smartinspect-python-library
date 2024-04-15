@@ -35,6 +35,10 @@ class Chunk(Packet):
         return PacketType.CHUNK
 
     def compile_packet(self, packet: Packet) -> None:
+        """
+        Compile but don't add to the chunk yet.
+        :param packet: packet to compile
+        """
         self._last_compiled_packet_size = self._formatter.compile(packet)
 
     def can_fit_formatted_packet(self) -> bool:
@@ -60,4 +64,4 @@ class Chunk(Packet):
 
     @staticmethod
     def _get_nano_time() -> int:
-        return int(time.perf_counter() * 1e9)
+        return int(time.perf_counter_ns())

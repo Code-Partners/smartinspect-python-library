@@ -9,24 +9,40 @@ logger = logging.getLogger(__name__)
 
 
 class AppNameToken(Token):
+    """
+    Represents app name token. Please see Token and TokenFactory documentation for more information.
+    """
+
     @staticmethod
     def expand(log_entry: LogEntry) -> str:
         return log_entry.appname
 
 
 class SessionToken(Token):
+    """
+    Represents session token. Please see Token and TokenFactory documentation for more information.
+    """
+
     @staticmethod
     def expand(log_entry: LogEntry) -> str:
         return log_entry.session_name
 
 
 class HostNameToken(Token):
+    """
+    Represents host name token. Please see Token and TokenFactory documentation for more information.
+    """
+
     @staticmethod
     def expand(log_entry: LogEntry) -> str:
         return log_entry.hostname
 
 
 class TitleToken(Token):
+    """
+    Represents title token. Please see Token and TokenFactory documentation for more information.
+    """
+
     @staticmethod
     def expand(log_entry: LogEntry) -> str:
         return log_entry.title
@@ -37,6 +53,9 @@ class TitleToken(Token):
 
 
 class TimestampToken(Token):
+    """
+    Represents timestamp token. Please see Token and TokenFactory documentation for more information.
+    """
     _FORMAT: str = "%Y-%m-%d %H:%M:%S.%f"
 
     @staticmethod
@@ -63,6 +82,9 @@ class TimestampToken(Token):
 
 
 class LevelToken(Token):
+    """
+    Represents level token. Please see Token and TokenFactory documentation for more information.
+    """
 
     @staticmethod
     def expand(log_entry: LogEntry) -> str:
@@ -70,6 +92,9 @@ class LevelToken(Token):
 
 
 class ColorToken(Token):
+    """
+    Represents color token. Please see Token and TokenFactory documentation for more information.
+    """
     _CHAR_MAP: str = "0123456789ABCDEF"
 
     def _append_hex(self, string_buffer: list, value: int) -> list:
@@ -93,29 +118,49 @@ class ColorToken(Token):
 
 
 class LogEntryTypeToken(Token):
+    """
+    Represents logentry type token. Please see Token and TokenFactory documentation for more information.
+    """
+
     @staticmethod
     def expand(log_entry: LogEntry) -> str:
         return str(log_entry.log_entry_type)
 
 
 class ViewerIdToken(Token):
+    """
+    Represents ViewerId token. Please see Token and TokenFactory documentation for more information.
+    """
+
     @staticmethod
     def expand(log_entry: LogEntry) -> str:
         return str(log_entry.viewer_id)
 
 
 class ThreadIdToken(Token):
+    """
+    Represents ThreadId token. Please see Token and TokenFactory documentation for more information.
+    """
+
     @staticmethod
     def expand(log_entry: LogEntry) -> str:
         return str(log_entry.thread_id)
 
 
 class ProcessIdToken(Token):
+    """
+    Represents ProcessId token. Please see Token and TokenFactory documentation for more information.
+    """
+
     @staticmethod
     def expand(log_entry: LogEntry) -> str:
         return str(log_entry.process_id)
 
 
 class LiteralToken(Token):
+    """
+    Represents literal token. Please see Token and TokenFactory documentation for more information.
+    """
+
     def expand(self, log_entry: LogEntry) -> str:
         return self.value

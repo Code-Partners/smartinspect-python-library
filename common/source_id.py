@@ -4,6 +4,21 @@ from common.viewer_id import ViewerId
 
 
 class SourceId(Enum):
+    """
+    Used in the LogSource methods of the Session class to specify
+    the type of source code.
+
+    Instructs the Session.log_source() methods to use syntax highlighting for relevant languages.
+
+    - HTML: Instructs the Session.log_source() methods to use syntax highlighting for HTML
+    - JAVASCRIPT: Instructs the Session.log_source() methods to use syntax highlighting for JAVASCRIPT
+    - VBSCRIPT: Instructs the Session.log_source() methods to use syntax highlighting for VBSCRIPT
+    - PERL: Instructs the Session.log_source() methods to use syntax highlighting for PERL
+    - SQL: Instructs the Session.log_source() methods to use syntax highlighting for SQL
+    - INI: Instructs the Session.log_source() methods to use syntax highlighting for INI
+    - PYTHON: Instructs the Session.log_source() methods to use syntax highlighting for PYTHON
+    - XML: Instructs the Session.log_source() methods to use syntax highlighting for XML
+    """
     HTML = ViewerId.HTML_SOURCE
     JAVASCRIPT = ViewerId.JAVASCRIPT_SOURCE
     VBSCRIPT = ViewerId.VBSCRIPT_SOURCE
@@ -30,5 +45,3 @@ class SourceId(Enum):
             if index != -1:
                 self.__str = self.__str[:index - 1]
         return self.__str
-
-
