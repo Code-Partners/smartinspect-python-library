@@ -15,7 +15,7 @@ It helps you identify bugs, find solutions to user-reported issues and gives you
 your software performs in different environments. Whether you need logging in the development phase, on production
 systems or at customer sites, SmartInspect is the perfect choice.
 
-SmartInspect website - `https://code-partners.com/offerings/smartinspect/`.
+Visit `SmartInspect website <https://code-partners.com/offerings/smartinspect/>`_.
 
 Installation
 ============
@@ -49,4 +49,4 @@ You can start using ``smartinspect`` like this:
     SiAuto.main.log_cursor_data("Cursor data", cursor)
     SiAuto.si.dispose()
 
-More Python examples available at `https://github.com/Code-Partners/smartinspect-examples/tree/main/python`.
+More Python examples available at `Code-Partners Github repository <https://github.com/Code-Partners/smartinspect-examples/tree/main/python>`_.
