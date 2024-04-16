@@ -463,7 +463,7 @@ class CloudProtocol(TcpProtocol):
             # if location is marked as 'resource', then we search for the cert
             # in 'resources' package
             if location == "resource":
-                pkg_path = importlib.util.find_spec("resources").origin
+                pkg_path = importlib.util.find_spec("smartinspect.resources").origin
                 # if there is a 'resources' package, we resolve its absolute path
                 # and add filepath to it
                 if pkg_path is not None:
