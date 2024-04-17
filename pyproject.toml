@@ -34,3 +34,6 @@ keywords = [
 [project.urls]
 Homepage = "https://code-partners.com/offerings/smartinspect/"
 Issues = "https://github.com/Code-Partners/smartinspect-python-library/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
