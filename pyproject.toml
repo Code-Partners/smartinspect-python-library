@@ -3,7 +3,7 @@ requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "smartinspect"
+name = "smartinspect-py"
 version = "4.0.0"
 authors = [
     { name = "Sergey Udachin", email = "sergey.udachin@code-partners.com" },
