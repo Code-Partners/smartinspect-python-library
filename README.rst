@@ -6,7 +6,7 @@ SmartInspect Python Library
     :alt: SmartInspect
 
 
-``smartinspect`` is a client library to integrate SmartInspect logging into Python applications.
+``smartinspect-py`` is a client library to integrate SmartInspect logging into Python applications.
 It also has a SmartInspect Handler which can be used to dispatch Python ``logging`` log records to
 the destination defined by SmartInspect.
 
@@ -20,16 +20,16 @@ Visit `SmartInspect website <https://code-partners.com/offerings/smartinspect/>`
 Installation
 ============
 
-You can install ``smartinspect`` with:
+You can install ``smartinspect-py`` with:
 
 .. code-block:: console
 
-    $ pip install smartinspect
+    $ pip install smartinspect-py
 
 Usage
 =====
 
-You can start using ``smartinspect`` like this:
+You can start using ``smartinspect-py`` like this:
 
 .. code-block:: pycon
 
