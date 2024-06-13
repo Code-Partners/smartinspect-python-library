@@ -143,7 +143,10 @@ class TcpProtocol(Protocol):
     def _internal_initialize_socket(self) -> socket.socket:
         socket_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         socket_.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        socket_.settimeout(self._timeout)
+        # settimeout argument is in seconds, smartinspect timeout option is milliseconds
+        # convert ms to s by dividing by 1000
+        # https://docs.python.org/3/library/socket.html#socket.socket.settimeout
+        socket_.settimeout(self._timeout / 1000)
         socket_.connect((self._hostname, self._port))
 
         return socket_
