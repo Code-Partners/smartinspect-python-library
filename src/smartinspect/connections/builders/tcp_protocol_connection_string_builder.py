@@ -20,6 +20,6 @@ class TcpProtocolConnectionStringBuilder(ProtocolConnectionStringBuilder):
         self._parent.cb.add_option("port", port)
         return self
 
-    def set_timeout(self, timeout: int) -> Self:
-        self._parent.cb.add_option("timeout", timeout)
+    def set_timeout(self, timeout_ms: int) -> Self:
+        self._parent.cb.add_option("timeout", timeout_ms)
         return self
