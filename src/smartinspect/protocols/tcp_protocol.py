@@ -106,6 +106,9 @@ class TcpProtocol(Protocol):
         self._read_server_banner()
         self._send_client_banner()
 
+    def _get_stream(self):
+        return self.__stream
+
     def _read_server_banner(self) -> None:
         answer = self.__stream.readline().strip()
         if not answer:

@@ -59,6 +59,8 @@ class CloudProtocol(TcpProtocol):
     _DEFAULT_TLS_CERTIFICATE_LOCATION: str = "resource"
     _DEFAULT_TLS_CERTIFICATE_FILEPATH: str = "client.pem"
 
+    _PREFACE_BYTES = bytes([0x29, 0x17, 0x73, 0x50])
+
     def __init__(self) -> None:
         super().__init__()
         self._reconnect_allowed: bool = True
@@ -511,6 +513,10 @@ class CloudProtocol(TcpProtocol):
             return ssl_sock
         else:
             return super()._internal_initialize_socket()
+
+    def _internal_write_packet(self, packet: Packet) -> None:
+        self._get_stream().write(self._PREFACE_BYTES)
+        super()._internal_write_packet(packet)
 
     def _internal_reconnect(self) -> bool:
         if self._reconnect_allowed:
