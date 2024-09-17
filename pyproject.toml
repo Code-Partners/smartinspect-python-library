@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "smartinspect-py"
-version = "4.0.3"
+version = "4.0.4"
 authors = [
     { name = "Sergey Udachin", email = "sergey.udachin@code-partners.com" },
 ]
