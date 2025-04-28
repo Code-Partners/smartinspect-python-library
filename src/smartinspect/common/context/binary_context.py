@@ -74,7 +74,7 @@ class BinaryContext(ViewerContext):
         """
 
         if not isinstance(bytestring, bytes) and \
-                not isinstance(bytestring, bytes):
+                not isinstance(bytestring, bytearray):
             raise TypeError("bytestring must be bytes sequence")
         if not isinstance(offset, int):
             raise TypeError("offset must be an integer")
