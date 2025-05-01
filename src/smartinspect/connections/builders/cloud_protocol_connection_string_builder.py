@@ -14,10 +14,9 @@ Self = TypeVar("Self", bound="CloudProtocolConnectionStringBuilder")
 
 
 class CloudProtocolConnectionStringBuilder(TcpProtocolConnectionStringBuilder):
-    _custom_labels: collections.OrderedDict = collections.OrderedDict()
-
     def __init__(self, parent: "ConnectionStringBuilder"):
         super().__init__(parent)
+        self._custom_labels: collections.OrderedDict = collections.OrderedDict()
 
     def end_protocol(self) -> "ConnectionStringBuilder":
         self._parent.cb.add_option("customlabels", CloudProtocol.compose_custom_labels_string(self._custom_labels))
