@@ -275,7 +275,9 @@ class CloudProtocol(TcpProtocol):
                 name, value = pair
 
                 if (
-                        len(name) <= self._MAX_ALLOWED_CUSTOM_LABEL_COMPONENT_LENGTH
+                        name != ""
+                        and value != ""
+                        and len(name) <= self._MAX_ALLOWED_CUSTOM_LABEL_COMPONENT_LENGTH
                         and len(value) <= self._MAX_ALLOWED_CUSTOM_LABEL_COMPONENT_LENGTH
                 ):
                     self._custom_labels[name] = value
